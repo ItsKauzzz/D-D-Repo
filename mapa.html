@@ -35,7 +35,7 @@
       position: fixed;
       top: 12px;
       left: 12px;
-      z-index: 10;
+      z-index: 20;
       display: flex;
       gap: 8px;
       align-items: center;
@@ -63,6 +63,78 @@
       font-size: 13px;
       color: #ddd;
     }
+
+    .zoom-control {
+      position: fixed;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 10px 8px;
+    }
+
+    .zoom-label {
+      color: #fff;
+      font-size: 12px;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    #zoomRange {
+      width: 25px;
+      height: 180px;
+      margin: 0;
+      writing-mode: bt-lr;
+      -webkit-appearance: slider-vertical;
+      appearance: slider-vertical;
+      border-radius: 999px;
+      background: #69614a;
+      border: 2px solid #3c3222;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    #zoomRange::-webkit-slider-runnable-track {
+      width: 25px;
+      height: 180px;
+      background: #69614a;
+      border: 2px solid #3c3222;
+      border-radius: 999px;
+    }
+
+    #zoomRange::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 21px;
+      height: 21px;
+      border-radius: 50%;
+      margin-top: -2px;
+      background: #3c3222;
+      border: 2px solid #ffffff;
+    }
+
+    #zoomRange::-moz-range-track {
+      width: 25px;
+      height: 180px;
+      background: #69614a;
+      border: 2px solid #3c3222;
+      border-radius: 999px;
+    }
+
+    #zoomRange::-moz-range-thumb {
+      width: 21px;
+      height: 21px;
+      border-radius: 50%;
+      background: #3c3222;
+      border: 2px solid #ffffff;
+    }
   </style>
 </head>
 <body>
@@ -72,17 +144,36 @@
     <span class="help">Arraste para mover · Scroll para deslocar</span>
   </div>
 
+  <div class="zoom-control" aria-label="Controle de zoom">
+    <span class="zoom-label" id="zoomValue">100%</span>
+    <input id="zoomRange" type="range" min="20" max="100" value="100" step="1" orient="vertical" />
+  </div>
+
   <div id="mapCanvas" aria-label="Mapa-múndi em tela cheia"></div>
 
   <script>
     const mapCanvas = document.getElementById('mapCanvas');
     const resetBtn = document.getElementById('resetBtn');
+    const zoomRange = document.getElementById('zoomRange');
+    const zoomValue = document.getElementById('zoomValue');
 
     let offsetX = 0;
     let offsetY = 0;
     let dragging = false;
     let lastX = 0;
     let lastY = 0;
+    let zoom = 1;
+    let naturalWidth = 0;
+    let naturalHeight = 0;
+
+    function applyZoom() {
+      if (naturalWidth && naturalHeight) {
+        mapCanvas.style.backgroundSize = `${naturalWidth * zoom}px ${naturalHeight * zoom}px`;
+      } else {
+        mapCanvas.style.backgroundSize = `${zoom * 100}% auto`;
+      }
+      zoomValue.textContent = `${Math.round(zoom * 100)}%`;
+    }
 
     function render() {
       mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
@@ -128,7 +219,6 @@
       render();
     }, { passive: false });
 
-    // Suporte touch
     mapCanvas.addEventListener('touchstart', (event) => {
       if (!event.touches.length) return;
       const touch = event.touches[0];
@@ -154,8 +244,23 @@
       dragging = false;
     }, { passive: true });
 
+    zoomRange.addEventListener('input', () => {
+      zoom = Number(zoomRange.value) / 100;
+      applyZoom();
+    });
+
     resetBtn.addEventListener('click', resetPosition);
+
+    const mapImage = new Image();
+    mapImage.onload = () => {
+      naturalWidth = mapImage.naturalWidth;
+      naturalHeight = mapImage.naturalHeight;
+      applyZoom();
+    };
+    mapImage.src = 'world_map_telarium.png';
+
     resetPosition();
+    applyZoom();
   </script>
 </body>
 </html>
