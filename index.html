@@ -9,82 +9,24 @@
       background: #111;
       color: #eee;
       text-align: center;
-      margin: 0;
-      padding: 40px 20px;
+      margin-top: 100px;
     }
 
-    h1 {
-      margin-bottom: 8px;
-    }
-
-    p {
-      margin-top: 0;
-    }
-
-    button {
+    button,
+    .map-link {
       padding: 10px 20px;
       font-size: 18px;
       cursor: pointer;
-      margin: 6px;
       border: 0;
       border-radius: 8px;
+      text-decoration: none;
+      display: inline-block;
+      margin: 6px;
     }
 
-    .map-toggle {
+    .map-link {
       background: #2c7be5;
       color: #fff;
-    }
-
-    .map-wrapper {
-      max-width: min(92vw, 1100px);
-      margin: 20px auto 0;
-      display: none;
-      border: 1px solid #333;
-      border-radius: 12px;
-      background: #0b0b0b;
-      padding: 12px;
-    }
-
-    .map-wrapper.open {
-      display: block;
-    }
-
-    .map-help {
-      font-size: 0.95rem;
-      color: #bbb;
-      margin: 0 0 10px;
-    }
-
-    .map-viewport {
-      width: 100%;
-      height: 60vh;
-      max-height: 620px;
-      overflow: auto;
-      border-radius: 10px;
-      border: 1px solid #222;
-      cursor: grab;
-      user-select: none;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .map-viewport:active {
-      cursor: grabbing;
-    }
-
-    .map-grid {
-      display: grid;
-      grid-template-columns: repeat(3, auto);
-      grid-template-rows: repeat(3, auto);
-      width: max-content;
-      height: max-content;
-      gap: 0;
-    }
-
-    .map-grid img {
-      width: min(90vw, 900px);
-      height: auto;
-      display: block;
-      pointer-events: none;
     }
   </style>
 </head>
@@ -93,99 +35,13 @@
   <h1>RPG Tool Test</h1>
   <p id="result">Clique para rolar 1d20</p>
   <button onclick="roll()">Roll</button>
-  <button class="map-toggle" onclick="toggleMap()">Abrir mapa-múndi</button>
-
-  <section id="mapSection" class="map-wrapper" aria-live="polite">
-    <p class="map-help">Arraste ou use o scroll para navegar pelo mapa. Quando chegar à borda, ele continua em loop.</p>
-    <div id="mapViewport" class="map-viewport">
-      <div class="map-grid" id="mapGrid"></div>
-    </div>
-  </section>
+  <a class="map-link" href="mapa.html">Abrir mapa-múndi (tela cheia)</a>
 
   <script>
     function roll() {
       const value = Math.floor(Math.random() * 20) + 1;
       document.getElementById('result').innerText = 'Resultado: ' + value;
     }
-
-    const mapSection = document.getElementById('mapSection');
-    const mapViewport = document.getElementById('mapViewport');
-    const mapGrid = document.getElementById('mapGrid');
-    const mapSrc = 'world_map_telarium.png';
-    let tileWidth = 0;
-    let tileHeight = 0;
-
-    function createLoopGrid() {
-      for (let i = 0; i < 9; i++) {
-        const img = document.createElement('img');
-        img.src = mapSrc;
-        img.alt = 'Mapa-múndi';
-        img.loading = 'lazy';
-        mapGrid.appendChild(img);
-      }
-
-      const centerTile = mapGrid.children[4];
-      centerTile.addEventListener('load', () => {
-        tileWidth = centerTile.naturalWidth;
-        tileHeight = centerTile.naturalHeight;
-        mapViewport.scrollLeft = tileWidth;
-        mapViewport.scrollTop = tileHeight;
-      }, { once: true });
-    }
-
-    function recenterIfNeeded() {
-      if (!tileWidth || !tileHeight) return;
-
-      if (mapViewport.scrollLeft < tileWidth * 0.5) {
-        mapViewport.scrollLeft += tileWidth;
-      } else if (mapViewport.scrollLeft > tileWidth * 1.5) {
-        mapViewport.scrollLeft -= tileWidth;
-      }
-
-      if (mapViewport.scrollTop < tileHeight * 0.5) {
-        mapViewport.scrollTop += tileHeight;
-      } else if (mapViewport.scrollTop > tileHeight * 1.5) {
-        mapViewport.scrollTop -= tileHeight;
-      }
-    }
-
-    function toggleMap() {
-      mapSection.classList.toggle('open');
-      if (mapSection.classList.contains('open') && tileWidth && tileHeight) {
-        mapViewport.scrollLeft = tileWidth;
-        mapViewport.scrollTop = tileHeight;
-      }
-    }
-
-    // Suporte para arrastar com mouse (estilo "pan" de mapa)
-    let isDragging = false;
-    let startX = 0;
-    let startY = 0;
-    let startLeft = 0;
-    let startTop = 0;
-
-    mapViewport.addEventListener('mousedown', (event) => {
-      isDragging = true;
-      startX = event.clientX;
-      startY = event.clientY;
-      startLeft = mapViewport.scrollLeft;
-      startTop = mapViewport.scrollTop;
-    });
-
-    window.addEventListener('mousemove', (event) => {
-      if (!isDragging) return;
-      mapViewport.scrollLeft = startLeft - (event.clientX - startX);
-      mapViewport.scrollTop = startTop - (event.clientY - startY);
-      recenterIfNeeded();
-    });
-
-    window.addEventListener('mouseup', () => {
-      isDragging = false;
-    });
-
-    mapViewport.addEventListener('scroll', recenterIfNeeded);
-
-    createLoopGrid();
   </script>
 
 </body>

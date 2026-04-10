@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapa-múndi</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: Arial, sans-serif;
+    }
+
+    #mapCanvas {
+      width: 100vw;
+      height: 100vh;
+      cursor: grab;
+      background-color: #000;
+      background-image: url('world_map_telarium.png');
+      background-repeat: repeat;
+      background-size: auto;
+      background-position: 0 0;
+      touch-action: none;
+    }
+
+    #mapCanvas.dragging {
+      cursor: grabbing;
+    }
+
+    .topbar {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 10;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.55);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      padding: 8px 10px;
+      backdrop-filter: blur(2px);
+    }
+
+    .topbar a,
+    .topbar button {
+      border: 0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      color: #fff;
+      background: #2c7be5;
+    }
+
+    .help {
+      font-size: 13px;
+      color: #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="index.html">← Voltar</a>
+    <button id="resetBtn" type="button">Centralizar</button>
+    <span class="help">Arraste para mover · Scroll para deslocar</span>
+  </div>
+
+  <div id="mapCanvas" aria-label="Mapa-múndi em tela cheia"></div>
+
+  <script>
+    const mapCanvas = document.getElementById('mapCanvas');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let offsetX = 0;
+    let offsetY = 0;
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    function render() {
+      mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
+    }
+
+    function resetPosition() {
+      offsetX = 0;
+      offsetY = 0;
+      render();
+    }
+
+    mapCanvas.addEventListener('mousedown', (event) => {
+      dragging = true;
+      mapCanvas.classList.add('dragging');
+      lastX = event.clientX;
+      lastY = event.clientY;
+    });
+
+    window.addEventListener('mousemove', (event) => {
+      if (!dragging) return;
+
+      const deltaX = event.clientX - lastX;
+      const deltaY = event.clientY - lastY;
+
+      offsetX += deltaX;
+      offsetY += deltaY;
+
+      lastX = event.clientX;
+      lastY = event.clientY;
+
+      render();
+    });
+
+    window.addEventListener('mouseup', () => {
+      dragging = false;
+      mapCanvas.classList.remove('dragging');
+    });
+
+    mapCanvas.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      offsetX -= event.deltaX;
+      offsetY -= event.deltaY;
+      render();
+    }, { passive: false });
+
+    // Suporte touch
+    mapCanvas.addEventListener('touchstart', (event) => {
+      if (!event.touches.length) return;
+      const touch = event.touches[0];
+      dragging = true;
+      lastX = touch.clientX;
+      lastY = touch.clientY;
+    }, { passive: true });
+
+    mapCanvas.addEventListener('touchmove', (event) => {
+      if (!dragging || !event.touches.length) return;
+      const touch = event.touches[0];
+      const deltaX = touch.clientX - lastX;
+      const deltaY = touch.clientY - lastY;
+
+      offsetX += deltaX;
+      offsetY += deltaY;
+      lastX = touch.clientX;
+      lastY = touch.clientY;
+      render();
+    }, { passive: true });
+
+    mapCanvas.addEventListener('touchend', () => {
+      dragging = false;
+    }, { passive: true });
+
+    resetBtn.addEventListener('click', resetPosition);
+    resetPosition();
+  </script>
+</body>
+</html>
