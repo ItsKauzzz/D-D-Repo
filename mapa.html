@@ -9,9 +9,26 @@
 <body>
   <div class="topbar">
     <a href="index.html">← Voltar</a>
-    <button id="resetBtn" type="button">Centralizar</button>
-    <span class="help">Arraste para mover · Scroll para deslocar</span>
   </div>
+
+  <aside class="poi-sidebar" aria-label="Pontos de interesse">
+    <h2>Pontos de interesse</h2>
+
+    <input id="poiSearch" class="poi-search" type="search" placeholder="Buscar localização..." aria-label="Buscar localização" />
+
+    <div class="poi-switches">
+      <label>
+        <input id="togglePins" type="checkbox" checked />
+        Mostrar pins
+      </label>
+      <label>
+        <input id="toggleNames" type="checkbox" checked />
+        Mostrar nomes
+      </label>
+    </div>
+
+    <ul id="poiList" class="poi-list"></ul>
+  </aside>
 
   <div class="zoom-control" aria-label="Controle de zoom">
     <span class="zoom-label" id="zoomValue">100%</span>
@@ -20,14 +37,20 @@
     </div>
   </div>
 
-  <div id="mapCanvas" aria-label="Mapa-múndi em tela cheia"></div>
+  <div id="mapCanvas" aria-label="Mapa-múndi em tela cheia">
+    <div id="poiLayer" class="poi-layer" aria-hidden="true"></div>
+  </div>
 
   <script>
     const mapCanvas = document.getElementById('mapCanvas');
-    const resetBtn = document.getElementById('resetBtn');
     const zoomTrack = document.getElementById('zoomTrack');
     const zoomThumb = document.getElementById('zoomThumb');
     const zoomValue = document.getElementById('zoomValue');
+    const poiLayer = document.getElementById('poiLayer');
+    const poiList = document.getElementById('poiList');
+    const togglePins = document.getElementById('togglePins');
+    const toggleNames = document.getElementById('toggleNames');
+    const poiSearch = document.getElementById('poiSearch');
 
     let offsetX = 0;
     let offsetY = 0;
@@ -37,9 +60,16 @@
     let zoom = 1;
     let naturalWidth = 0;
     let naturalHeight = 0;
+    let locations = [];
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 1;
+
+    const TYPE_STYLES = {
+      cidade: '#dd6f43',
+      vila: '#5f9ea0',
+      acontecimento: '#d3b45d'
+    };
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -47,6 +77,24 @@
 
     function zoomToRatio() {
       return (zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM);
+    }
+
+    function normalizeType(type) {
+      return String(type || '').trim().toLowerCase();
+    }
+
+    function getTypeColor(type) {
+      return TYPE_STYLES[normalizeType(type)] || '#7f7f7f';
+    }
+
+    function getFilteredLocations() {
+      const filter = poiSearch.value.trim().toLowerCase();
+      if (!filter) return locations;
+
+      return locations.filter((location) => {
+        const fullText = `${location.name} ${location.type}`.toLowerCase();
+        return fullText.includes(filter);
+      });
     }
 
     function renderZoomThumb() {
@@ -68,15 +116,25 @@
         mapCanvas.style.backgroundSize = `${zoom * 100}% auto`;
       }
       renderZoomThumb();
+      renderPOI();
     }
 
     function render() {
       mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
+      renderPOI();
     }
 
     function resetPosition() {
       offsetX = 0;
       offsetY = 0;
+      render();
+    }
+
+    function focusLocation(location) {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      offsetX = centerX - (location.x * zoom);
+      offsetY = centerY - (location.y * zoom);
       render();
     }
 
@@ -101,6 +159,153 @@
       const ratio = clamp((rect.bottom - clientY) / rect.height, 0, 1);
       const percent = 20 + ratio * 80;
       setZoomFromPercent(percent);
+    }
+
+    function setZoomFromWheel(deltaY, clientX, clientY) {
+      const zoomStep = 0.06;
+      const direction = deltaY > 0 ? -1 : 1;
+      const nextZoom = clamp(zoom + (direction * zoomStep), MIN_ZOOM, MAX_ZOOM);
+      if (nextZoom === zoom) return;
+
+      const worldXAtPointer = (clientX - offsetX) / zoom;
+      const worldYAtPointer = (clientY - offsetY) / zoom;
+
+      zoom = nextZoom;
+      offsetX = clientX - (worldXAtPointer * zoom);
+      offsetY = clientY - (worldYAtPointer * zoom);
+
+      applyZoom();
+      render();
+    }
+
+    function createLocationElement(location) {
+      const element = document.createElement('article');
+      element.className = 'poi-item';
+      element.dataset.id = location.id;
+
+      const color = getTypeColor(location.type);
+      element.style.setProperty('--poi-color', color);
+
+      const showPin = togglePins.checked && location.show_pin;
+      const showName = toggleNames.checked && location.show_name;
+
+      if (showPin) {
+        const pin = document.createElement('span');
+        pin.className = 'poi-pin';
+        element.appendChild(pin);
+      }
+
+      if (showName) {
+        const label = document.createElement('span');
+        label.className = 'poi-name';
+        label.textContent = location.name;
+        element.appendChild(label);
+      }
+
+      if (!showPin && !showName) {
+        element.classList.add('is-hidden');
+      }
+
+      return element;
+    }
+
+    function renderPOI() {
+      poiLayer.innerHTML = '';
+
+      getFilteredLocations().forEach((location) => {
+        const marker = createLocationElement(location);
+        marker.style.left = `${offsetX + location.x * zoom}px`;
+        marker.style.top = `${offsetY + location.y * zoom}px`;
+        poiLayer.appendChild(marker);
+      });
+    }
+
+    function renderPOIList() {
+      poiList.innerHTML = '';
+
+      getFilteredLocations().forEach((location) => {
+        const item = document.createElement('li');
+        item.className = 'poi-entry';
+        item.tabIndex = 0;
+        item.setAttribute('role', 'button');
+        item.style.setProperty('--poi-color', getTypeColor(location.type));
+        item.innerHTML = `<strong>${location.name}</strong><span>${location.type}</span>`;
+
+        item.addEventListener('click', () => focusLocation(location));
+        item.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            focusLocation(location);
+          }
+        });
+
+        poiList.appendChild(item);
+      });
+    }
+
+    async function discoverLocationFiles() {
+      const discovered = new Set();
+
+      try {
+        const response = await fetch('data/locations/');
+        if (!response.ok) throw new Error('Sem listagem HTTP da pasta.');
+
+        const html = await response.text();
+        const hrefMatches = html.match(/href\s*=\s*["']([^"']+)["']/gi) || [];
+
+        hrefMatches.forEach((rawHref) => {
+          const href = rawHref.replace(/href\s*=\s*["']|["']/gi, '');
+          const cleanHref = href.split('?')[0].split('#')[0];
+          const fileName = decodeURIComponent(cleanHref.split('/').pop() || '');
+          if (fileName.endsWith('.json') && fileName !== 'index.json') {
+            discovered.add(fileName);
+          }
+        });
+      } catch (error) {
+        console.debug('Varredura direta indisponível, usando fallback index.json:', error);
+      }
+
+      try {
+        const fallbackResponse = await fetch('data/locations/index.json');
+        const fallbackFiles = await fallbackResponse.json();
+        fallbackFiles.forEach((fileName) => {
+          if (String(fileName).endsWith('.json')) discovered.add(String(fileName));
+        });
+      } catch (error) {
+        console.debug('Fallback index.json indisponível:', error);
+      }
+
+      return [...discovered].sort();
+    }
+
+    async function loadLocations() {
+      const files = await discoverLocationFiles();
+      if (!files.length) {
+        locations = [];
+        renderPOIList();
+        renderPOI();
+        poiList.innerHTML = '<li>Nenhum arquivo JSON encontrado em data/locations.</li>';
+        return;
+      }
+
+      const entries = await Promise.all(files.map(async (fileName) => {
+        const fileResponse = await fetch(`data/locations/${fileName}`);
+        const data = await fileResponse.json();
+
+        return {
+          id: fileName,
+          x: Number(data.x || 0),
+          y: Number(data.y || 0),
+          name: String(data.name || 'Sem nome'),
+          type: String(data.type || 'desconhecido'),
+          show_pin: data.show_pin !== false,
+          show_name: data.show_name !== false
+        };
+      }));
+
+      locations = entries;
+      renderPOIList();
+      renderPOI();
     }
 
     mapCanvas.addEventListener('mousedown', (event) => {
@@ -132,9 +337,7 @@
 
     mapCanvas.addEventListener('wheel', (event) => {
       event.preventDefault();
-      offsetX -= event.deltaX;
-      offsetY -= event.deltaY;
-      render();
+      setZoomFromWheel(event.deltaY, event.clientX, event.clientY);
     }, { passive: false });
 
     mapCanvas.addEventListener('touchstart', (event) => {
@@ -203,8 +406,13 @@
       }
     });
 
-    resetBtn.addEventListener('click', resetPosition);
+    poiSearch.addEventListener('input', () => {
+      renderPOIList();
+      renderPOI();
+    });
 
+    togglePins.addEventListener('change', renderPOI);
+    toggleNames.addEventListener('change', renderPOI);
     const mapImage = new Image();
     mapImage.onload = () => {
       naturalWidth = mapImage.naturalWidth;
@@ -212,6 +420,11 @@
       applyZoom();
     };
     mapImage.src = 'world_map_telarium.png';
+
+    loadLocations().catch((error) => {
+      console.error('Erro ao carregar pontos de interesse:', error);
+      poiList.innerHTML = '<li>Não foi possível carregar os pontos de interesse.</li>';
+    });
 
     resetPosition();
     applyZoom();
