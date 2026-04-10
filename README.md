@@ -6,6 +6,8 @@ Os pontos de interesse são carregados da pasta `data/locations`.
 
 Ao abrir o mapa, o sistema tenta fazer varredura dos arquivos `.json` diretamente em `data/locations/` (quando o servidor permite listagem de diretório). Se a listagem não estiver disponível, usa `data/locations/index.json` como fallback.
 
+No mapa, o scroll do mouse controla o zoom (aproximar/afastar) até os limites configurados.
+
 Cada arquivo JSON deve conter:
 - `x` e `y` (coordenadas no mapa)
 - `name`

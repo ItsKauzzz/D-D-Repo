@@ -41,8 +41,7 @@ body {
   backdrop-filter: blur(2px);
 }
 
-.topbar a,
-.topbar button {
+.topbar a {
   border: 0;
   border-radius: 8px;
   padding: 6px 10px;
@@ -51,11 +50,6 @@ body {
   text-decoration: none;
   color: #fff;
   background: #2c7be5;
-}
-
-.help {
-  font-size: 13px;
-  color: #ddd;
 }
 
 .poi-sidebar {

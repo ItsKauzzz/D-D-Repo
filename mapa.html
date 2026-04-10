@@ -9,8 +9,6 @@
 <body>
   <div class="topbar">
     <a href="index.html">← Voltar</a>
-    <button id="resetBtn" type="button">Centralizar</button>
-    <span class="help">Arraste para mover · Scroll para deslocar</span>
   </div>
 
   <aside class="poi-sidebar" aria-label="Pontos de interesse">
@@ -45,7 +43,6 @@
 
   <script>
     const mapCanvas = document.getElementById('mapCanvas');
-    const resetBtn = document.getElementById('resetBtn');
     const zoomTrack = document.getElementById('zoomTrack');
     const zoomThumb = document.getElementById('zoomThumb');
     const zoomValue = document.getElementById('zoomValue');
@@ -164,6 +161,23 @@
       setZoomFromPercent(percent);
     }
 
+    function setZoomFromWheel(deltaY, clientX, clientY) {
+      const zoomStep = 0.06;
+      const direction = deltaY > 0 ? -1 : 1;
+      const nextZoom = clamp(zoom + (direction * zoomStep), MIN_ZOOM, MAX_ZOOM);
+      if (nextZoom === zoom) return;
+
+      const worldXAtPointer = (clientX - offsetX) / zoom;
+      const worldYAtPointer = (clientY - offsetY) / zoom;
+
+      zoom = nextZoom;
+      offsetX = clientX - (worldXAtPointer * zoom);
+      offsetY = clientY - (worldYAtPointer * zoom);
+
+      applyZoom();
+      render();
+    }
+
     function createLocationElement(location) {
       const element = document.createElement('article');
       element.className = 'poi-item';
@@ -230,33 +244,49 @@
     }
 
     async function discoverLocationFiles() {
+      const discovered = new Set();
+
       try {
         const response = await fetch('data/locations/');
         if (!response.ok) throw new Error('Sem listagem HTTP da pasta.');
 
-        const contentType = response.headers.get('content-type') || '';
-        if (!contentType.includes('text/html')) throw new Error('Listagem de pasta indisponível.');
-
         const html = await response.text();
-        const parsed = new DOMParser().parseFromString(html, 'text/html');
+        const hrefMatches = html.match(/href\s*=\s*["']([^"']+)["']/gi) || [];
 
-        const fromDirectory = [...parsed.querySelectorAll('a')]
-          .map((link) => link.getAttribute('href') || '')
-          .map((href) => href.split('/').pop())
-          .filter((fileName) => fileName.endsWith('.json'))
-          .filter((fileName) => fileName !== 'index.json');
-
-        if (fromDirectory.length) return [...new Set(fromDirectory)].sort();
+        hrefMatches.forEach((rawHref) => {
+          const href = rawHref.replace(/href\s*=\s*["']|["']/gi, '');
+          const cleanHref = href.split('?')[0].split('#')[0];
+          const fileName = decodeURIComponent(cleanHref.split('/').pop() || '');
+          if (fileName.endsWith('.json') && fileName !== 'index.json') {
+            discovered.add(fileName);
+          }
+        });
       } catch (error) {
         console.debug('Varredura direta indisponível, usando fallback index.json:', error);
       }
 
-      const fallbackResponse = await fetch('data/locations/index.json');
-      return fallbackResponse.json();
+      try {
+        const fallbackResponse = await fetch('data/locations/index.json');
+        const fallbackFiles = await fallbackResponse.json();
+        fallbackFiles.forEach((fileName) => {
+          if (String(fileName).endsWith('.json')) discovered.add(String(fileName));
+        });
+      } catch (error) {
+        console.debug('Fallback index.json indisponível:', error);
+      }
+
+      return [...discovered].sort();
     }
 
     async function loadLocations() {
       const files = await discoverLocationFiles();
+      if (!files.length) {
+        locations = [];
+        renderPOIList();
+        renderPOI();
+        poiList.innerHTML = '<li>Nenhum arquivo JSON encontrado em data/locations.</li>';
+        return;
+      }
 
       const entries = await Promise.all(files.map(async (fileName) => {
         const fileResponse = await fetch(`data/locations/${fileName}`);
@@ -307,9 +337,7 @@
 
     mapCanvas.addEventListener('wheel', (event) => {
       event.preventDefault();
-      offsetX -= event.deltaX;
-      offsetY -= event.deltaY;
-      render();
+      setZoomFromWheel(event.deltaY, event.clientX, event.clientY);
     }, { passive: false });
 
     mapCanvas.addEventListener('touchstart', (event) => {
@@ -385,8 +413,6 @@
 
     togglePins.addEventListener('change', renderPOI);
     toggleNames.addEventListener('change', renderPOI);
-    resetBtn.addEventListener('click', resetPosition);
-
     const mapImage = new Image();
     mapImage.onload = () => {
       naturalWidth = mapImage.naturalWidth;
