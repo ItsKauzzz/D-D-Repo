@@ -61,7 +61,7 @@ body {
 .poi-sidebar {
   position: fixed;
   top: 86px;
-  right: 66px;
+  left: 12px;
   width: min(290px, 30vw);
   max-height: calc(100vh - 110px);
   z-index: 25;
@@ -79,6 +79,24 @@ body {
 .poi-sidebar h2 {
   margin: 0;
   font-size: 16px;
+}
+
+.poi-search {
+  height: 34px;
+  border: 2px solid #3c3222;
+  border-radius: 10px;
+  padding: 0 10px;
+  color: #f4efe2;
+  background: rgba(0, 0, 0, 0.35);
+  outline: none;
+}
+
+.poi-search::placeholder {
+  color: #cdc6b4;
+}
+
+.poi-search:focus {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
 }
 
 .poi-switches {
@@ -103,17 +121,42 @@ body {
   gap: 8px;
 }
 
-.poi-list li {
+.poi-entry {
+  width: 100%;
+  border: 0;
   border-left: 6px solid var(--poi-color, #7f7f7f);
   background: rgba(0, 0, 0, 0.25);
   border-radius: 8px;
   padding: 8px;
   display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f4efe2;
+  text-align: left;
+  cursor: pointer;
+}
+
+.poi-entry:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.poi-entry-icon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid #fff;
+  background: var(--poi-color, #7f7f7f);
+  flex: 0 0 auto;
+}
+
+.poi-entry-text {
+  display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.poi-list li span {
+.poi-entry-text span {
   color: #dddbd3;
   font-size: 12px;
 }

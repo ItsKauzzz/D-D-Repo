@@ -4,13 +4,14 @@
 
 Os pontos de interesse são carregados da pasta `data/locations`.
 
-1. Liste os arquivos em `data/locations/index.json`.
-2. Cada arquivo JSON deve conter:
-   - `x` e `y` (coordenadas no mapa)
-   - `name`
-   - `type` (ex.: `Cidade`, `Vila`, `Acontecimento`)
-   - `show_pin` (boolean)
-   - `show_name` (boolean)
+Ao abrir o mapa, o sistema tenta fazer varredura dos arquivos `.json` diretamente em `data/locations/` (quando o servidor permite listagem de diretório). Se a listagem não estiver disponível, usa `data/locations/index.json` como fallback.
+
+Cada arquivo JSON deve conter:
+- `x` e `y` (coordenadas no mapa)
+- `name`
+- `type` (ex.: `Cidade`, `Vila`, `Acontecimento`)
+- `show_pin` (boolean)
+- `show_name` (boolean)
 
 Exemplo:
 

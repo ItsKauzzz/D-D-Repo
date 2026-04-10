@@ -16,6 +16,8 @@
   <aside class="poi-sidebar" aria-label="Pontos de interesse">
     <h2>Pontos de interesse</h2>
 
+    <input id="poiSearch" class="poi-search" type="search" placeholder="Buscar localização..." aria-label="Buscar localização" />
+
     <div class="poi-switches">
       <label>
         <input id="togglePins" type="checkbox" checked />
@@ -51,6 +53,7 @@
     const poiList = document.getElementById('poiList');
     const togglePins = document.getElementById('togglePins');
     const toggleNames = document.getElementById('toggleNames');
+    const poiSearch = document.getElementById('poiSearch');
 
     let offsetX = 0;
     let offsetY = 0;
@@ -87,6 +90,16 @@
       return TYPE_STYLES[normalizeType(type)] || '#7f7f7f';
     }
 
+    function getFilteredLocations() {
+      const filter = poiSearch.value.trim().toLowerCase();
+      if (!filter) return locations;
+
+      return locations.filter((location) => {
+        const fullText = `${location.name} ${location.type}`.toLowerCase();
+        return fullText.includes(filter);
+      });
+    }
+
     function renderZoomThumb() {
       const trackHeight = zoomTrack.clientHeight;
       const thumbHeight = zoomThumb.clientHeight;
@@ -117,6 +130,14 @@
     function resetPosition() {
       offsetX = 0;
       offsetY = 0;
+      render();
+    }
+
+    function focusLocation(location) {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      offsetX = centerX - (location.x * zoom);
+      offsetY = centerY - (location.y * zoom);
       render();
     }
 
@@ -177,7 +198,7 @@
     function renderPOI() {
       poiLayer.innerHTML = '';
 
-      locations.forEach((location) => {
+      getFilteredLocations().forEach((location) => {
         const marker = createLocationElement(location);
         marker.style.left = `${offsetX + location.x * zoom}px`;
         marker.style.top = `${offsetY + location.y * zoom}px`;
@@ -188,17 +209,55 @@
     function renderPOIList() {
       poiList.innerHTML = '';
 
-      locations.forEach((location) => {
+      getFilteredLocations().forEach((location) => {
         const item = document.createElement('li');
-        item.style.setProperty('--poi-color', getTypeColor(location.type));
-        item.innerHTML = `<strong>${location.name}</strong><span>${location.type}</span>`;
+        const button = document.createElement('button');
+
+        button.type = 'button';
+        button.className = 'poi-entry';
+        button.style.setProperty('--poi-color', getTypeColor(location.type));
+        button.innerHTML = `
+          <span class="poi-entry-icon" aria-hidden="true"></span>
+          <span class="poi-entry-text">
+            <strong>${location.name}</strong>
+            <span>${location.type}</span>
+          </span>
+        `;
+        button.addEventListener('click', () => focusLocation(location));
+
+        item.appendChild(button);
         poiList.appendChild(item);
       });
     }
 
+    async function discoverLocationFiles() {
+      try {
+        const response = await fetch('data/locations/');
+        if (!response.ok) throw new Error('Sem listagem HTTP da pasta.');
+
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('text/html')) throw new Error('Listagem de pasta indisponível.');
+
+        const html = await response.text();
+        const parsed = new DOMParser().parseFromString(html, 'text/html');
+
+        const fromDirectory = [...parsed.querySelectorAll('a')]
+          .map((link) => link.getAttribute('href') || '')
+          .map((href) => href.split('/').pop())
+          .filter((fileName) => fileName.endsWith('.json'))
+          .filter((fileName) => fileName !== 'index.json');
+
+        if (fromDirectory.length) return [...new Set(fromDirectory)].sort();
+      } catch (error) {
+        console.debug('Varredura direta indisponível, usando fallback index.json:', error);
+      }
+
+      const fallbackResponse = await fetch('data/locations/index.json');
+      return fallbackResponse.json();
+    }
+
     async function loadLocations() {
-      const response = await fetch('data/locations/index.json');
-      const files = await response.json();
+      const files = await discoverLocationFiles();
 
       const entries = await Promise.all(files.map(async (fileName) => {
         const fileResponse = await fetch(`data/locations/${fileName}`);
@@ -318,6 +377,11 @@
         setZoomFromPercent((zoom * 100) - 2);
         event.preventDefault();
       }
+    });
+
+    poiSearch.addEventListener('input', () => {
+      renderPOIList();
+      renderPOI();
     });
 
     togglePins.addEventListener('change', renderPOI);
