@@ -52,11 +52,12 @@ body {
   background: #2c7be5;
 }
 
-.poi-sidebar {
+body .poi-sidebar {
   position: fixed;
   top: 86px;
-  left: 12px;
-  right: auto;
+  left: 12px !important;
+  right: auto !important;
+  transform: none !important;
   width: min(290px, 30vw);
   max-height: calc(100vh - 110px);
   z-index: 25;
