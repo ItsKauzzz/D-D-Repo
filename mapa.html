@@ -13,6 +13,23 @@
     <span class="help">Arraste para mover · Scroll para deslocar</span>
   </div>
 
+  <aside class="poi-sidebar" aria-label="Pontos de interesse">
+    <h2>Pontos de interesse</h2>
+
+    <div class="poi-switches">
+      <label>
+        <input id="togglePins" type="checkbox" checked />
+        Mostrar pins
+      </label>
+      <label>
+        <input id="toggleNames" type="checkbox" checked />
+        Mostrar nomes
+      </label>
+    </div>
+
+    <ul id="poiList" class="poi-list"></ul>
+  </aside>
+
   <div class="zoom-control" aria-label="Controle de zoom">
     <span class="zoom-label" id="zoomValue">100%</span>
     <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="100" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
@@ -20,7 +37,9 @@
     </div>
   </div>
 
-  <div id="mapCanvas" aria-label="Mapa-múndi em tela cheia"></div>
+  <div id="mapCanvas" aria-label="Mapa-múndi em tela cheia">
+    <div id="poiLayer" class="poi-layer" aria-hidden="true"></div>
+  </div>
 
   <script>
     const mapCanvas = document.getElementById('mapCanvas');
@@ -28,6 +47,10 @@
     const zoomTrack = document.getElementById('zoomTrack');
     const zoomThumb = document.getElementById('zoomThumb');
     const zoomValue = document.getElementById('zoomValue');
+    const poiLayer = document.getElementById('poiLayer');
+    const poiList = document.getElementById('poiList');
+    const togglePins = document.getElementById('togglePins');
+    const toggleNames = document.getElementById('toggleNames');
 
     let offsetX = 0;
     let offsetY = 0;
@@ -37,9 +60,16 @@
     let zoom = 1;
     let naturalWidth = 0;
     let naturalHeight = 0;
+    let locations = [];
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 1;
+
+    const TYPE_STYLES = {
+      cidade: '#dd6f43',
+      vila: '#5f9ea0',
+      acontecimento: '#d3b45d'
+    };
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -47,6 +77,14 @@
 
     function zoomToRatio() {
       return (zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM);
+    }
+
+    function normalizeType(type) {
+      return String(type || '').trim().toLowerCase();
+    }
+
+    function getTypeColor(type) {
+      return TYPE_STYLES[normalizeType(type)] || '#7f7f7f';
     }
 
     function renderZoomThumb() {
@@ -68,10 +106,12 @@
         mapCanvas.style.backgroundSize = `${zoom * 100}% auto`;
       }
       renderZoomThumb();
+      renderPOI();
     }
 
     function render() {
       mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
+      renderPOI();
     }
 
     function resetPosition() {
@@ -101,6 +141,83 @@
       const ratio = clamp((rect.bottom - clientY) / rect.height, 0, 1);
       const percent = 20 + ratio * 80;
       setZoomFromPercent(percent);
+    }
+
+    function createLocationElement(location) {
+      const element = document.createElement('article');
+      element.className = 'poi-item';
+      element.dataset.id = location.id;
+
+      const color = getTypeColor(location.type);
+      element.style.setProperty('--poi-color', color);
+
+      const showPin = togglePins.checked && location.show_pin;
+      const showName = toggleNames.checked && location.show_name;
+
+      if (showPin) {
+        const pin = document.createElement('span');
+        pin.className = 'poi-pin';
+        element.appendChild(pin);
+      }
+
+      if (showName) {
+        const label = document.createElement('span');
+        label.className = 'poi-name';
+        label.textContent = location.name;
+        element.appendChild(label);
+      }
+
+      if (!showPin && !showName) {
+        element.classList.add('is-hidden');
+      }
+
+      return element;
+    }
+
+    function renderPOI() {
+      poiLayer.innerHTML = '';
+
+      locations.forEach((location) => {
+        const marker = createLocationElement(location);
+        marker.style.left = `${offsetX + location.x * zoom}px`;
+        marker.style.top = `${offsetY + location.y * zoom}px`;
+        poiLayer.appendChild(marker);
+      });
+    }
+
+    function renderPOIList() {
+      poiList.innerHTML = '';
+
+      locations.forEach((location) => {
+        const item = document.createElement('li');
+        item.style.setProperty('--poi-color', getTypeColor(location.type));
+        item.innerHTML = `<strong>${location.name}</strong><span>${location.type}</span>`;
+        poiList.appendChild(item);
+      });
+    }
+
+    async function loadLocations() {
+      const response = await fetch('data/locations/index.json');
+      const files = await response.json();
+
+      const entries = await Promise.all(files.map(async (fileName) => {
+        const fileResponse = await fetch(`data/locations/${fileName}`);
+        const data = await fileResponse.json();
+
+        return {
+          id: fileName,
+          x: Number(data.x || 0),
+          y: Number(data.y || 0),
+          name: String(data.name || 'Sem nome'),
+          type: String(data.type || 'desconhecido'),
+          show_pin: data.show_pin !== false,
+          show_name: data.show_name !== false
+        };
+      }));
+
+      locations = entries;
+      renderPOIList();
+      renderPOI();
     }
 
     mapCanvas.addEventListener('mousedown', (event) => {
@@ -203,6 +320,8 @@
       }
     });
 
+    togglePins.addEventListener('change', renderPOI);
+    toggleNames.addEventListener('change', renderPOI);
     resetBtn.addEventListener('click', resetPosition);
 
     const mapImage = new Image();
@@ -212,6 +331,11 @@
       applyZoom();
     };
     mapImage.src = 'world_map_telarium.png';
+
+    loadLocations().catch((error) => {
+      console.error('Erro ao carregar pontos de interesse:', error);
+      poiList.innerHTML = '<li>Não foi possível carregar os pontos de interesse.</li>';
+    });
 
     resetPosition();
     applyZoom();
