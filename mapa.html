@@ -211,21 +211,20 @@
 
       getFilteredLocations().forEach((location) => {
         const item = document.createElement('li');
-        const button = document.createElement('button');
+        item.className = 'poi-entry';
+        item.tabIndex = 0;
+        item.setAttribute('role', 'button');
+        item.style.setProperty('--poi-color', getTypeColor(location.type));
+        item.innerHTML = `<strong>${location.name}</strong><span>${location.type}</span>`;
 
-        button.type = 'button';
-        button.className = 'poi-entry';
-        button.style.setProperty('--poi-color', getTypeColor(location.type));
-        button.innerHTML = `
-          <span class="poi-entry-icon" aria-hidden="true"></span>
-          <span class="poi-entry-text">
-            <strong>${location.name}</strong>
-            <span>${location.type}</span>
-          </span>
-        `;
-        button.addEventListener('click', () => focusLocation(location));
+        item.addEventListener('click', () => focusLocation(location));
+        item.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            focusLocation(location);
+          }
+        });
 
-        item.appendChild(button);
         poiList.appendChild(item);
       });
     }
