@@ -56,6 +56,7 @@ body {
   position: fixed;
   top: 86px;
   left: 12px;
+  right: auto;
   width: min(290px, 30vw);
   max-height: calc(100vh - 110px);
   z-index: 25;
