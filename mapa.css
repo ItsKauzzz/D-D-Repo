@@ -93,8 +93,8 @@ body {
   left: 50%;
   top: 0;
   width: 21px;
-  height: 21px;
-  border-radius: 50%;
+  height: 29px;
+  border-radius: 40%;
   transform: translateX(-50%);
   background: #3c3222;
   border: 2px solid #fff;
