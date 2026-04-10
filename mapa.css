@@ -112,12 +112,15 @@ body .poi-sidebar {
   padding: 0 4px 0 0;
   list-style: none;
   overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
 .poi-entry {
+  box-sizing: border-box;
   width: 100%;
   border-left: 6px solid var(--poi-color, #7f7f7f);
   background: rgba(0, 0, 0, 0.25);
@@ -142,11 +145,15 @@ body .poi-sidebar {
 .poi-entry strong {
   font-size: 15px;
   color: #f4efe2;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .poi-entry span {
   color: #dddbd3;
   font-size: 12px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .poi-list::-webkit-scrollbar {
