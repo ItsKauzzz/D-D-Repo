@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapa-múndi</title>
+  <link rel="stylesheet" href="mapa.css" />
+</head>
+<body>
+  <div class="topbar">
+    <a href="index.html">← Voltar</a>
+    <button id="resetBtn" type="button">Centralizar</button>
+    <span class="help">Arraste para mover · Scroll para deslocar</span>
+  </div>
+
+  <div class="zoom-control" aria-label="Controle de zoom">
+    <span class="zoom-label" id="zoomValue">100%</span>
+    <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="100" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
+      <div id="zoomThumb" class="zoom-thumb"></div>
+    </div>
+  </div>
+
+  <div id="mapCanvas" aria-label="Mapa-múndi em tela cheia"></div>
+
+  <script>
+    const mapCanvas = document.getElementById('mapCanvas');
+    const resetBtn = document.getElementById('resetBtn');
+    const zoomTrack = document.getElementById('zoomTrack');
+    const zoomThumb = document.getElementById('zoomThumb');
+    const zoomValue = document.getElementById('zoomValue');
+
+    let offsetX = 0;
+    let offsetY = 0;
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    let zoom = 1;
+    let naturalWidth = 0;
+    let naturalHeight = 0;
+
+    const MIN_ZOOM = 0.2;
+    const MAX_ZOOM = 1;
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function zoomToRatio() {
+      return (zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM);
+    }
+
+    function renderZoomThumb() {
+      const trackHeight = zoomTrack.clientHeight;
+      const thumbHeight = zoomThumb.clientHeight;
+      const ratio = zoomToRatio();
+      const travel = trackHeight - thumbHeight;
+      const top = (1 - ratio) * travel;
+
+      zoomThumb.style.top = `${top}px`;
+      zoomValue.textContent = `${Math.round(zoom * 100)}%`;
+      zoomTrack.setAttribute('aria-valuenow', String(Math.round(zoom * 100)));
+    }
+
+    function applyZoom() {
+      if (naturalWidth && naturalHeight) {
+        mapCanvas.style.backgroundSize = `${naturalWidth * zoom}px ${naturalHeight * zoom}px`;
+      } else {
+        mapCanvas.style.backgroundSize = `${zoom * 100}% auto`;
+      }
+      renderZoomThumb();
+    }
+
+    function render() {
+      mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
+    }
+
+    function resetPosition() {
+      offsetX = 0;
+      offsetY = 0;
+      render();
+    }
+
+    function setZoomFromPercent(percent) {
+      const nextZoom = clamp(percent / 100, MIN_ZOOM, MAX_ZOOM);
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+
+      const worldXAtCenter = (centerX - offsetX) / zoom;
+      const worldYAtCenter = (centerY - offsetY) / zoom;
+
+      zoom = nextZoom;
+      offsetX = centerX - (worldXAtCenter * zoom);
+      offsetY = centerY - (worldYAtCenter * zoom);
+
+      applyZoom();
+      render();
+    }
+
+    function setZoomFromPointer(clientY) {
+      const rect = zoomTrack.getBoundingClientRect();
+      const ratio = clamp((rect.bottom - clientY) / rect.height, 0, 1);
+      const percent = 20 + ratio * 80;
+      setZoomFromPercent(percent);
+    }
+
+    mapCanvas.addEventListener('mousedown', (event) => {
+      dragging = true;
+      mapCanvas.classList.add('dragging');
+      lastX = event.clientX;
+      lastY = event.clientY;
+    });
+
+    window.addEventListener('mousemove', (event) => {
+      if (!dragging) return;
+
+      const deltaX = event.clientX - lastX;
+      const deltaY = event.clientY - lastY;
+
+      offsetX += deltaX;
+      offsetY += deltaY;
+
+      lastX = event.clientX;
+      lastY = event.clientY;
+
+      render();
+    });
+
+    window.addEventListener('mouseup', () => {
+      dragging = false;
+      mapCanvas.classList.remove('dragging');
+    });
+
+    mapCanvas.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      offsetX -= event.deltaX;
+      offsetY -= event.deltaY;
+      render();
+    }, { passive: false });
+
+    mapCanvas.addEventListener('touchstart', (event) => {
+      if (!event.touches.length) return;
+      const touch = event.touches[0];
+      dragging = true;
+      lastX = touch.clientX;
+      lastY = touch.clientY;
+    }, { passive: true });
+
+    mapCanvas.addEventListener('touchmove', (event) => {
+      if (!dragging || !event.touches.length) return;
+      const touch = event.touches[0];
+      const deltaX = touch.clientX - lastX;
+      const deltaY = touch.clientY - lastY;
+
+      offsetX += deltaX;
+      offsetY += deltaY;
+      lastX = touch.clientX;
+      lastY = touch.clientY;
+      render();
+    }, { passive: true });
+
+    mapCanvas.addEventListener('touchend', () => {
+      dragging = false;
+    }, { passive: true });
+
+    let zoomDragging = false;
+
+    zoomTrack.addEventListener('mousedown', (event) => {
+      zoomDragging = true;
+      setZoomFromPointer(event.clientY);
+    });
+
+    window.addEventListener('mousemove', (event) => {
+      if (!zoomDragging) return;
+      setZoomFromPointer(event.clientY);
+    });
+
+    window.addEventListener('mouseup', () => {
+      zoomDragging = false;
+    });
+
+    zoomTrack.addEventListener('touchstart', (event) => {
+      if (!event.touches.length) return;
+      zoomDragging = true;
+      setZoomFromPointer(event.touches[0].clientY);
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (event) => {
+      if (!zoomDragging || !event.touches.length) return;
+      setZoomFromPointer(event.touches[0].clientY);
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => {
+      zoomDragging = false;
+    }, { passive: true });
+
+    zoomTrack.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowUp' || event.key === 'ArrowRight') {
+        setZoomFromPercent((zoom * 100) + 2);
+        event.preventDefault();
+      } else if (event.key === 'ArrowDown' || event.key === 'ArrowLeft') {
+        setZoomFromPercent((zoom * 100) - 2);
+        event.preventDefault();
+      }
+    });
+
+    resetBtn.addEventListener('click', resetPosition);
+
+    const mapImage = new Image();
+    mapImage.onload = () => {
+      naturalWidth = mapImage.naturalWidth;
+      naturalHeight = mapImage.naturalHeight;
+      applyZoom();
+    };
+    mapImage.src = 'world_map_telarium.png';
+
+    resetPosition();
+    applyZoom();
+  </script>
+</body>
+</html>

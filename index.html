@@ -3,32 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <title>RPG Test</title>
-  <style>
-    body {
-      font-family: Arial;
-      background: #111;
-      color: #eee;
-      text-align: center;
-      margin-top: 100px;
-    }
-
-    button {
-      padding: 10px 20px;
-      font-size: 18px;
-      cursor: pointer;
-    }
-  </style>
+  <link rel="stylesheet" href="index.css">
 </head>
 <body>
 
   <h1>RPG Tool Test</h1>
   <p id="result">Clique para rolar 1d20</p>
   <button onclick="roll()">Roll</button>
+  <a class="map-link" href="mapa.html">Abrir mapa-múndi (tela cheia)</a>
 
   <script>
     function roll() {
       const value = Math.floor(Math.random() * 20) + 1;
-      document.getElementById("result").innerText = "Resultado: " + value;
+      document.getElementById('result').innerText = 'Resultado: ' + value;
     }
   </script>
 
