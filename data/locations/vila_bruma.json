@@ -5,6 +5,7 @@
   "type": "Vila",
   "description": "Pequena vila costeira envolta por neblina constante e rumores de navios fantasmas.",
   "image_prefix": "bruma",
+  "icon_index_offset": -2,
   "show_pin": true,
   "show_name": false
 }

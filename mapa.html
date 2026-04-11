@@ -22,6 +22,10 @@
         Mostrar pins
       </label>
       <label>
+        <input id="toggleIcons" type="checkbox" checked />
+        Mostrar ícones
+      </label>
+      <label>
         <input id="toggleNames" type="checkbox" checked />
         Mostrar nomes
       </label>
@@ -71,6 +75,7 @@
     const poiLayer = document.getElementById('poiLayer');
     const poiList = document.getElementById('poiList');
     const togglePins = document.getElementById('togglePins');
+    const toggleIcons = document.getElementById('toggleIcons');
     const toggleNames = document.getElementById('toggleNames');
     const poiSearch = document.getElementById('poiSearch');
     const poiModalBackdrop = document.getElementById('poiModalBackdrop');
@@ -94,6 +99,8 @@
     let naturalHeight = 0;
     let locations = [];
     let typeConfig = {};
+    let iconSeed = 20260411;
+    let iconSizePx = 22;
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 1;
@@ -128,6 +135,39 @@
       return matched?.[1] || {};
     }
 
+    function positiveModulo(value, base) {
+      return ((value % base) + base) % base;
+    }
+
+    function hashStringToInt(input) {
+      let hash = 2166136261;
+      for (const char of String(input || '')) {
+        hash ^= char.charCodeAt(0);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
+    }
+
+    function getTypeIconSet(type) {
+      const defaults = getTypeDefaults(type);
+      return Array.isArray(defaults.icons) ? defaults.icons : [];
+    }
+
+    function getLocationIcon(location) {
+      const icons = getTypeIconSet(location.type);
+      if (!icons.length) return '';
+
+      const offset = Number(location.icon_index_offset || 0);
+      const baseHash = hashStringToInt(`${iconSeed}:${location.type}:${location.id}:${location.name}`);
+      const seededIndex = baseHash % icons.length;
+      const finalIndex = positiveModulo(seededIndex + offset, icons.length);
+      return icons[finalIndex];
+    }
+
+    function getIconSize() {
+      return Math.max(10, Number(iconSizePx || 22));
+    }
+
     function applyLabelStyle(labelElement, type) {
       const style = getTypeStyle(type);
       const baseSizePt = 10;
@@ -143,12 +183,16 @@
         if (!response.ok) throw new Error('Falha no carregamento de data/poi-config.json');
         const configData = await response.json();
         typeConfig = configData.types || {};
+        iconSeed = Number(configData.icon_seed || 20260411);
+        iconSizePx = Number(configData.icon_size_px || 22);
       } catch (error) {
         console.warn('Usando configuração padrão de tipos.', error);
+        iconSeed = 20260411;
+        iconSizePx = 22;
         typeConfig = {
-          Cidade: { color: '#dd6f43' },
-          Vila: { color: '#5f9ea0' },
-          Acontecimento: { color: '#d3b45d' }
+          Cidade: { color: '#dd6f43', icons: ['Icon/Cidade/icon_1.png'] },
+          Vila: { color: '#5f9ea0', icons: ['Icon/Vila/icon_1.png'] },
+          Acontecimento: { color: '#d3b45d', icons: ['Icon/Acontecimento/icon_1.png'] }
         };
       }
     }
@@ -254,12 +298,26 @@
       element.style.setProperty('--poi-color', color);
 
       const showPin = togglePins.checked && location.show_pin;
+      const showIcon = toggleIcons.checked && location.show_icon;
       const showName = toggleNames.checked && location.show_name;
 
       if (showPin) {
         const pin = document.createElement('span');
         pin.className = 'poi-pin';
         element.appendChild(pin);
+
+        const iconSrc = showIcon ? getLocationIcon(location) : '';
+        if (iconSrc) {
+          const icon = document.createElement('img');
+          icon.className = 'poi-pin-icon';
+          icon.src = iconSrc;
+          icon.alt = `Ícone de ${location.type}`;
+          icon.loading = 'lazy';
+          icon.style.width = `${getIconSize()}px`;
+          icon.style.height = `${getIconSize()}px`;
+          icon.addEventListener('error', () => icon.remove());
+          element.appendChild(icon);
+        }
       }
 
       if (showName) {
@@ -299,7 +357,26 @@
         item.tabIndex = 0;
         item.setAttribute('role', 'button');
         item.style.setProperty('--poi-color', getTypeColor(location.type));
-        item.innerHTML = `<strong>${location.name}</strong><span>${location.type}</span>`;
+        const iconSrc = toggleIcons.checked ? getLocationIcon(location) : '';
+        const iconMarkup = iconSrc
+          ? `<img class="poi-entry-icon" src="${iconSrc}" alt="Ícone de ${location.type}" />`
+          : '<span class="poi-entry-icon is-empty" aria-hidden="true"></span>';
+        item.innerHTML = `
+          <div class="poi-entry-top">
+            ${iconMarkup}
+            <strong>${location.name}</strong>
+          </div>
+          <span>${location.type}</span>
+        `;
+        const thumb = item.querySelector('.poi-entry-icon');
+        if (thumb && thumb.tagName === 'IMG') {
+          thumb.addEventListener('error', () => {
+            const fallback = document.createElement('span');
+            fallback.className = 'poi-entry-icon is-empty';
+            fallback.setAttribute('aria-hidden', 'true');
+            thumb.replaceWith(fallback);
+          });
+        }
 
         item.addEventListener('click', () => focusLocation(location));
         item.addEventListener('keydown', (event) => {
@@ -371,10 +448,12 @@
           name: String(data.name || 'Sem nome'),
           type,
           show_pin: typeof data.show_pin === 'boolean' ? data.show_pin : defaults.show_pin_default !== false,
+          show_icon: typeof data.show_icon === 'boolean' ? data.show_icon : defaults.show_icon_default !== false,
           show_name: typeof data.show_name === 'boolean' ? data.show_name : defaults.show_name_default !== false,
           description: String(data.description || ''),
           image_prefix: String(data.image_prefix || slugFromName(data.name || fileName.replace('.json', ''))),
-          images: Array.isArray(data.images) ? data.images : []
+          images: Array.isArray(data.images) ? data.images : [],
+          icon_index_offset: Number(data.icon_index_offset || 0)
         };
       }));
 
@@ -619,6 +698,10 @@
     });
 
     togglePins.addEventListener('change', renderPOI);
+    toggleIcons.addEventListener('change', () => {
+      renderPOI();
+      renderPOIList();
+    });
     toggleNames.addEventListener('change', renderPOI);
     poiModalClose.addEventListener('click', closePoiModal);
     imageModalClose.addEventListener('click', closeImageModal);
