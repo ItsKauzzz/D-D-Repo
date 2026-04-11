@@ -1,0 +1,34 @@
+{
+  "types": {
+    "Cidade": {
+      "color": "#dd6f43",
+      "show_pin_default": true,
+      "show_name_default": true,
+      "label_style": {
+        "size_offset_pt": 2,
+        "bold": true,
+        "italic": false
+      }
+    },
+    "Vila": {
+      "color": "#5f9ea0",
+      "show_pin_default": true,
+      "show_name_default": true,
+      "label_style": {
+        "size_offset_pt": -1,
+        "bold": false,
+        "italic": true
+      }
+    },
+    "Acontecimento": {
+      "color": "#d3b45d",
+      "show_pin_default": false,
+      "show_name_default": true,
+      "label_style": {
+        "size_offset_pt": -1,
+        "bold": false,
+        "italic": false
+      }
+    }
+  }
+}
