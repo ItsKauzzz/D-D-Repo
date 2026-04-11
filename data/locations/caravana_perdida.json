@@ -5,6 +5,8 @@
   "type": "Acontecimento",
   "description": "Há relatos de uma caravana mercante que se perdeu próximo a floresta selvagem e o pântano do salgueiro. A caravana era majoritariamente de mercadores que traziam ajuda e tambem tratados diplomáticos de Elmanther.",
   "image_prefix": "",
+  "icon_override": "data/locations/icons/acontecimento_icon_2.svg",
   "show_pin": false,
+  "show_icon": true,
   "show_name": true
 }
