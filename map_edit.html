@@ -88,6 +88,73 @@
       width: 100%;
       box-sizing: border-box;
     }
+    .icon-picker-controls {
+      display: grid;
+      gap: 8px;
+    }
+    .icon-picker-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .icon-picker-close {
+      border: 2px solid #3c3222;
+      border-radius: 10px;
+      background: #4a3f2c;
+      color: #f4efe2;
+      padding: 8px 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .icon-picker-close:hover {
+      background: #5b4d35;
+      border-color: #f4efe2;
+    }
+    .icon-picker-search {
+      border: 2px solid #3c3222;
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: #f4efe2;
+      background: rgba(0, 0, 0, 0.36);
+    }
+    .icon-picker-search:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(244, 239, 226, 0.28);
+    }
+    .icon-zoom-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .icon-zoom-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 8px;
+      border-radius: 999px;
+      background: #3c3222;
+      border: 1px solid #c3b89e;
+    }
+    .icon-zoom-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      background: #8f764f;
+      cursor: pointer;
+    }
+    .icon-zoom-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      background: #8f764f;
+      cursor: pointer;
+    }
     .icon-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
@@ -110,12 +177,25 @@
     }
     .icon-option img {
       width: 100%;
-      height: 54px;
+      height: var(--icon-picker-preview-size, 54px);
       object-fit: contain;
       background: rgba(255, 255, 255, 0.08);
       border-radius: 6px;
     }
     .icon-option:hover { border-color: #fff; }
+    .icon-grid::-webkit-scrollbar {
+      width: 10px;
+    }
+    .icon-grid::-webkit-scrollbar-track {
+      background: #5b4f39;
+      border-radius: 999px;
+      border: 1px solid #3c3222;
+    }
+    .icon-grid::-webkit-scrollbar-thumb {
+      background: #3c3222;
+      border-radius: 999px;
+      border: 1px solid #d9ceb4;
+    }
     .preview-dot {
       position: absolute;
       width: 14px;
@@ -185,8 +265,18 @@
   </div>
   <div id="iconPickerBackdrop" class="icon-picker-backdrop" aria-hidden="true">
     <article class="icon-picker" role="dialog" aria-modal="true" aria-label="Selecionar ícone">
-      <button id="closeIconPicker" type="button">Fechar</button>
-      <input id="iconPickerSearch" type="search" placeholder="Buscar ícone..." />
+      <div class="icon-picker-controls">
+        <div class="icon-picker-topbar">
+          <strong>Selecionar ícone (todos)</strong>
+          <button id="closeIconPicker" class="icon-picker-close" type="button">Fechar</button>
+        </div>
+        <input id="iconPickerSearch" class="icon-picker-search" type="search" placeholder="Buscar ícone..." />
+        <label class="icon-zoom-row">
+          <span>Zoom ícones</span>
+          <input id="iconZoomSlider" class="icon-zoom-slider" type="range" min="40" max="130" step="2" value="54" />
+          <span id="iconZoomValue">54px</span>
+        </label>
+      </div>
       <div id="iconGrid" class="icon-grid"></div>
     </article>
   </div>
@@ -212,6 +302,8 @@
     const closeIconPicker = document.getElementById('closeIconPicker');
     const iconPickerSearch = document.getElementById('iconPickerSearch');
     const iconGrid = document.getElementById('iconGrid');
+    const iconZoomSlider = document.getElementById('iconZoomSlider');
+    const iconZoomValue = document.getElementById('iconZoomValue');
     const selectCoord = document.getElementById('selectCoord');
     const savePoi = document.getElementById('savePoi');
     const chooseDir = document.getElementById('chooseDir');
@@ -235,6 +327,8 @@
     let cachedDirectoryHandle = null;
     let editingPoiId = null;
     let selectedIconPath = '';
+    let iconPreviewSize = 54;
+    let iconSeed = 20260411;
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 1;
@@ -265,11 +359,41 @@
       return Array.isArray(defaults.icons) ? defaults.icons : [];
     }
 
+    function getAllIcons() {
+      const entries = Object.entries(typeConfig);
+      const all = entries.flatMap(([type, cfg]) => {
+        const icons = Array.isArray(cfg?.icons) ? cfg.icons : [];
+        return icons.map((path) => ({ type, path: String(path) }));
+      });
+      const unique = new Map();
+      all.forEach((entry) => {
+        if (!unique.has(entry.path)) unique.set(entry.path, entry);
+      });
+      return [...unique.values()];
+    }
+
+    function hashStringToInt(input) {
+      let hash = 2166136261;
+      for (const char of String(input || '')) {
+        hash ^= char.charCodeAt(0);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
+    }
+
     function getRandomTypeIcon(type) {
       const icons = getTypeIcons(type);
       if (!icons.length) return '';
       const index = Math.floor(Math.random() * icons.length);
       return icons[index];
+    }
+
+    function getLocationPreviewIcon(location) {
+      if (location.icon_override) return String(location.icon_override);
+      const icons = getTypeIcons(location.type);
+      if (!icons.length) return '';
+      const hash = hashStringToInt(`${iconSeed}:${location.id}:${location.name}:${location.type}`);
+      return icons[hash % icons.length];
     }
 
     function updateIconChoicePreview() {
@@ -289,11 +413,15 @@
     }
 
     function getFilteredIconsForPicker() {
-      const type = poiType.value;
-      const icons = getTypeIcons(type);
+      const icons = getAllIcons();
       const query = iconPickerSearch.value.trim().toLowerCase();
       if (!query) return icons;
-      return icons.filter((iconPath) => iconPath.toLowerCase().includes(query));
+      return icons.filter((entry) => `${entry.type} ${entry.path}`.toLowerCase().includes(query));
+    }
+
+    function applyIconPickerZoom() {
+      iconGrid.style.setProperty('--icon-picker-preview-size', `${iconPreviewSize}px`);
+      iconZoomValue.textContent = `${iconPreviewSize}px`;
     }
 
     function renderIconPicker() {
@@ -305,19 +433,20 @@
         iconGrid.appendChild(empty);
         return;
       }
-      icons.forEach((iconPath) => {
+      icons.forEach((entry) => {
         const option = document.createElement('button');
         option.type = 'button';
         option.className = 'icon-option';
-        option.innerHTML = `<img src="${iconPath}" alt="${iconPath}"/><span>${iconPath.split('/').pop() || iconPath}</span>`;
+        option.innerHTML = `<img src="${entry.path}" alt="${entry.path}"/><span>${entry.path.split('/').pop() || entry.path}<br/><small>${entry.type}</small></span>`;
         option.addEventListener('click', () => {
-          selectedIconPath = iconPath;
+          selectedIconPath = entry.path;
           updateIconChoicePreview();
           iconPickerBackdrop.classList.remove('visible');
           iconPickerBackdrop.setAttribute('aria-hidden', 'true');
         });
         iconGrid.appendChild(option);
       });
+      applyIconPickerZoom();
     }
 
     function applyLabelStyle(labelElement, type) {
@@ -412,15 +541,36 @@
       element.className = 'poi-item';
       element.style.setProperty('--poi-color', getTypeColor(location.type));
 
-      const pin = document.createElement('span');
-      pin.className = 'poi-pin';
-      element.appendChild(pin);
+      if (location.show_pin !== false) {
+        const pin = document.createElement('span');
+        pin.className = 'poi-pin';
+        element.appendChild(pin);
+      }
 
-      const label = document.createElement('span');
-      label.className = 'poi-name';
-      label.textContent = location.name;
-      applyLabelStyle(label, location.type);
-      element.appendChild(label);
+      if (location.show_icon !== false) {
+        const iconSrc = getLocationPreviewIcon(location);
+        if (iconSrc) {
+          const icon = document.createElement('img');
+          icon.className = 'poi-pin-icon';
+          icon.src = iconSrc;
+          icon.alt = `Ícone de ${location.type}`;
+          icon.loading = 'lazy';
+          icon.addEventListener('error', () => icon.remove());
+          element.appendChild(icon);
+        }
+      }
+
+      if (location.show_name !== false) {
+        const label = document.createElement('span');
+        label.className = 'poi-name';
+        label.textContent = location.name;
+        applyLabelStyle(label, location.type);
+        element.appendChild(label);
+      }
+
+      if (location.show_pin === false && location.show_icon === false && location.show_name === false) {
+        element.classList.add('is-hidden');
+      }
       return element;
     }
 
@@ -486,6 +636,7 @@
       const response = await fetch('data/poi-config.json');
       const configData = await response.json();
       typeConfig = configData.types || {};
+      iconSeed = Number(configData.icon_seed || 20260411);
       poiType.innerHTML = Object.keys(typeConfig).map((name) => `<option value="${name}">${name}</option>`).join('');
     }
 
@@ -522,6 +673,7 @@
           name: String(data.name || 'Sem nome'),
           type,
           show_pin: typeof data.show_pin === 'boolean' ? data.show_pin : defaults.show_pin_default !== false,
+          show_icon: typeof data.show_icon === 'boolean' ? data.show_icon : defaults.show_icon_default !== false,
           show_name: typeof data.show_name === 'boolean' ? data.show_name : defaults.show_name_default !== false,
           description: String(data.description || ''),
           image_prefix: String(data.image_prefix || ''),
@@ -708,6 +860,7 @@
         image_prefix: imagePrefix,
         icon_override: selectedIconPath || getRandomTypeIcon(type),
         show_pin: typeDefaults.show_pin_default !== false,
+        show_icon: typeDefaults.show_icon_default !== false,
         show_name: typeDefaults.show_name_default !== false
       };
 
@@ -795,6 +948,10 @@
     });
 
     iconPickerSearch.addEventListener('input', renderIconPicker);
+    iconZoomSlider.addEventListener('input', () => {
+      iconPreviewSize = Number(iconZoomSlider.value || 54);
+      applyIconPickerZoom();
+    });
     poiType.addEventListener('change', () => {
       if (!selectedIconPath) updateIconChoicePreview();
       if (iconPickerBackdrop.classList.contains('visible')) renderIconPicker();
