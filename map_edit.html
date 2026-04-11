@@ -206,6 +206,25 @@
       transform: translate(-50%, -50%);
       pointer-events: none;
     }
+    .add-poi-fab {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 2px solid #ffffffcc;
+      background: #2c7be5;
+      color: #fff;
+      font-size: 30px;
+      line-height: 1;
+      cursor: pointer;
+      z-index: 45;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+    }
+    .add-poi-fab:hover {
+      background: #1f66c7;
+    }
     @media (max-width: 920px) {
       .editor-panel {
         right: 12px;
@@ -244,9 +263,7 @@
     <input id="coordX" type="number" placeholder="Coord X" />
     <input id="coordY" type="number" placeholder="Coord Y" />
     <button id="chooseDir" type="button">Escolher pasta data/locations</button>
-    <button id="resetDir" type="button">Reconfigurar pasta salva</button>
     <button id="savePoi" type="button">Criar POI</button>
-    <button id="addNewPoi" type="button">Adicionar novo</button>
     <button id="deletePoi" type="button" hidden>Deletar POI</button>
     <button id="cancelEdit" type="button" hidden>Cancelar edição</button>
     <p class="editor-status" id="editorStatus">Dica: para gravar direto em `data/locations`, execute localmente em Chrome e use File System Access API.</p>
@@ -280,6 +297,7 @@
       <div id="iconGrid" class="icon-grid"></div>
     </article>
   </div>
+  <button id="addPoiFab" class="add-poi-fab" type="button" aria-label="Adicionar novo POI">+</button>
 
   <script>
     const mapCanvas = document.getElementById('mapCanvas');
@@ -307,8 +325,7 @@
     const selectCoord = document.getElementById('selectCoord');
     const savePoi = document.getElementById('savePoi');
     const chooseDir = document.getElementById('chooseDir');
-    const resetDir = document.getElementById('resetDir');
-    const addNewPoi = document.getElementById('addNewPoi');
+    const addPoiFab = document.getElementById('addPoiFab');
     const deletePoi = document.getElementById('deletePoi');
     const cancelEdit = document.getElementById('cancelEdit');
     const editorStatus = document.getElementById('editorStatus');
@@ -589,6 +606,10 @@
       if (location.show_pin === false && location.show_icon === false && location.show_name === false) {
         element.classList.add('is-hidden');
       }
+      element.addEventListener('click', () => {
+        focusLocation(location);
+        loadPoiIntoForm(location);
+      });
       return element;
     }
 
@@ -824,12 +845,6 @@
       }
     });
 
-    resetDir.addEventListener('click', async () => {
-      cachedDirectoryHandle = null;
-      await clearSavedDirectoryHandle().catch(() => {});
-      editorStatus.textContent = 'Pasta salva removida. Escolha uma nova pasta para salvar os POIs.';
-    });
-
     function saveAsDownload(fileName, payload) {
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const link = document.createElement('a');
@@ -908,7 +923,7 @@
       }
     });
 
-    addNewPoi.addEventListener('click', () => {
+    addPoiFab.addEventListener('click', () => {
       resetEditorForm();
       editorStatus.textContent = 'Pronto para criar um novo POI.';
     });

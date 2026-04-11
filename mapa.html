@@ -132,6 +132,7 @@
     let iconSeed = 20260411;
     let iconSizePx = 110;
     const markerCache = new Map();
+    const VIEW_STATE_KEY = 'mapa_view_state_v1';
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 2;
@@ -317,12 +318,36 @@
     function render() {
       mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
       renderPOI();
+      persistViewState();
     }
 
     function resetPosition() {
       offsetX = 0;
       offsetY = 0;
       render();
+    }
+
+    function persistViewState() {
+      try {
+        localStorage.setItem(VIEW_STATE_KEY, JSON.stringify({ offsetX, offsetY, zoom }));
+      } catch {}
+    }
+
+    function restoreViewState() {
+      try {
+        const raw = localStorage.getItem(VIEW_STATE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        if (!Number.isFinite(parsed?.offsetX) || !Number.isFinite(parsed?.offsetY) || !Number.isFinite(parsed?.zoom)) {
+          return false;
+        }
+        offsetX = Number(parsed.offsetX);
+        offsetY = Number(parsed.offsetY);
+        zoom = clamp(Number(parsed.zoom), MIN_ZOOM, MAX_ZOOM);
+        return true;
+      } catch {
+        return false;
+      }
     }
 
     function focusLocation(location) {
@@ -919,6 +944,7 @@
     mapImage.onload = () => {
       naturalWidth = mapImage.naturalWidth;
       naturalHeight = mapImage.naturalHeight;
+      restoreViewState();
       applyZoom();
     };
     mapImage.src = 'world_map_telarium.png';
