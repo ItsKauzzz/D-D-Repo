@@ -3,6 +3,10 @@
   "y": 1381,
   "name": "Elmanther",
   "type": "Cidade",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "",
   "show_pin": true,
+  "show_icon": true,
   "show_name": true
 }

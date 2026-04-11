@@ -5,7 +5,8 @@
   "type": "Cidade",
   "description": "Capital comercial de Telarium, conhecida pelas pontes de cristal e pelo mercado lunarrrrrrrrrrrrrrrrrrr.",
   "image_prefix": "aurora",
-  "images": ["aurora_image_1.png", "aurora_image_2.png", "aurora_image_3.png", "aurora_image_4.png"],
+  "icon_override": "",
   "show_pin": true,
+  "show_icon": true,
   "show_name": true
 }

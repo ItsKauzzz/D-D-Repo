@@ -5,6 +5,8 @@
   "type": "Acontecimento",
   "description": "Campo histórico onde o antigo rei foi derrotado na Batalha das Três Coroas.",
   "image_prefix": "queda_rei",
+  "icon_override": "",
   "show_pin": false,
+  "show_icon": true,
   "show_name": true
 }

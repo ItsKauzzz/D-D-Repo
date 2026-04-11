@@ -3,6 +3,10 @@
   "y": 765,
   "name": "Serenia",
   "type": "Cidade",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "",
   "show_pin": true,
+  "show_icon": true,
   "show_name": true
 }
