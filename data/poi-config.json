@@ -5,7 +5,7 @@
       "show_pin_default": true,
       "show_name_default": true,
       "label_style": {
-        "size_offset_pt": 0,
+        "size_offset_pt": 2,
         "bold": true,
         "italic": false
       }
@@ -13,11 +13,11 @@
     "Vila": {
       "color": "#5f9ea0",
       "show_pin_default": true,
-      "show_name_default": false,
+      "show_name_default": true,
       "label_style": {
-        "size_offset_pt": -2,
-        "bold": true,
-        "italic": false
+        "size_offset_pt": -1,
+        "bold": false,
+        "italic": true
       }
     },
     "Acontecimento": {
@@ -26,8 +26,8 @@
       "show_name_default": true,
       "label_style": {
         "size_offset_pt": -1,
-        "bold": true,
-        "italic": true
+        "bold": false,
+        "italic": false
       }
     }
   }
