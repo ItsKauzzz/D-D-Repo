@@ -1,0 +1,10 @@
+{
+  "x": 1530,
+  "y": 1040,
+  "name": "Vila da Bruma",
+  "type": "Vila",
+  "description": "Pequena vila costeira envolta por neblina constante e rumores de navios fantasmas.",
+  "image_prefix": "bruma",
+  "show_pin": true,
+  "show_name": false
+}
