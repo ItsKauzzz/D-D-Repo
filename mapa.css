@@ -152,23 +152,32 @@ body .poi-sidebar {
 
 .poi-entry-top {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
 }
 
+.poi-entry-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
 .poi-entry-icon {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
+  width: 22px;
+  height: auto;
+  min-height: 100%;
+  flex: 0 0 22px;
   object-fit: contain;
+  align-self: stretch;
 }
 
 .poi-entry-icon.is-empty {
-  border-radius: 999px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.2);
 }
 
-.poi-entry span {
+.poi-entry-type {
   color: #dddbd3;
   font-size: 12px;
   min-width: 0;
@@ -293,7 +302,7 @@ body .poi-sidebar {
 
 .poi-modal-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: start;
   gap: 8px;
 }
@@ -309,10 +318,14 @@ body .poi-sidebar {
 
 .poi-carousel {
   position: relative;
-  height: 320px;
+  height: 220px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 12px;
   overflow: hidden;
+}
+
+.poi-carousel.is-empty {
+  display: none;
 }
 
 .poi-carousel img {
@@ -343,6 +356,18 @@ body .poi-sidebar {
   gap: 6px;
   overflow-x: auto;
   padding-top: 2px;
+}
+
+.poi-carousel-thumbs.is-empty {
+  display: none;
+}
+
+.poi-modal-info h3 {
+  margin: 0 0 4px 0;
+}
+
+.poi-modal-info small {
+  color: #dddbd3;
 }
 
 .poi-carousel-thumbs button {

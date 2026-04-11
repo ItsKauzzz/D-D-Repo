@@ -76,6 +76,8 @@
     <input id="coordY" type="number" placeholder="Coord Y" />
     <button id="chooseDir" type="button">Escolher pasta data/locations</button>
     <button id="savePoi" type="button">Criar POI</button>
+    <button id="addNewPoi" type="button">Adicionar novo</button>
+    <button id="deletePoi" type="button" hidden>Deletar POI</button>
     <button id="cancelEdit" type="button" hidden>Cancelar edição</button>
     <p class="editor-status" id="editorStatus">Dica: para gravar direto em `data/locations`, execute localmente em Chrome e use File System Access API.</p>
   </section>
@@ -109,6 +111,8 @@
     const selectCoord = document.getElementById('selectCoord');
     const savePoi = document.getElementById('savePoi');
     const chooseDir = document.getElementById('chooseDir');
+    const addNewPoi = document.getElementById('addNewPoi');
+    const deletePoi = document.getElementById('deletePoi');
     const cancelEdit = document.getElementById('cancelEdit');
     const editorStatus = document.getElementById('editorStatus');
     const previewDot = document.getElementById('previewDot');
@@ -289,6 +293,7 @@
       coordX.value = '';
       coordY.value = '';
       savePoi.textContent = 'Criar POI';
+      deletePoi.hidden = true;
       cancelEdit.hidden = true;
       updatePreviewDot();
     }
@@ -302,6 +307,7 @@
       coordX.value = String(location.x ?? '');
       coordY.value = String(location.y ?? '');
       savePoi.textContent = 'Salvar alterações';
+      deletePoi.hidden = false;
       cancelEdit.hidden = false;
       updatePreviewDot();
     }
@@ -475,6 +481,22 @@
       URL.revokeObjectURL(link.href);
     }
 
+    async function deleteUsingFSApi(fileName) {
+      const dirHandle = await ensureDirectoryHandle();
+      await dirHandle.removeEntry(fileName);
+
+      try {
+        const indexHandle = await dirHandle.getFileHandle('index.json', { create: true });
+        const existing = await indexHandle.getFile().then((f) => f.text()).catch(() => '[]');
+        const parsed = JSON.parse(existing || '[]').filter((entry) => entry !== fileName);
+        const indexWritable = await indexHandle.createWritable();
+        await indexWritable.write(JSON.stringify(parsed, null, 2));
+        await indexWritable.close();
+      } catch {
+        console.warn('Não foi possível atualizar index.json automaticamente ao deletar.');
+      }
+    }
+
     savePoi.addEventListener('click', async () => {
       const name = poiName.value.trim();
       const type = poiType.value;
@@ -523,6 +545,40 @@
         loadPoiIntoForm(nextEntry);
       } catch (error) {
         editorStatus.textContent = `Falha ao salvar: ${error.message}`;
+      }
+    });
+
+    addNewPoi.addEventListener('click', () => {
+      resetEditorForm();
+      editorStatus.textContent = 'Pronto para criar um novo POI.';
+    });
+
+    deletePoi.addEventListener('click', async () => {
+      if (!editingPoiId) {
+        editorStatus.textContent = 'Selecione um POI existente para deletar.';
+        return;
+      }
+
+      const fileName = editingPoiId;
+      if (!window.confirm(`Deseja deletar o POI ${fileName}?`)) return;
+
+      try {
+        if ('showDirectoryPicker' in window) {
+          await deleteUsingFSApi(fileName);
+        }
+
+        locations = locations.filter((location) => location.id !== fileName);
+        renderPOIList();
+        renderPOI();
+        resetEditorForm();
+
+        if ('showDirectoryPicker' in window) {
+          editorStatus.textContent = `POI deletado: ${fileName}.`;
+        } else {
+          editorStatus.textContent = 'POI removido da sessão atual. Remova o JSON manualmente no projeto.';
+        }
+      } catch (error) {
+        editorStatus.textContent = `Falha ao deletar: ${error.message}`;
       }
     });
 
