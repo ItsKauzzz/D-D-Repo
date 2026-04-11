@@ -967,6 +967,11 @@
       restoreViewState();
       applyZoom();
     };
+    mapImage.onerror = () => {
+      console.warn('Não foi possível carregar world_map_telarium.png para medir o tile; usando fallback de viewport.');
+      restoreViewState();
+      applyZoom();
+    };
     mapImage.src = 'world_map_telarium.png';
 
     renderPoiTabMenu();

@@ -558,6 +558,23 @@
       };
     }
 
+    function positiveModulo(value, base) {
+      return ((value % base) + base) % base;
+    }
+
+    function getMapTileSizePx() {
+      const width = naturalWidth > 0 ? naturalWidth * zoom : (mapCanvas.clientWidth || window.innerWidth);
+      const height = naturalHeight > 0 ? naturalHeight * zoom : (mapCanvas.clientHeight || window.innerHeight);
+      return { width, height };
+    }
+
+    function wrapToViewport(rawPosition, tileSize, viewportCenter) {
+      if (!Number.isFinite(tileSize) || tileSize <= 0) return rawPosition;
+      let wrapped = positiveModulo(rawPosition, tileSize);
+      wrapped += Math.round((viewportCenter - wrapped) / tileSize) * tileSize;
+      return wrapped;
+    }
+
     function focusLocation(location) {
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
@@ -639,11 +656,14 @@
 
     function renderPOI() {
       poiLayer.innerHTML = '';
+      const tileSize = getMapTileSizePx();
       getFilteredLocations().forEach((location) => {
         const marker = createLocationElement(location);
         const screen = screenFromWorld(location.x, location.y);
-        marker.style.left = `${screen.x}px`;
-        marker.style.top = `${screen.y}px`;
+        const wrappedX = wrapToViewport(screen.x, tileSize.width, window.innerWidth / 2);
+        const wrappedY = wrapToViewport(screen.y, tileSize.height, window.innerHeight / 2);
+        marker.style.left = `${wrappedX}px`;
+        marker.style.top = `${wrappedY}px`;
         poiLayer.appendChild(marker);
       });
     }
@@ -818,7 +838,7 @@
       db.close();
     }
 
-    async function ensureDirectoryHandle() {
+    async function ensureDirectoryHandle({ interactive = false } = {}) {
       if (cachedDirectoryHandle) return cachedDirectoryHandle;
 
       if ('showDirectoryPicker' in window) {
@@ -831,6 +851,10 @@
             return cachedDirectoryHandle;
           }
         }
+      }
+
+      if (!interactive) {
+        throw new Error('Nenhuma pasta selecionada para salvar no diretório local.');
       }
 
       cachedDirectoryHandle = await window.showDirectoryPicker();
@@ -866,8 +890,7 @@
       }
 
       try {
-        cachedDirectoryHandle = await window.showDirectoryPicker();
-        await saveDirectoryHandle(cachedDirectoryHandle).catch(() => {});
+        cachedDirectoryHandle = await ensureDirectoryHandle({ interactive: true });
         editorStatus.textContent = 'Pasta salva. Novos POIs usarão este diretório automaticamente.';
       } catch (error) {
         editorStatus.textContent = `Seleção de pasta cancelada: ${error.message}`;
@@ -1015,8 +1038,13 @@
 
       try {
         if ('showDirectoryPicker' in window) {
-          await saveUsingFSApi(fileName, payload);
-          editorStatus.textContent = `POI salvo: ${fileName}.`;
+          try {
+            await saveUsingFSApi(fileName, payload);
+            editorStatus.textContent = `POI salvo: ${fileName}.`;
+          } catch {
+            saveAsDownload(fileName, payload);
+            editorStatus.textContent = `POI exportado sem seleção de pasta: ${fileName}.`;
+          }
         } else {
           saveAsDownload(fileName, payload);
           editorStatus.textContent = 'Navegador sem File System Access API: arquivo baixado para mover manualmente.';
@@ -1155,6 +1183,10 @@
     mapImage.onload = () => {
       naturalWidth = mapImage.naturalWidth;
       naturalHeight = mapImage.naturalHeight;
+      applyZoom();
+    };
+    mapImage.onerror = () => {
+      console.warn('Não foi possível carregar world_map_telarium.png para medir o tile; usando fallback de viewport.');
       applyZoom();
     };
     mapImage.src = 'world_map_telarium.png';
