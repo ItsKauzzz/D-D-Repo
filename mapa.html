@@ -454,6 +454,7 @@
       next.addEventListener('click', () => {
         activeIndex = (activeIndex + 1) % images.length;
         image.src = images[activeIndex];
+        renderThumbState();
       });
 
       poiCarousel.appendChild(image);
@@ -461,6 +462,33 @@
         poiCarousel.appendChild(prev);
         poiCarousel.appendChild(next);
       }
+
+      const thumbs = document.createElement('div');
+      thumbs.className = 'poi-carousel-thumbs';
+
+      function renderThumbState() {
+        [...thumbs.children].forEach((button, index) => {
+          button.classList.toggle('active', index === activeIndex);
+        });
+      }
+
+      images.forEach((src, index) => {
+        const thumbButton = document.createElement('button');
+        thumbButton.type = 'button';
+        const thumb = document.createElement('img');
+        thumb.src = src;
+        thumb.alt = `Imagem ${index + 1}`;
+        thumbButton.appendChild(thumb);
+        thumbButton.addEventListener('click', () => {
+          activeIndex = index;
+          image.src = images[activeIndex];
+          renderThumbState();
+        });
+        thumbs.appendChild(thumbButton);
+      });
+
+      poiCarousel.appendChild(thumbs);
+      renderThumbState();
     }
 
     function openImageModal(src) {

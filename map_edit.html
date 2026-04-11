@@ -76,6 +76,7 @@
     <input id="coordY" type="number" placeholder="Coord Y" />
     <button id="chooseDir" type="button">Escolher pasta data/locations</button>
     <button id="savePoi" type="button">Criar POI</button>
+    <button id="cancelEdit" type="button" hidden>Cancelar edição</button>
     <p class="editor-status" id="editorStatus">Dica: para gravar direto em `data/locations`, execute localmente em Chrome e use File System Access API.</p>
   </section>
 
@@ -108,6 +109,7 @@
     const selectCoord = document.getElementById('selectCoord');
     const savePoi = document.getElementById('savePoi');
     const chooseDir = document.getElementById('chooseDir');
+    const cancelEdit = document.getElementById('cancelEdit');
     const editorStatus = document.getElementById('editorStatus');
     const previewDot = document.getElementById('previewDot');
 
@@ -122,6 +124,7 @@
     let locations = [];
     let typeConfig = {};
     let cachedDirectoryHandle = null;
+    let editingPoiId = null;
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 1;
@@ -264,9 +267,37 @@
         item.tabIndex = 0;
         item.style.setProperty('--poi-color', getTypeColor(location.type));
         item.innerHTML = `<strong>${location.name}</strong><span>${location.type}</span>`;
-        item.addEventListener('click', () => focusLocation(location));
+        item.addEventListener('click', () => {
+          focusLocation(location);
+          loadPoiIntoForm(location);
+        });
         poiList.appendChild(item);
       });
+    }
+
+    function resetEditorForm() {
+      editingPoiId = null;
+      poiName.value = '';
+      poiDescription.value = '';
+      poiImagePrefix.value = '';
+      coordX.value = '';
+      coordY.value = '';
+      savePoi.textContent = 'Criar POI';
+      cancelEdit.hidden = true;
+      updatePreviewDot();
+    }
+
+    function loadPoiIntoForm(location) {
+      editingPoiId = location.id;
+      poiName.value = location.name || '';
+      poiType.value = location.type || poiType.value;
+      poiDescription.value = location.description || '';
+      poiImagePrefix.value = location.image_prefix || '';
+      coordX.value = String(location.x ?? '');
+      coordY.value = String(location.y ?? '');
+      savePoi.textContent = 'Salvar alterações';
+      cancelEdit.hidden = false;
+      updatePreviewDot();
     }
 
     async function loadTypeConfig() {
@@ -459,7 +490,7 @@
         show_name: typeDefaults.show_name_default !== false
       };
 
-      const fileName = `${slugify(name)}.json`;
+      const fileName = editingPoiId || `${slugify(name)}.json`;
 
       try {
         if ('showDirectoryPicker' in window) {
@@ -470,12 +501,24 @@
           editorStatus.textContent = 'Navegador sem File System Access API: arquivo baixado para mover manualmente.';
         }
 
-        locations.push({ id: fileName, ...payload });
+        const existingIndex = locations.findIndex((location) => location.id === fileName);
+        const nextEntry = { id: fileName, ...payload };
+        if (existingIndex >= 0) {
+          locations[existingIndex] = nextEntry;
+        } else {
+          locations.push(nextEntry);
+        }
         renderPOIList();
         renderPOI();
+        loadPoiIntoForm(nextEntry);
       } catch (error) {
         editorStatus.textContent = `Falha ao salvar: ${error.message}`;
       }
+    });
+
+    cancelEdit.addEventListener('click', () => {
+      resetEditorForm();
+      editorStatus.textContent = 'Edição cancelada.';
     });
 
     mapCanvas.addEventListener('click', (event) => {
@@ -536,6 +579,7 @@
     Promise.all([loadTypeConfig(), loadLocations()]).then(() => {
       renderPOIList();
       renderPOI();
+      resetEditorForm();
     });
   </script>
 </body>

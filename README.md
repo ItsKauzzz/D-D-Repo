@@ -21,6 +21,7 @@ O arquivo `data/poi-config.json` define cores e atributos padrão por tipo:
 `map_edit.html` é uma página para uso local que permite criar novos POIs:
 - formulário com nome, tipo e coordenadas
 - seleção de coordenada por clique no mapa
+- edição de POIs existentes ao clicar no item da lista lateral
 - gravação de JSON em `data/locations` via File System Access API (Chrome/local) ou download manual do arquivo em navegadores sem suporte
 - opção de escolher a pasta uma vez e reutilizar nos próximos salvamentos (persistida em IndexedDB, quando suportado)
 
@@ -41,6 +42,8 @@ As imagens devem ficar em `data/locations/images` e seguir o padrão:
 Exemplo:
 - `aurora_image_1.jpg`
 - `aurora_image_2.jpg`
+
+No mapa, as imagens da galeria são exibidas inteiras (sem crop) e com miniaturas para navegar entre anterior/próxima.
 
 Exemplo:
 
