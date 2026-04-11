@@ -19,6 +19,7 @@ body {
   background-size: auto;
   background-position: 0 0;
   touch-action: none;
+  will-change: background-position, background-size;
 }
 
 #mapCanvas.dragging {
@@ -194,6 +195,7 @@ body .poi-sidebar {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  transform: translateZ(0);
 }
 
 .poi-item {
