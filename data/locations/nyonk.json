@@ -1,8 +1,10 @@
 {
-  "x": 5663,
-  "y": 969,
-  "name": "Nyonk",
-  "type": "Cidade",
+  "x": 5540,
+  "y": 1124,
+  "name": "Riacho Cristalino",
+  "type": "Vila Pequena",
+  "description": "Uma vila pequena e não tão próspera. Existem relatos de homens encapuzados de alguma seita estranha nas proximidades da cidade",
+  "image_prefix": "",
   "show_pin": true,
   "show_name": true
 }
