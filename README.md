@@ -31,6 +31,7 @@ O arquivo `data/poi-config.json` define cores e atributos padrão por tipo:
   - Exemplo: se a seed sorteou o índice `3` para uma vila, usar `icon_index_offset: -2` muda para o índice `1` (com wrap).
 - O ícone é desenhado abaixo do pin e permanece estável sempre que o mapa recarrega.
 - O ícone acompanha exatamente o zoom do mapa (mantém proporção em relação à imagem total).
+- A âncora do ícone fica centralizada para evitar “salto” vertical durante zoom in/out.
 - O menu do mapa possui uma opção para esconder/exibir ícones, e a lista lateral mostra miniatura do ícone ao lado do nome do POI.
 
 ## Editor local de mapa
