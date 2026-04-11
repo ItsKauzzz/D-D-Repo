@@ -122,6 +122,12 @@
       return matched?.[1]?.label_style || {};
     }
 
+    function getTypeDefaults(type) {
+      const target = normalizeType(type);
+      const matched = Object.entries(typeConfig).find(([name]) => normalizeType(name) === target);
+      return matched?.[1] || {};
+    }
+
     function applyLabelStyle(labelElement, type) {
       const style = getTypeStyle(type);
       const baseSizePt = 10;
@@ -355,15 +361,17 @@
       const entries = await Promise.all(files.map(async (fileName) => {
         const fileResponse = await fetch(`data/locations/${fileName}`);
         const data = await fileResponse.json();
+        const type = String(data.type || 'desconhecido');
+        const defaults = getTypeDefaults(type);
 
         return {
           id: fileName,
           x: Number(data.x || 0),
           y: Number(data.y || 0),
           name: String(data.name || 'Sem nome'),
-          type: String(data.type || 'desconhecido'),
-          show_pin: data.show_pin !== false,
-          show_name: data.show_name !== false,
+          type,
+          show_pin: typeof data.show_pin === 'boolean' ? data.show_pin : defaults.show_pin_default !== false,
+          show_name: typeof data.show_name === 'boolean' ? data.show_name : defaults.show_name_default !== false,
           description: String(data.description || ''),
           image_prefix: String(data.image_prefix || slugFromName(data.name || fileName.replace('.json', ''))),
           images: Array.isArray(data.images) ? data.images : []
@@ -628,18 +636,14 @@
     };
     mapImage.src = 'world_map_telarium.png';
 
-    loadLocations().catch((error) => {
-      console.error('Erro ao carregar pontos de interesse:', error);
-      poiList.innerHTML = '<li>Não foi possível carregar os pontos de interesse.</li>';
-    });
-
     resetPosition();
     applyZoom();
-
-    loadTypeConfig().then(() => {
-      renderPOIList();
-      renderPOI();
-    });
+    loadTypeConfig()
+      .then(() => loadLocations())
+      .catch((error) => {
+        console.error('Erro ao carregar pontos de interesse:', error);
+        poiList.innerHTML = '<li>Não foi possível carregar os pontos de interesse.</li>';
+      });
   </script>
 </body>
 </html>

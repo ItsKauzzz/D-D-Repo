@@ -144,6 +144,12 @@
       return matched?.[1]?.label_style || {};
     }
 
+    function getTypeDefaults(type) {
+      const target = normalizeType(type);
+      const matched = Object.entries(typeConfig).find(([name]) => normalizeType(name) === target);
+      return matched?.[1] || {};
+    }
+
     function applyLabelStyle(labelElement, type) {
       const style = getTypeStyle(type);
       const baseSizePt = 10;
@@ -331,14 +337,18 @@
       const files = await discoverLocationFiles();
       const entries = await Promise.all(files.map(async (fileName) => {
         const data = await (await fetch(`data/locations/${fileName}`)).json();
+        const type = String(data.type || 'Desconhecido');
+        const defaults = getTypeDefaults(type);
         return {
           id: fileName,
           x: Number(data.x || 0),
           y: Number(data.y || 0),
           name: String(data.name || 'Sem nome'),
-          type: String(data.type || 'Desconhecido'),
-          show_pin: data.show_pin !== false,
-          show_name: data.show_name !== false
+          type,
+          show_pin: typeof data.show_pin === 'boolean' ? data.show_pin : defaults.show_pin_default !== false,
+          show_name: typeof data.show_name === 'boolean' ? data.show_name : defaults.show_name_default !== false,
+          description: String(data.description || ''),
+          image_prefix: String(data.image_prefix || '')
         };
       }));
       locations = entries;
