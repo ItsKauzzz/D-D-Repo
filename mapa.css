@@ -476,6 +476,7 @@ body .poi-sidebar {
   overflow-x: hidden;
   padding-right: 6px;
   line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 .image-modal img {

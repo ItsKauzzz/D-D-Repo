@@ -75,6 +75,7 @@
     <input id="coordX" type="number" placeholder="Coord X" />
     <input id="coordY" type="number" placeholder="Coord Y" />
     <button id="chooseDir" type="button">Escolher pasta data/locations</button>
+    <button id="resetDir" type="button">Reconfigurar pasta salva</button>
     <button id="savePoi" type="button">Criar POI</button>
     <button id="addNewPoi" type="button">Adicionar novo</button>
     <button id="deletePoi" type="button" hidden>Deletar POI</button>
@@ -111,6 +112,7 @@
     const selectCoord = document.getElementById('selectCoord');
     const savePoi = document.getElementById('savePoi');
     const chooseDir = document.getElementById('chooseDir');
+    const resetDir = document.getElementById('resetDir');
     const addNewPoi = document.getElementById('addNewPoi');
     const deletePoi = document.getElementById('deletePoi');
     const cancelEdit = document.getElementById('cancelEdit');
@@ -416,6 +418,17 @@
       return handle;
     }
 
+    async function clearSavedDirectoryHandle() {
+      const db = await getDirectoryStore();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('settings', 'readwrite');
+        tx.objectStore('settings').delete('locationsDir');
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    }
+
     async function ensureDirectoryHandle() {
       if (cachedDirectoryHandle) return cachedDirectoryHandle;
 
@@ -470,6 +483,12 @@
       } catch (error) {
         editorStatus.textContent = `Seleção de pasta cancelada: ${error.message}`;
       }
+    });
+
+    resetDir.addEventListener('click', async () => {
+      cachedDirectoryHandle = null;
+      await clearSavedDirectoryHandle().catch(() => {});
+      editorStatus.textContent = 'Pasta salva removida. Escolha uma nova pasta para salvar os POIs.';
     });
 
     function saveAsDownload(fileName, payload) {
