@@ -1,0 +1,19 @@
+{
+  "types": {
+    "Cidade": {
+      "color": "#dd6f43",
+      "show_pin_default": true,
+      "show_name_default": true
+    },
+    "Vila": {
+      "color": "#5f9ea0",
+      "show_pin_default": true,
+      "show_name_default": false
+    },
+    "Acontecimento": {
+      "color": "#d3b45d",
+      "show_pin_default": false,
+      "show_name_default": true
+    }
+  }
+}

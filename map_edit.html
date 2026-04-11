@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor de mapa</title>
+  <link rel="stylesheet" href="mapa.css" />
+  <style>
+    .editor-panel {
+      position: fixed;
+      top: 86px;
+      right: 12px;
+      width: min(320px, 34vw);
+      z-index: 35;
+      border-radius: 16px;
+      background: #69614a;
+      border: 2px solid #3c3222;
+      color: #f4efe2;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .editor-panel button,
+    .editor-panel input,
+    .editor-panel select {
+      border-radius: 8px;
+      border: 2px solid #3c3222;
+      background: rgba(0, 0, 0, 0.25);
+      color: #fff;
+      padding: 8px;
+    }
+    .editor-panel button { cursor: pointer; background: #3c3222; }
+    .editor-status { font-size: 12px; color: #ddd; }
+    .preview-dot {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: #2c7be5;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    @media (max-width: 920px) {
+      .editor-panel {
+        right: 12px;
+        left: auto;
+        top: auto;
+        bottom: 12px;
+        width: min(420px, calc(100vw - 86px));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="index.html">← Voltar</a>
+    <a href="mapa.html">Ver mapa</a>
+  </div>
+
+  <aside class="poi-sidebar" aria-label="Pontos de interesse">
+    <h2>Pontos de interesse</h2>
+    <input id="poiSearch" class="poi-search" type="search" placeholder="Buscar localização..." aria-label="Buscar localização" />
+    <ul id="poiList" class="poi-list"></ul>
+  </aside>
+
+  <section class="editor-panel" aria-label="Criação de POI">
+    <h2>Novo POI</h2>
+    <input id="poiName" type="text" placeholder="Nome" />
+    <select id="poiType"></select>
+    <label><input id="selectCoord" type="checkbox" /> Selecionar coordenada clicando no mapa</label>
+    <input id="coordX" type="number" placeholder="Coord X" />
+    <input id="coordY" type="number" placeholder="Coord Y" />
+    <button id="savePoi" type="button">Criar POI</button>
+    <p class="editor-status" id="editorStatus">Dica: para gravar direto em `data/locations`, execute localmente em Chrome e use File System Access API.</p>
+  </section>
+
+  <div class="zoom-control" aria-label="Controle de zoom">
+    <span class="zoom-label" id="zoomValue">100%</span>
+    <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="100" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
+      <div id="zoomThumb" class="zoom-thumb"></div>
+    </div>
+  </div>
+
+  <div id="mapCanvas" aria-label="Editor de mapa">
+    <div id="poiLayer" class="poi-layer" aria-hidden="true"></div>
+    <div id="previewDot" class="preview-dot" hidden></div>
+  </div>
+
+  <script>
+    const mapCanvas = document.getElementById('mapCanvas');
+    const zoomTrack = document.getElementById('zoomTrack');
+    const zoomThumb = document.getElementById('zoomThumb');
+    const zoomValue = document.getElementById('zoomValue');
+    const poiLayer = document.getElementById('poiLayer');
+    const poiList = document.getElementById('poiList');
+    const poiSearch = document.getElementById('poiSearch');
+    const poiName = document.getElementById('poiName');
+    const poiType = document.getElementById('poiType');
+    const coordX = document.getElementById('coordX');
+    const coordY = document.getElementById('coordY');
+    const selectCoord = document.getElementById('selectCoord');
+    const savePoi = document.getElementById('savePoi');
+    const editorStatus = document.getElementById('editorStatus');
+    const previewDot = document.getElementById('previewDot');
+
+    let offsetX = 0;
+    let offsetY = 0;
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    let zoom = 1;
+    let naturalWidth = 0;
+    let naturalHeight = 0;
+    let locations = [];
+    let typeConfig = {};
+
+    const MIN_ZOOM = 0.2;
+    const MAX_ZOOM = 1;
+
+    function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+    function normalizeType(type) { return String(type || '').trim().toLowerCase(); }
+
+    function getTypeColor(type) {
+      const target = normalizeType(type);
+      const matched = Object.entries(typeConfig).find(([name]) => normalizeType(name) === target);
+      return matched ? matched[1].color : '#7f7f7f';
+    }
+
+    function getFilteredLocations() {
+      const filter = poiSearch.value.trim().toLowerCase();
+      if (!filter) return locations;
+      return locations.filter((location) => `${location.name} ${location.type}`.toLowerCase().includes(filter));
+    }
+
+    function zoomToRatio() { return (zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM); }
+
+    function renderZoomThumb() {
+      const trackHeight = zoomTrack.clientHeight;
+      const thumbHeight = zoomThumb.clientHeight;
+      const ratio = zoomToRatio();
+      const travel = trackHeight - thumbHeight;
+      zoomThumb.style.top = `${(1 - ratio) * travel}px`;
+      zoomValue.textContent = `${Math.round(zoom * 100)}%`;
+      zoomTrack.setAttribute('aria-valuenow', String(Math.round(zoom * 100)));
+    }
+
+    function render() {
+      mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
+      renderPOI();
+      updatePreviewDot();
+    }
+
+    function applyZoom() {
+      if (naturalWidth && naturalHeight) {
+        mapCanvas.style.backgroundSize = `${naturalWidth * zoom}px ${naturalHeight * zoom}px`;
+      } else {
+        mapCanvas.style.backgroundSize = `${zoom * 100}% auto`;
+      }
+      renderZoomThumb();
+      render();
+    }
+
+    function worldFromScreen(clientX, clientY) {
+      return {
+        x: Math.round((clientX - offsetX) / zoom),
+        y: Math.round((clientY - offsetY) / zoom)
+      };
+    }
+
+    function screenFromWorld(worldX, worldY) {
+      return {
+        x: offsetX + worldX * zoom,
+        y: offsetY + worldY * zoom
+      };
+    }
+
+    function focusLocation(location) {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      offsetX = centerX - (location.x * zoom);
+      offsetY = centerY - (location.y * zoom);
+      render();
+    }
+
+    function setZoomFromWheel(deltaY, clientX, clientY) {
+      const zoomStep = 0.06;
+      const direction = deltaY > 0 ? -1 : 1;
+      const nextZoom = clamp(zoom + (direction * zoomStep), MIN_ZOOM, MAX_ZOOM);
+      if (nextZoom === zoom) return;
+
+      const world = worldFromScreen(clientX, clientY);
+      zoom = nextZoom;
+      offsetX = clientX - (world.x * zoom);
+      offsetY = clientY - (world.y * zoom);
+
+      applyZoom();
+    }
+
+    function setZoomFromPointer(clientY) {
+      const rect = zoomTrack.getBoundingClientRect();
+      const ratio = clamp((rect.bottom - clientY) / rect.height, 0, 1);
+      const nextZoom = (20 + ratio * 80) / 100;
+      zoom = clamp(nextZoom, MIN_ZOOM, MAX_ZOOM);
+      applyZoom();
+    }
+
+    function createLocationElement(location) {
+      const element = document.createElement('article');
+      element.className = 'poi-item';
+      element.style.setProperty('--poi-color', getTypeColor(location.type));
+
+      const pin = document.createElement('span');
+      pin.className = 'poi-pin';
+      element.appendChild(pin);
+
+      const label = document.createElement('span');
+      label.className = 'poi-name';
+      label.textContent = location.name;
+      element.appendChild(label);
+      return element;
+    }
+
+    function renderPOI() {
+      poiLayer.innerHTML = '';
+      getFilteredLocations().forEach((location) => {
+        const marker = createLocationElement(location);
+        const screen = screenFromWorld(location.x, location.y);
+        marker.style.left = `${screen.x}px`;
+        marker.style.top = `${screen.y}px`;
+        poiLayer.appendChild(marker);
+      });
+    }
+
+    function renderPOIList() {
+      poiList.innerHTML = '';
+      getFilteredLocations().forEach((location) => {
+        const item = document.createElement('li');
+        item.className = 'poi-entry';
+        item.tabIndex = 0;
+        item.style.setProperty('--poi-color', getTypeColor(location.type));
+        item.innerHTML = `<strong>${location.name}</strong><span>${location.type}</span>`;
+        item.addEventListener('click', () => focusLocation(location));
+        poiList.appendChild(item);
+      });
+    }
+
+    async function loadTypeConfig() {
+      const response = await fetch('data/poi-config.json');
+      const configData = await response.json();
+      typeConfig = configData.types || {};
+      poiType.innerHTML = Object.keys(typeConfig).map((name) => `<option value="${name}">${name}</option>`).join('');
+    }
+
+    async function discoverLocationFiles() {
+      const discovered = new Set();
+      try {
+        const response = await fetch('data/locations/');
+        const html = await response.text();
+        const hrefMatches = html.match(/href\s*=\s*["']([^"']+)["']/gi) || [];
+        hrefMatches.forEach((rawHref) => {
+          const href = rawHref.replace(/href\s*=\s*["']|["']/gi, '');
+          const fileName = decodeURIComponent(href.split('?')[0].split('#')[0].split('/').pop() || '');
+          if (fileName.endsWith('.json') && fileName !== 'index.json') discovered.add(fileName);
+        });
+      } catch {}
+
+      try {
+        const fallback = await fetch('data/locations/index.json');
+        (await fallback.json()).forEach((fileName) => discovered.add(String(fileName)));
+      } catch {}
+      return [...discovered].sort();
+    }
+
+    async function loadLocations() {
+      const files = await discoverLocationFiles();
+      const entries = await Promise.all(files.map(async (fileName) => {
+        const data = await (await fetch(`data/locations/${fileName}`)).json();
+        return {
+          id: fileName,
+          x: Number(data.x || 0),
+          y: Number(data.y || 0),
+          name: String(data.name || 'Sem nome'),
+          type: String(data.type || 'Desconhecido'),
+          show_pin: data.show_pin !== false,
+          show_name: data.show_name !== false
+        };
+      }));
+      locations = entries;
+      renderPOIList();
+      renderPOI();
+    }
+
+    function updatePreviewDot() {
+      if (!coordX.value || !coordY.value) {
+        previewDot.hidden = true;
+        return;
+      }
+      const screen = screenFromWorld(Number(coordX.value), Number(coordY.value));
+      previewDot.style.left = `${screen.x}px`;
+      previewDot.style.top = `${screen.y}px`;
+      previewDot.hidden = false;
+    }
+
+    function slugify(value) {
+      return value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '') || 'novo_poi';
+    }
+
+    async function saveUsingFSApi(fileName, payload) {
+      const dirHandle = await window.showDirectoryPicker();
+      const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(JSON.stringify(payload, null, 2));
+      await writable.close();
+
+      try {
+        const indexHandle = await dirHandle.getFileHandle('index.json', { create: true });
+        const existing = await indexHandle.getFile().then((f) => f.text()).catch(() => '[]');
+        const parsed = JSON.parse(existing || '[]');
+        if (!parsed.includes(fileName)) parsed.push(fileName);
+        const indexWritable = await indexHandle.createWritable();
+        await indexWritable.write(JSON.stringify(parsed, null, 2));
+        await indexWritable.close();
+      } catch {
+        console.warn('Não foi possível atualizar index.json automaticamente.');
+      }
+    }
+
+    function saveAsDownload(fileName, payload) {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    savePoi.addEventListener('click', async () => {
+      const name = poiName.value.trim();
+      const type = poiType.value;
+      const x = Number(coordX.value);
+      const y = Number(coordY.value);
+
+      if (!name || !Number.isFinite(x) || !Number.isFinite(y)) {
+        editorStatus.textContent = 'Preencha nome e coordenadas válidas.';
+        return;
+      }
+
+      const typeDefaults = typeConfig[type] || {};
+      const payload = {
+        x,
+        y,
+        name,
+        type,
+        show_pin: typeDefaults.show_pin_default !== false,
+        show_name: typeDefaults.show_name_default !== false
+      };
+
+      const fileName = `${slugify(name)}.json`;
+
+      try {
+        if ('showDirectoryPicker' in window) {
+          await saveUsingFSApi(fileName, payload);
+          editorStatus.textContent = `POI salvo: ${fileName}.`;
+        } else {
+          saveAsDownload(fileName, payload);
+          editorStatus.textContent = 'Navegador sem File System Access API: arquivo baixado para mover manualmente.';
+        }
+
+        locations.push({ id: fileName, ...payload });
+        renderPOIList();
+        renderPOI();
+      } catch (error) {
+        editorStatus.textContent = `Falha ao salvar: ${error.message}`;
+      }
+    });
+
+    mapCanvas.addEventListener('click', (event) => {
+      if (!selectCoord.checked) return;
+      const world = worldFromScreen(event.clientX, event.clientY);
+      coordX.value = String(world.x);
+      coordY.value = String(world.y);
+      updatePreviewDot();
+    });
+
+    coordX.addEventListener('input', updatePreviewDot);
+    coordY.addEventListener('input', updatePreviewDot);
+
+    mapCanvas.addEventListener('mousedown', (event) => {
+      dragging = true;
+      mapCanvas.classList.add('dragging');
+      lastX = event.clientX;
+      lastY = event.clientY;
+    });
+
+    window.addEventListener('mousemove', (event) => {
+      if (!dragging) return;
+      offsetX += event.clientX - lastX;
+      offsetY += event.clientY - lastY;
+      lastX = event.clientX;
+      lastY = event.clientY;
+      render();
+    });
+
+    window.addEventListener('mouseup', () => {
+      dragging = false;
+      mapCanvas.classList.remove('dragging');
+    });
+
+    mapCanvas.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      setZoomFromWheel(event.deltaY, event.clientX, event.clientY);
+    }, { passive: false });
+
+    let zoomDragging = false;
+    zoomTrack.addEventListener('mousedown', (event) => { zoomDragging = true; setZoomFromPointer(event.clientY); });
+    window.addEventListener('mousemove', (event) => { if (zoomDragging) setZoomFromPointer(event.clientY); });
+    window.addEventListener('mouseup', () => { zoomDragging = false; });
+
+    poiSearch.addEventListener('input', () => {
+      renderPOIList();
+      renderPOI();
+    });
+
+    const mapImage = new Image();
+    mapImage.onload = () => {
+      naturalWidth = mapImage.naturalWidth;
+      naturalHeight = mapImage.naturalHeight;
+      applyZoom();
+    };
+    mapImage.src = 'world_map_telarium.png';
+
+    Promise.all([loadTypeConfig(), loadLocations()]).then(() => {
+      renderPOIList();
+      renderPOI();
+    });
+  </script>
+</body>
+</html>
