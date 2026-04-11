@@ -382,6 +382,12 @@
         marker.style.display = '';
         marker.style.left = `${offsetX + location.x * zoom}px`;
         marker.style.top = `${offsetY + location.y * zoom}px`;
+
+        const pinIcon = marker.querySelector('.poi-pin-icon');
+        if (pinIcon) {
+          pinIcon.style.width = `${getIconSize()}px`;
+          pinIcon.style.height = `${getIconSize()}px`;
+        }
       });
     }
 
