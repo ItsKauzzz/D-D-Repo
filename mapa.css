@@ -19,6 +19,7 @@ body {
   background-size: auto;
   background-position: 0 0;
   touch-action: none;
+  will-change: background-position, background-size;
 }
 
 #mapCanvas.dragging {
@@ -149,6 +150,24 @@ body .poi-sidebar {
   overflow-wrap: anywhere;
 }
 
+.poi-entry-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.poi-entry-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  object-fit: contain;
+}
+
+.poi-entry-icon.is-empty {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .poi-entry span {
   color: #dddbd3;
   font-size: 12px;
@@ -176,6 +195,7 @@ body .poi-sidebar {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  transform: translateZ(0);
 }
 
 .poi-item {
@@ -201,6 +221,7 @@ body .poi-sidebar {
   background: var(--poi-color, #7f7f7f);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
   transform: translate(-50%, -50%);
+  z-index: 3;
 }
 
 .poi-pin::after {
@@ -214,6 +235,18 @@ body .poi-sidebar {
   transform: translateX(-50%);
 }
 
+.poi-pin-icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+  z-index: 1;
+}
+
 .poi-name {
   position: absolute;
   left: 0;
@@ -224,6 +257,7 @@ body .poi-sidebar {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
   white-space: nowrap;
   transform: translate(-50%, -100%);
+  z-index: 4;
 }
 
 .poi-modal-backdrop,

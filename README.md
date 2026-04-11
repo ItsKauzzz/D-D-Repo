@@ -11,12 +11,29 @@ No mapa, o scroll do mouse controla o zoom (aproximar/afastar) até os limites c
 ## Configuração de tipos
 
 O arquivo `data/poi-config.json` define cores e atributos padrão por tipo:
+- `icon_seed` (seed global usada para distribuir ícones por tipo de forma determinística)
+- `icon_size_px` (tamanho base do ícone em pixels do mapa; escala junto com zoom in/out)
 - `color`
 - `show_pin_default`
+- `show_icon_default`
 - `show_name_default`
+- `icons` (lista de imagens PNG do tipo, ex.: `Icon/Vila/icon_1.png`)
 - `label_style` (ex.: `size_offset_pt`, `bold`, `italic`)
 
 > `show_pin_default` e `show_name_default` só são usados quando o POI não define explicitamente `show_pin`/`show_name` no próprio JSON.
+
+### Ícones por tipo no mapa
+
+- As imagens de ícone ficam na pasta raiz `Icon/`, separadas por tipo (ex.: `Icon/Cidade`, `Icon/Vila`, `Icon/Acontecimento`) e devem ser PNG.
+- Neste repositório, os PNGs não são versionados no git (adicione localmente os arquivos na pasta `Icon/`).
+- A escolha do ícone é **fixa por POI** e leva em conta a combinação de `icon_seed` + tipo + id do arquivo + nome.
+- Para ajuste manual por local específico, use `icon_index_offset` no JSON do POI (pode ser negativo ou positivo).
+  - Exemplo: se a seed sorteou o índice `3` para uma vila, usar `icon_index_offset: -2` muda para o índice `1` (com wrap).
+- O ícone é desenhado abaixo do pin e permanece estável sempre que o mapa recarrega.
+- O ícone acompanha exatamente o zoom do mapa (mantém proporção em relação à imagem total).
+- A âncora do ícone fica centralizada para evitar “salto” vertical durante zoom in/out.
+- O pin/nome ficam acima do ícone e ancorados nele com offset proporcional ao zoom (base: `50px * zoom`).
+- O menu do mapa possui uma opção para esconder/exibir ícones, e a lista lateral mostra miniatura do ícone ao lado do nome do POI.
 
 ## Editor local de mapa
 
@@ -34,7 +51,9 @@ Cada arquivo JSON deve conter:
 - `description`
 - `image_prefix` (prefixo para buscar imagens em `data/locations/images`)
 - `show_pin` (boolean)
+- `show_icon` (boolean, opcional)
 - `show_name` (boolean)
+- `icon_index_offset` (number opcional para deslocar o índice do ícone)
 
 ### Galeria de imagens
 
