@@ -263,6 +263,8 @@
     <input id="coordX" type="number" placeholder="Coord X" />
     <input id="coordY" type="number" placeholder="Coord Y" />
     <button id="chooseDir" type="button">Escolher pasta data/locations</button>
+    <button id="exportData" type="button">Exportar dados</button>
+    <button id="importData" type="button">Importar dados</button>
     <button id="savePoi" type="button">Criar POI</button>
     <button id="deletePoi" type="button" hidden>Deletar POI</button>
     <button id="cancelEdit" type="button" hidden>Cancelar edição</button>
@@ -271,7 +273,7 @@
 
   <div class="zoom-control" aria-label="Controle de zoom">
     <span class="zoom-label" id="zoomValue">100%</span>
-    <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="200" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
+    <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="300" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
       <div id="zoomThumb" class="zoom-thumb"></div>
     </div>
   </div>
@@ -298,6 +300,7 @@
     </article>
   </div>
   <button id="addPoiFab" class="add-poi-fab" type="button" aria-label="Adicionar novo POI">+</button>
+  <input id="importDataInput" type="file" accept=".json,application/json" hidden />
 
   <script>
     const mapCanvas = document.getElementById('mapCanvas');
@@ -325,6 +328,9 @@
     const selectCoord = document.getElementById('selectCoord');
     const savePoi = document.getElementById('savePoi');
     const chooseDir = document.getElementById('chooseDir');
+    const exportData = document.getElementById('exportData');
+    const importData = document.getElementById('importData');
+    const importDataInput = document.getElementById('importDataInput');
     const addPoiFab = document.getElementById('addPoiFab');
     const deletePoi = document.getElementById('deletePoi');
     const cancelEdit = document.getElementById('cancelEdit');
@@ -348,7 +354,7 @@
     let iconSeed = 20260411;
 
     const MIN_ZOOM = 0.2;
-    const MAX_ZOOM = 2;
+    const MAX_ZOOM = 3;
 
     function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
     function normalizeType(type) { return String(type || '').trim().toLowerCase(); }
@@ -559,7 +565,7 @@
     function setZoomFromPointer(clientY) {
       const rect = zoomTrack.getBoundingClientRect();
       const ratio = clamp((rect.bottom - clientY) / rect.height, 0, 1);
-      const nextZoom = (20 + ratio * 180) / 100;
+      const nextZoom = (20 + ratio * 280) / 100;
       zoom = clamp(nextZoom, MIN_ZOOM, MAX_ZOOM);
       applyZoom();
     }
@@ -845,6 +851,45 @@
       }
     });
 
+    exportData.addEventListener('click', () => {
+      const exported = locations.map((location) => ({
+        file_name: location.id,
+        x: Number(location.x || 0),
+        y: Number(location.y || 0),
+        name: String(location.name || ''),
+        type: String(location.type || ''),
+        description: String(location.description || ''),
+        image_prefix: String(location.image_prefix || ''),
+        icon_override: String(location.icon_override || ''),
+        show_pin: location.show_pin !== false,
+        show_icon: location.show_icon !== false,
+        show_name: location.show_name !== false
+      }));
+      saveAsDownload('poi_full_export.json', {
+        version: 1,
+        exported_at: new Date().toISOString(),
+        pois: exported
+      });
+      editorStatus.textContent = `Exportação concluída: ${exported.length} POIs.`;
+    });
+
+    importData.addEventListener('click', () => {
+      importDataInput.value = '';
+      importDataInput.click();
+    });
+
+    importDataInput.addEventListener('change', async () => {
+      const file = importDataInput.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        await importFullDataset(parsed);
+      } catch (error) {
+        editorStatus.textContent = `Falha ao importar JSON: ${error.message}`;
+      }
+    });
+
     function saveAsDownload(fileName, payload) {
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const link = document.createElement('a');
@@ -852,6 +897,52 @@
       link.download = fileName;
       link.click();
       URL.revokeObjectURL(link.href);
+    }
+
+    function normalizeImportedPoi(rawEntry) {
+      const type = String(rawEntry.type || poiType.value || 'Desconhecido');
+      const defaults = getTypeDefaults(type);
+      const name = String(rawEntry.name || 'Sem nome');
+      const cleanName = String(rawEntry.file_name || rawEntry.id || `${slugify(name)}.json`).replace(/[^a-zA-Z0-9._-]/g, '_');
+      const fileName = cleanName.endsWith('.json') ? cleanName : `${cleanName}.json`;
+      return {
+        fileName,
+        payload: {
+          x: Number(rawEntry.x || 0),
+          y: Number(rawEntry.y || 0),
+          name,
+          type,
+          description: String(rawEntry.description || ''),
+          image_prefix: String(rawEntry.image_prefix || ''),
+          icon_override: String(rawEntry.icon_override || ''),
+          show_pin: typeof rawEntry.show_pin === 'boolean' ? rawEntry.show_pin : defaults.show_pin_default !== false,
+          show_icon: typeof rawEntry.show_icon === 'boolean' ? rawEntry.show_icon : defaults.show_icon_default !== false,
+          show_name: typeof rawEntry.show_name === 'boolean' ? rawEntry.show_name : defaults.show_name_default !== false
+        }
+      };
+    }
+
+    async function importFullDataset(parsed) {
+      const sourceEntries = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.pois) ? parsed.pois : []);
+      if (!sourceEntries.length) throw new Error('Arquivo sem POIs válidos.');
+
+      const normalized = sourceEntries.map(normalizeImportedPoi);
+      const locationMap = new Map(locations.map((entry) => [entry.id, entry]));
+
+      if ('showDirectoryPicker' in window) {
+        for (const { fileName, payload } of normalized) {
+          await saveUsingFSApi(fileName, payload);
+        }
+      }
+
+      normalized.forEach(({ fileName, payload }) => {
+        locationMap.set(fileName, { id: fileName, ...payload });
+      });
+
+      locations = [...locationMap.values()];
+      renderPOIList();
+      renderPOI();
+      editorStatus.textContent = `Importação concluída: ${normalized.length} POIs processados.`;
     }
 
     async function deleteUsingFSApi(fileName) {
