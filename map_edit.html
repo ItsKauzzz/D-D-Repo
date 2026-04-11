@@ -495,7 +495,25 @@
     function getFilteredLocations() {
       const filter = poiSearch.value.trim().toLowerCase();
       if (!filter) return locations;
-      return locations.filter((location) => `${location.name} ${location.type}`.toLowerCase().includes(filter));
+      return locations.filter((location) => `${location.name} ${location.type} ${location.description || ''}`.toLowerCase().includes(filter));
+    }
+
+    function buildSearchMeta(location) {
+      const filter = poiSearch.value.trim().toLowerCase();
+      if (!filter) return String(location.type || '');
+
+      const description = String(location.description || '');
+      const haystack = description.toLowerCase();
+      const index = haystack.indexOf(filter);
+      if (index < 0) return String(location.type || '');
+
+      const radius = 26;
+      const start = Math.max(0, index - radius);
+      const end = Math.min(description.length, index + filter.length + radius);
+      const snippet = description.slice(start, end).replace(/\s+/g, ' ').trim();
+      const prefix = start > 0 ? '... ' : '';
+      const suffix = end < description.length ? ' ...' : '';
+      return `${prefix}${snippet}${suffix} - ${location.type}`;
     }
 
     function zoomToRatio() { return (zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM); }
@@ -637,7 +655,12 @@
         item.className = 'poi-entry';
         item.tabIndex = 0;
         item.style.setProperty('--poi-color', getTypeColor(location.type));
-        item.innerHTML = `<strong>${location.name}</strong><span>${location.type}</span>`;
+        const title = document.createElement('strong');
+        title.textContent = location.name;
+        const meta = document.createElement('span');
+        meta.className = 'poi-entry-type';
+        meta.textContent = buildSearchMeta(location);
+        item.append(title, meta);
         item.addEventListener('click', () => {
           focusLocation(location);
           loadPoiIntoForm(location);

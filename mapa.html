@@ -288,9 +288,27 @@
       if (!filter) return locations;
 
       return locations.filter((location) => {
-        const fullText = `${location.name} ${location.type}`.toLowerCase();
+        const fullText = `${location.name} ${location.type} ${location.description || ''}`.toLowerCase();
         return fullText.includes(filter);
       });
+    }
+
+    function buildSearchMeta(location) {
+      const filter = poiSearch.value.trim().toLowerCase();
+      if (!filter) return String(location.type || '');
+
+      const description = String(location.description || '');
+      const haystack = description.toLowerCase();
+      const index = haystack.indexOf(filter);
+      if (index < 0) return String(location.type || '');
+
+      const radius = 26;
+      const start = Math.max(0, index - radius);
+      const end = Math.min(description.length, index + filter.length + radius);
+      const snippet = description.slice(start, end).replace(/\s+/g, ' ').trim();
+      const prefix = start > 0 ? '... ' : '';
+      const suffix = end < description.length ? ' ...' : '';
+      return `${prefix}${snippet}${suffix} - ${location.type}`;
     }
 
     function renderZoomThumb() {
@@ -539,10 +557,12 @@
             ${iconMarkup}
             <div class="poi-entry-text">
               <strong>${location.name}</strong>
-              <span class="poi-entry-type">${location.type}</span>
+              <span class="poi-entry-type"></span>
             </div>
           </div>
         `;
+        const meta = item.querySelector('.poi-entry-type');
+        if (meta) meta.textContent = buildSearchMeta(location);
         const thumb = item.querySelector('.poi-entry-icon');
         if (thumb && thumb.tagName === 'IMG') {
           thumb.addEventListener('error', () => {
