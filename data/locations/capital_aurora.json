@@ -1,0 +1,10 @@
+{
+  "x": 1120,
+  "y": 840,
+  "name": "Cidade de Aurora",
+  "type": "Cidade",
+  "description": "Capital comercial de Telarium, conhecida pelas pontes de cristal e pelo mercado lunar.",
+  "image_prefix": "aurora",
+  "show_pin": true,
+  "show_name": true
+}
