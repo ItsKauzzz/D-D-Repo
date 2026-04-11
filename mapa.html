@@ -171,10 +171,28 @@
     }
 
     function applyIconLayout(iconElement) {
-      const anchorY = Math.max(6, 16 * zoom);
       iconElement.style.width = `${getIconSize()}px`;
       iconElement.style.height = `${getIconSize()}px`;
-      iconElement.style.top = `${anchorY}px`;
+      iconElement.style.top = '0px';
+    }
+
+    function getPinOffsetFromIconAnchor() {
+      return 50 * zoom;
+    }
+
+    function applyMarkerAnchors(markerElement) {
+      const pinOffset = getPinOffsetFromIconAnchor();
+      const labelExtraOffset = 14 * zoom;
+
+      const pin = markerElement.querySelector('.poi-pin');
+      if (pin) {
+        pin.style.top = `${-pinOffset}px`;
+      }
+
+      const name = markerElement.querySelector('.poi-name');
+      if (name) {
+        name.style.top = `${-(pinOffset + labelExtraOffset)}px`;
+      }
     }
 
     function applyLabelStyle(labelElement, type) {
@@ -341,6 +359,7 @@
       }
 
       element.addEventListener('click', () => openPoiModal(location));
+      applyMarkerAnchors(element);
 
       return element;
     }
@@ -393,6 +412,7 @@
         if (pinIcon) {
           applyIconLayout(pinIcon);
         }
+        applyMarkerAnchors(marker);
       });
     }
 
