@@ -293,7 +293,7 @@ body .poi-sidebar {
 
 .poi-modal-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: start;
   gap: 8px;
 }
@@ -309,10 +309,14 @@ body .poi-sidebar {
 
 .poi-carousel {
   position: relative;
-  height: 320px;
+  height: 220px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 12px;
   overflow: hidden;
+}
+
+.poi-carousel.is-empty {
+  display: none;
 }
 
 .poi-carousel img {
@@ -343,6 +347,18 @@ body .poi-sidebar {
   gap: 6px;
   overflow-x: auto;
   padding-top: 2px;
+}
+
+.poi-carousel-thumbs.is-empty {
+  display: none;
+}
+
+.poi-modal-info h3 {
+  margin: 0 0 4px 0;
+}
+
+.poi-modal-info small {
+  color: #dddbd3;
 }
 
 .poi-carousel-thumbs button {

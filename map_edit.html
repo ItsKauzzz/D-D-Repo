@@ -76,6 +76,7 @@
     <input id="coordY" type="number" placeholder="Coord Y" />
     <button id="chooseDir" type="button">Escolher pasta data/locations</button>
     <button id="savePoi" type="button">Criar POI</button>
+    <button id="addNewPoi" type="button">Adicionar novo</button>
     <button id="cancelEdit" type="button" hidden>Cancelar edição</button>
     <p class="editor-status" id="editorStatus">Dica: para gravar direto em `data/locations`, execute localmente em Chrome e use File System Access API.</p>
   </section>
@@ -109,6 +110,7 @@
     const selectCoord = document.getElementById('selectCoord');
     const savePoi = document.getElementById('savePoi');
     const chooseDir = document.getElementById('chooseDir');
+    const addNewPoi = document.getElementById('addNewPoi');
     const cancelEdit = document.getElementById('cancelEdit');
     const editorStatus = document.getElementById('editorStatus');
     const previewDot = document.getElementById('previewDot');
@@ -524,6 +526,11 @@
       } catch (error) {
         editorStatus.textContent = `Falha ao salvar: ${error.message}`;
       }
+    });
+
+    addNewPoi.addEventListener('click', () => {
+      resetEditorForm();
+      editorStatus.textContent = 'Pronto para criar um novo POI.';
     });
 
     cancelEdit.addEventListener('click', () => {

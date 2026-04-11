@@ -48,14 +48,14 @@
   <div id="poiModalBackdrop" class="poi-modal-backdrop" aria-hidden="true">
     <article class="poi-modal" role="dialog" aria-modal="true" aria-labelledby="poiModalTitle">
       <header class="poi-modal-header">
-        <div>
-          <h3 id="poiModalTitle">POI</h3>
-          <small id="poiModalMeta"></small>
-        </div>
         <button id="poiModalClose" class="poi-modal-close" type="button">Fechar</button>
       </header>
       <div id="poiCarousel" class="poi-carousel"></div>
       <div id="poiCarouselThumbs" class="poi-carousel-thumbs"></div>
+      <div class="poi-modal-info">
+        <h3 id="poiModalTitle">POI</h3>
+        <small id="poiModalMeta"></small>
+      </div>
       <div id="poiDescription" class="poi-description"></div>
     </article>
   </div>
@@ -588,9 +588,13 @@
       poiCarousel.innerHTML = '';
       poiCarouselThumbs.innerHTML = '';
       if (!images.length) {
-        poiCarousel.innerHTML = '<p style=\"padding: 14px;\">Sem imagens para este POI.</p>';
+        poiCarousel.classList.add('is-empty');
+        poiCarouselThumbs.classList.add('is-empty');
         return;
       }
+
+      poiCarousel.classList.remove('is-empty');
+      poiCarouselThumbs.classList.remove('is-empty');
 
       let activeIndex = 0;
       const image = document.createElement('img');
