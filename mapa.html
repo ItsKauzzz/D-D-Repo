@@ -377,6 +377,20 @@
       ].join('|');
     }
 
+    function getMapTileWidthPx() {
+      if (naturalWidth > 0) return naturalWidth * zoom;
+      return mapCanvas.clientWidth || window.innerWidth;
+    }
+
+    function wrapToViewportX(rawX, tileWidth) {
+      if (!Number.isFinite(tileWidth) || tileWidth <= 0) return rawX;
+
+      const viewportCenterX = window.innerWidth / 2;
+      let wrapped = positiveModulo(rawX, tileWidth);
+      wrapped += Math.round((viewportCenterX - wrapped) / tileWidth) * tileWidth;
+      return wrapped;
+    }
+
     function renderPOI() {
       const visibleLocations = getFilteredLocations();
       const visibleIds = new Set(visibleLocations.map((location) => location.id));
@@ -404,8 +418,12 @@
           markerCache.set(location.id, marker);
         }
 
+        const tileWidth = getMapTileWidthPx();
+        const rawX = offsetX + location.x * zoom;
+        const wrappedX = wrapToViewportX(rawX, tileWidth);
+
         marker.style.display = '';
-        marker.style.left = `${offsetX + location.x * zoom}px`;
+        marker.style.left = `${wrappedX}px`;
         marker.style.top = `${offsetY + location.y * zoom}px`;
 
         const pinIcon = marker.querySelector('.poi-pin-icon');
