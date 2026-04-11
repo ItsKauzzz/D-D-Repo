@@ -1,0 +1,10 @@
+{
+  "x": 5923,
+  "y": 960,
+  "name": "Avistamento de Aranha Gigante",
+  "type": "Acontecimento",
+  "description": "Exploradores relatam terem visto uma aranha de tamanho descomunal pela região, acompanhada de outras aranhas menores, mas ainda sim do tamanho de homens habitando próximo a paredes rochosas e a um velho moinho da região que foi abandonado há decadas. Dois dos cinco homens não voltaram, e a área passou a ser altamente periculosa, fazendo que quaisquer buscas que poderiam ser feitas pela região fossem abandonadas",
+  "image_prefix": "",
+  "show_pin": false,
+  "show_name": true
+}
