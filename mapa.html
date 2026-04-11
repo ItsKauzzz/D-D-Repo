@@ -100,7 +100,8 @@
     let locations = [];
     let typeConfig = {};
     let iconSeed = 20260411;
-    let iconSizePx = 22;
+    let iconSizePx = 110;
+    const markerCache = new Map();
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 1;
@@ -165,7 +166,8 @@
     }
 
     function getIconSize() {
-      return Math.max(10, Number(iconSizePx || 22));
+      const baseSize = Math.max(10, Number(iconSizePx || 110));
+      return Math.max(8, baseSize * zoom);
     }
 
     function applyLabelStyle(labelElement, type) {
@@ -184,11 +186,11 @@
         const configData = await response.json();
         typeConfig = configData.types || {};
         iconSeed = Number(configData.icon_seed || 20260411);
-        iconSizePx = Number(configData.icon_size_px || 22);
+        iconSizePx = Number(configData.icon_size_px || 110);
       } catch (error) {
         console.warn('Usando configuração padrão de tipos.', error);
         iconSeed = 20260411;
-        iconSizePx = 22;
+        iconSizePx = 110;
         typeConfig = {
           Cidade: { color: '#dd6f43', icons: ['Icon/Cidade/icon_1.png'] },
           Vila: { color: '#5f9ea0', icons: ['Icon/Vila/icon_1.png'] },
@@ -337,14 +339,49 @@
       return element;
     }
 
-    function renderPOI() {
-      poiLayer.innerHTML = '';
+    function getMarkerSignature(location) {
+      return [
+        togglePins.checked,
+        toggleIcons.checked,
+        toggleNames.checked,
+        location.show_pin,
+        location.show_icon,
+        location.show_name,
+        location.type,
+        location.name
+      ].join('|');
+    }
 
-      getFilteredLocations().forEach((location) => {
-        const marker = createLocationElement(location);
+    function renderPOI() {
+      const visibleLocations = getFilteredLocations();
+      const visibleIds = new Set(visibleLocations.map((location) => location.id));
+
+      locations.forEach((location) => {
+        const cachedMarker = markerCache.get(location.id);
+        if (cachedMarker && !visibleIds.has(location.id)) {
+          cachedMarker.style.display = 'none';
+        }
+      });
+
+      visibleLocations.forEach((location) => {
+        const signature = getMarkerSignature(location);
+        let marker = markerCache.get(location.id);
+
+        if (!marker || marker.dataset.signature !== signature) {
+          const nextMarker = createLocationElement(location);
+          nextMarker.dataset.signature = signature;
+          if (marker) {
+            marker.replaceWith(nextMarker);
+          } else {
+            poiLayer.appendChild(nextMarker);
+          }
+          marker = nextMarker;
+          markerCache.set(location.id, marker);
+        }
+
+        marker.style.display = '';
         marker.style.left = `${offsetX + location.x * zoom}px`;
         marker.style.top = `${offsetY + location.y * zoom}px`;
-        poiLayer.appendChild(marker);
       });
     }
 
@@ -458,6 +495,8 @@
       }));
 
       locations = entries;
+      markerCache.clear();
+      poiLayer.innerHTML = '';
       renderPOIList();
       renderPOI();
     }
