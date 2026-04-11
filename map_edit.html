@@ -71,6 +71,7 @@
     <label><input id="selectCoord" type="checkbox" /> Selecionar coordenada clicando no mapa</label>
     <input id="coordX" type="number" placeholder="Coord X" />
     <input id="coordY" type="number" placeholder="Coord Y" />
+    <button id="chooseDir" type="button">Escolher pasta data/locations</button>
     <button id="savePoi" type="button">Criar POI</button>
     <p class="editor-status" id="editorStatus">Dica: para gravar direto em `data/locations`, execute localmente em Chrome e use File System Access API.</p>
   </section>
@@ -101,6 +102,7 @@
     const coordY = document.getElementById('coordY');
     const selectCoord = document.getElementById('selectCoord');
     const savePoi = document.getElementById('savePoi');
+    const chooseDir = document.getElementById('chooseDir');
     const editorStatus = document.getElementById('editorStatus');
     const previewDot = document.getElementById('previewDot');
 
@@ -114,6 +116,7 @@
     let naturalHeight = 0;
     let locations = [];
     let typeConfig = {};
+    let cachedDirectoryHandle = null;
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 1;
@@ -311,8 +314,63 @@
         .replace(/^_+|_+$/g, '') || 'novo_poi';
     }
 
+    async function getDirectoryStore() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open('poi-editor-db', 1);
+        request.onupgradeneeded = () => {
+          request.result.createObjectStore('settings');
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function saveDirectoryHandle(handle) {
+      const db = await getDirectoryStore();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('settings', 'readwrite');
+        tx.objectStore('settings').put(handle, 'locationsDir');
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    }
+
+    async function loadDirectoryHandle() {
+      const db = await getDirectoryStore();
+      const handle = await new Promise((resolve, reject) => {
+        const tx = db.transaction('settings', 'readonly');
+        const req = tx.objectStore('settings').get('locationsDir');
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+      db.close();
+      return handle;
+    }
+
+    async function ensureDirectoryHandle() {
+      if (cachedDirectoryHandle) return cachedDirectoryHandle;
+
+      if ('showDirectoryPicker' in window) {
+        const restored = await loadDirectoryHandle().catch(() => null);
+        if (restored) {
+          const permission = await restored.queryPermission({ mode: 'readwrite' });
+          if (permission === 'granted' || await restored.requestPermission({ mode: 'readwrite' }) === 'granted') {
+            cachedDirectoryHandle = restored;
+            editorStatus.textContent = 'Pasta reutilizada da sessão anterior.';
+            return cachedDirectoryHandle;
+          }
+        }
+      }
+
+      cachedDirectoryHandle = await window.showDirectoryPicker();
+      await saveDirectoryHandle(cachedDirectoryHandle).catch(() => {});
+      editorStatus.textContent = 'Pasta escolhida e salva para próximos POIs.';
+      return cachedDirectoryHandle;
+    }
+
     async function saveUsingFSApi(fileName, payload) {
-      const dirHandle = await window.showDirectoryPicker();
+      const dirHandle = await ensureDirectoryHandle();
       const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
       const writable = await fileHandle.createWritable();
       await writable.write(JSON.stringify(payload, null, 2));
@@ -330,6 +388,21 @@
         console.warn('Não foi possível atualizar index.json automaticamente.');
       }
     }
+
+    chooseDir.addEventListener('click', async () => {
+      if (!('showDirectoryPicker' in window)) {
+        editorStatus.textContent = 'Seu navegador não suporta seleção persistente de pasta.';
+        return;
+      }
+
+      try {
+        cachedDirectoryHandle = await window.showDirectoryPicker();
+        await saveDirectoryHandle(cachedDirectoryHandle).catch(() => {});
+        editorStatus.textContent = 'Pasta salva. Novos POIs usarão este diretório automaticamente.';
+      } catch (error) {
+        editorStatus.textContent = `Seleção de pasta cancelada: ${error.message}`;
+      }
+    });
 
     function saveAsDownload(fileName, payload) {
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });

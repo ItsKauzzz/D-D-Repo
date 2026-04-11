@@ -21,6 +21,7 @@ O arquivo `data/poi-config.json` define cores e atributos padrão por tipo:
 - formulário com nome, tipo e coordenadas
 - seleção de coordenada por clique no mapa
 - gravação de JSON em `data/locations` via File System Access API (Chrome/local) ou download manual do arquivo em navegadores sem suporte
+- opção de escolher a pasta uma vez e reutilizar nos próximos salvamentos (persistida em IndexedDB, quando suportado)
 
 Cada arquivo JSON deve conter:
 - `x` e `y` (coordenadas no mapa)
