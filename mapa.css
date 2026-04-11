@@ -215,6 +215,21 @@ body .poi-sidebar {
   pointer-events: auto;
 }
 
+.poi-item:hover .poi-pin,
+.poi-item.is-hovered .poi-pin {
+  filter: brightness(1.15) saturate(1.08);
+}
+
+.poi-item:hover .poi-pin-icon,
+.poi-item.is-hovered .poi-pin-icon {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7)) brightness(1.08);
+}
+
+.poi-item:hover .poi-name,
+.poi-item.is-hovered .poi-name {
+  filter: brightness(1.08);
+}
+
 .poi-item.is-hidden {
   display: none;
 }
@@ -252,7 +267,8 @@ body .poi-sidebar {
   height: 22px;
   transform: translate(-50%, -50%);
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
   z-index: 1;
 }
 
