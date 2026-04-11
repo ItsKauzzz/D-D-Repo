@@ -32,6 +32,7 @@ O arquivo `data/poi-config.json` define cores e atributos padrão por tipo:
 - O ícone é desenhado abaixo do pin e permanece estável sempre que o mapa recarrega.
 - O ícone acompanha exatamente o zoom do mapa (mantém proporção em relação à imagem total).
 - A âncora do ícone fica centralizada para evitar “salto” vertical durante zoom in/out.
+- O pin/nome ficam acima do ícone e ancorados nele com offset proporcional ao zoom (base: `50px * zoom`).
 - O menu do mapa possui uma opção para esconder/exibir ícones, e a lista lateral mostra miniatura do ícone ao lado do nome do POI.
 
 ## Editor local de mapa
