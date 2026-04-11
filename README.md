@@ -14,6 +14,7 @@ O arquivo `data/poi-config.json` define cores e atributos padrão por tipo:
 - `color`
 - `show_pin_default`
 - `show_name_default`
+- `label_style` (ex.: `size_offset_pt`, `bold`, `italic`)
 
 ## Editor local de mapa
 

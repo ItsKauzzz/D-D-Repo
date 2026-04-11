@@ -130,6 +130,21 @@
       return matched ? matched[1].color : '#7f7f7f';
     }
 
+    function getTypeStyle(type) {
+      const target = normalizeType(type);
+      const matched = Object.entries(typeConfig).find(([name]) => normalizeType(name) === target);
+      return matched?.[1]?.label_style || {};
+    }
+
+    function applyLabelStyle(labelElement, type) {
+      const style = getTypeStyle(type);
+      const baseSizePt = 10;
+      const sizeOffset = Number(style.size_offset_pt || 0);
+      labelElement.style.fontSize = `${Math.max(6, baseSizePt + sizeOffset)}pt`;
+      labelElement.style.fontWeight = style.bold === false ? '500' : '700';
+      labelElement.style.fontStyle = style.italic ? 'italic' : 'normal';
+    }
+
     function getFilteredLocations() {
       const filter = poiSearch.value.trim().toLowerCase();
       if (!filter) return locations;
@@ -220,6 +235,7 @@
       const label = document.createElement('span');
       label.className = 'poi-name';
       label.textContent = location.name;
+      applyLabelStyle(label, location.type);
       element.appendChild(label);
       return element;
     }
