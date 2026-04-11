@@ -1,9 +1,15 @@
 {
+  "icon_seed": 20260411,
   "types": {
     "Cidade": {
       "color": "#dd6f43",
       "show_pin_default": true,
       "show_name_default": true,
+      "icons": [
+        "Icon/Cidade/icon_1.svg",
+        "Icon/Cidade/icon_2.svg",
+        "Icon/Cidade/icon_3.svg"
+      ],
       "label_style": {
         "size_offset_pt": 2,
         "bold": true,
@@ -14,6 +20,11 @@
       "color": "#5f9ea0",
       "show_pin_default": true,
       "show_name_default": true,
+      "icons": [
+        "Icon/Vila/icon_1.svg",
+        "Icon/Vila/icon_2.svg",
+        "Icon/Vila/icon_3.svg"
+      ],
       "label_style": {
         "size_offset_pt": -1,
         "bold": false,
@@ -24,6 +35,11 @@
       "color": "#d3b45d",
       "show_pin_default": false,
       "show_name_default": true,
+      "icons": [
+        "Icon/Acontecimento/icon_1.svg",
+        "Icon/Acontecimento/icon_2.svg",
+        "Icon/Acontecimento/icon_3.svg"
+      ],
       "label_style": {
         "size_offset_pt": -1,
         "bold": false,

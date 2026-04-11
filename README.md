@@ -11,12 +11,22 @@ No mapa, o scroll do mouse controla o zoom (aproximar/afastar) até os limites c
 ## Configuração de tipos
 
 O arquivo `data/poi-config.json` define cores e atributos padrão por tipo:
+- `icon_seed` (seed global usada para distribuir ícones por tipo de forma determinística)
 - `color`
 - `show_pin_default`
 - `show_name_default`
+- `icons` (lista de imagens do tipo, ex.: `Icon/Vila/icon_1.svg`)
 - `label_style` (ex.: `size_offset_pt`, `bold`, `italic`)
 
 > `show_pin_default` e `show_name_default` só são usados quando o POI não define explicitamente `show_pin`/`show_name` no próprio JSON.
+
+### Ícones por tipo no mapa
+
+- As imagens de ícone ficam na pasta raiz `Icon/`, separadas por tipo (ex.: `Icon/Cidade`, `Icon/Vila`, `Icon/Acontecimento`).
+- A escolha do ícone é **fixa por POI** e leva em conta a combinação de `icon_seed` + tipo + id do arquivo + nome.
+- Para ajuste manual por local específico, use `icon_index_offset` no JSON do POI (pode ser negativo ou positivo).
+  - Exemplo: se a seed sorteou o índice `3` para uma vila, usar `icon_index_offset: -2` muda para o índice `1` (com wrap).
+- O ícone é desenhado abaixo do pin e permanece estável sempre que o mapa recarrega.
 
 ## Editor local de mapa
 
@@ -35,6 +45,7 @@ Cada arquivo JSON deve conter:
 - `image_prefix` (prefixo para buscar imagens em `data/locations/images`)
 - `show_pin` (boolean)
 - `show_name` (boolean)
+- `icon_index_offset` (number opcional para deslocar o índice do ícone)
 
 ### Galeria de imagens
 
