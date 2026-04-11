@@ -36,7 +36,7 @@
 
   <div class="zoom-control" aria-label="Controle de zoom">
     <span class="zoom-label" id="zoomValue">100%</span>
-    <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="100" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
+    <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="200" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
       <div id="zoomThumb" class="zoom-thumb"></div>
     </div>
   </div>
@@ -134,7 +134,7 @@
     const markerCache = new Map();
 
     const MIN_ZOOM = 0.2;
-    const MAX_ZOOM = 1;
+    const MAX_ZOOM = 2;
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -352,7 +352,7 @@
     function setZoomFromPointer(clientY) {
       const rect = zoomTrack.getBoundingClientRect();
       const ratio = clamp((rect.bottom - clientY) / rect.height, 0, 1);
-      const percent = 20 + ratio * 80;
+      const percent = 20 + ratio * 180;
       setZoomFromPercent(percent);
     }
 

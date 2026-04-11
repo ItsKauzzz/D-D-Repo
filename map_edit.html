@@ -254,7 +254,7 @@
 
   <div class="zoom-control" aria-label="Controle de zoom">
     <span class="zoom-label" id="zoomValue">100%</span>
-    <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="100" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
+    <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="200" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
       <div id="zoomThumb" class="zoom-thumb"></div>
     </div>
   </div>
@@ -331,7 +331,7 @@
     let iconSeed = 20260411;
 
     const MIN_ZOOM = 0.2;
-    const MAX_ZOOM = 1;
+    const MAX_ZOOM = 2;
 
     function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
     function normalizeType(type) { return String(type || '').trim().toLowerCase(); }
@@ -394,6 +394,17 @@
       if (!icons.length) return '';
       const hash = hashStringToInt(`${iconSeed}:${location.id}:${location.name}:${location.type}`);
       return icons[hash % icons.length];
+    }
+
+    function getLegacyIconFallback(iconPath) {
+      const fileName = String(iconPath || '').split('/').pop() || '';
+      if (!fileName) return '';
+      if (fileName.startsWith('cidade_')) return `Icon/Cidade/${fileName.replace('cidade_', '')}`;
+      if (fileName.startsWith('vila_grande_')) return `Icon/Vila Grande/${fileName.replace('vila_grande_', '')}`;
+      if (fileName.startsWith('vila_pequena_')) return `Icon/Vila Pequena/${fileName.replace('vila_pequena_', '')}`;
+      if (fileName.startsWith('vila_')) return `Icon/Vila/${fileName.replace('vila_', '')}`;
+      if (fileName.startsWith('acontecimento_')) return `Icon/Acontecimento/${fileName.replace('acontecimento_', '')}`;
+      return '';
     }
 
     function updateIconChoicePreview() {
@@ -531,7 +542,7 @@
     function setZoomFromPointer(clientY) {
       const rect = zoomTrack.getBoundingClientRect();
       const ratio = clamp((rect.bottom - clientY) / rect.height, 0, 1);
-      const nextZoom = (20 + ratio * 80) / 100;
+      const nextZoom = (20 + ratio * 180) / 100;
       zoom = clamp(nextZoom, MIN_ZOOM, MAX_ZOOM);
       applyZoom();
     }
@@ -555,7 +566,14 @@
           icon.src = iconSrc;
           icon.alt = `Ícone de ${location.type}`;
           icon.loading = 'lazy';
-          icon.addEventListener('error', () => icon.remove());
+          icon.addEventListener('error', () => {
+            const fallback = getLegacyIconFallback(iconSrc);
+            if (fallback && icon.src !== new URL(fallback, window.location.href).href) {
+              icon.src = fallback;
+              return;
+            }
+            icon.remove();
+          });
           element.appendChild(icon);
         }
       }
