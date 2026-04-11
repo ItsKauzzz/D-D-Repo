@@ -279,8 +279,6 @@ body .poi-sidebar {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 12px;
   overflow: hidden;
-  display: grid;
-  grid-template-rows: 1fr auto;
 }
 
 .poi-carousel img {
@@ -310,7 +308,7 @@ body .poi-sidebar {
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding-top: 6px;
+  padding-top: 2px;
 }
 
 .poi-carousel-thumbs button {

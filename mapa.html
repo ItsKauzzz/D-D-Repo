@@ -51,6 +51,7 @@
         <button id="poiModalClose" class="poi-modal-close" type="button">Fechar</button>
       </header>
       <div id="poiCarousel" class="poi-carousel"></div>
+      <div id="poiCarouselThumbs" class="poi-carousel-thumbs"></div>
       <div id="poiDescription" class="poi-description"></div>
     </article>
   </div>
@@ -77,6 +78,7 @@
     const poiModalTitle = document.getElementById('poiModalTitle');
     const poiModalMeta = document.getElementById('poiModalMeta');
     const poiCarousel = document.getElementById('poiCarousel');
+    const poiCarouselThumbs = document.getElementById('poiCarouselThumbs');
     const poiDescription = document.getElementById('poiDescription');
     const imageModalBackdrop = document.getElementById('imageModalBackdrop');
     const imageModalImage = document.getElementById('imageModalImage');
@@ -427,6 +429,7 @@
 
     function renderCarousel(images) {
       poiCarousel.innerHTML = '';
+      poiCarouselThumbs.innerHTML = '';
       if (!images.length) {
         poiCarousel.innerHTML = '<p style=\"padding: 14px;\">Sem imagens para este POI.</p>';
         return;
@@ -463,11 +466,8 @@
         poiCarousel.appendChild(next);
       }
 
-      const thumbs = document.createElement('div');
-      thumbs.className = 'poi-carousel-thumbs';
-
       function renderThumbState() {
-        [...thumbs.children].forEach((button, index) => {
+        [...poiCarouselThumbs.children].forEach((button, index) => {
           button.classList.toggle('active', index === activeIndex);
         });
       }
@@ -484,10 +484,9 @@
           image.src = images[activeIndex];
           renderThumbState();
         });
-        thumbs.appendChild(thumbButton);
+        poiCarouselThumbs.appendChild(thumbButton);
       });
 
-      poiCarousel.appendChild(thumbs);
       renderThumbState();
     }
 
