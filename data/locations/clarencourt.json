@@ -4,5 +4,5 @@
   "name": "Clarencourt",
   "type": "Vila",
   "show_pin": true,
-  "show_name": false
+  "show_name": true
 }
