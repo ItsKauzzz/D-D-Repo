@@ -152,23 +152,32 @@ body .poi-sidebar {
 
 .poi-entry-top {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
 }
 
+.poi-entry-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
 .poi-entry-icon {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
+  width: 22px;
+  height: auto;
+  min-height: 100%;
+  flex: 0 0 22px;
   object-fit: contain;
+  align-self: stretch;
 }
 
 .poi-entry-icon.is-empty {
-  border-radius: 999px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.2);
 }
 
-.poi-entry span {
+.poi-entry-type {
   color: #dddbd3;
   font-size: 12px;
   min-width: 0;
@@ -204,6 +213,21 @@ body .poi-sidebar {
   top: 0;
   cursor: pointer;
   pointer-events: auto;
+}
+
+.poi-item:hover .poi-pin,
+.poi-item.is-hovered .poi-pin {
+  filter: brightness(1.15) saturate(1.08);
+}
+
+.poi-item:hover .poi-pin-icon,
+.poi-item.is-hovered .poi-pin-icon {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7)) brightness(1.08);
+}
+
+.poi-item:hover .poi-name,
+.poi-item.is-hovered .poi-name {
+  filter: brightness(1.08);
 }
 
 .poi-item.is-hidden {
@@ -243,7 +267,8 @@ body .poi-sidebar {
   height: 22px;
   transform: translate(-50%, -50%);
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
   z-index: 1;
 }
 
@@ -291,9 +316,72 @@ body .poi-sidebar {
   padding: 14px;
 }
 
+.poi-modal-layout {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.poi-modal-main {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.poi-tab-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: stretch;
+}
+
+.poi-tab-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid #3c3222;
+  background: rgba(0, 0, 0, 0.25);
+  color: #f4efe2;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.poi-tab-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.poi-tab-btn:hover {
+  filter: brightness(1.08);
+}
+
+.poi-tab-btn.is-active {
+  background: #3c3222;
+  border-color: #fff;
+}
+
+.poi-tab-panel {
+  display: none;
+  gap: 10px;
+}
+
+.poi-tab-panel.is-active {
+  display: grid;
+}
+
+.poi-tab-placeholder {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
 .poi-modal-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: start;
   gap: 8px;
 }
@@ -309,10 +397,14 @@ body .poi-sidebar {
 
 .poi-carousel {
   position: relative;
-  height: 320px;
+  height: 220px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 12px;
   overflow: hidden;
+}
+
+.poi-carousel.is-empty {
+  display: none;
 }
 
 .poi-carousel img {
@@ -345,6 +437,18 @@ body .poi-sidebar {
   padding-top: 2px;
 }
 
+.poi-carousel-thumbs.is-empty {
+  display: none;
+}
+
+.poi-modal-info h3 {
+  margin: 0 0 4px 0;
+}
+
+.poi-modal-info small {
+  color: #dddbd3;
+}
+
 .poi-carousel-thumbs button {
   border: 2px solid transparent;
   background: transparent;
@@ -372,6 +476,7 @@ body .poi-sidebar {
   overflow-x: hidden;
   padding-right: 6px;
   line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 .image-modal img {
@@ -433,5 +538,13 @@ body .poi-sidebar {
     bottom: 12px;
     width: min(400px, calc(100vw - 86px));
     max-height: 42vh;
+  }
+
+  .poi-modal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .poi-tab-menu {
+    flex-direction: row;
   }
 }

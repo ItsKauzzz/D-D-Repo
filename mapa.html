@@ -47,16 +47,36 @@
 
   <div id="poiModalBackdrop" class="poi-modal-backdrop" aria-hidden="true">
     <article class="poi-modal" role="dialog" aria-modal="true" aria-labelledby="poiModalTitle">
-      <header class="poi-modal-header">
-        <div>
-          <h3 id="poiModalTitle">POI</h3>
-          <small id="poiModalMeta"></small>
+      <div class="poi-modal-layout">
+        <div class="poi-modal-main">
+          <header class="poi-modal-header">
+            <button id="poiModalClose" class="poi-modal-close" type="button">Fechar</button>
+          </header>
+
+          <section id="tabPanelFotos" class="poi-tab-panel" data-tab="fotos" aria-hidden="true">
+            <div id="poiCarousel" class="poi-carousel"></div>
+            <div id="poiCarouselThumbs" class="poi-carousel-thumbs"></div>
+          </section>
+
+          <section id="tabPanelInfo" class="poi-tab-panel" data-tab="info" aria-hidden="false">
+            <div class="poi-modal-info">
+              <h3 id="poiModalTitle">POI</h3>
+              <small id="poiModalMeta"></small>
+            </div>
+            <div id="poiDescription" class="poi-description"></div>
+          </section>
+
+          <section id="tabPanelPersonagens" class="poi-tab-panel" data-tab="personagens" aria-hidden="true">
+            <p class="poi-tab-placeholder">Personagens (placeholder)</p>
+          </section>
+
+          <section id="tabPanelLojas" class="poi-tab-panel" data-tab="lojas" aria-hidden="true">
+            <p class="poi-tab-placeholder">Lojas (placeholder)</p>
+          </section>
         </div>
-        <button id="poiModalClose" class="poi-modal-close" type="button">Fechar</button>
-      </header>
-      <div id="poiCarousel" class="poi-carousel"></div>
-      <div id="poiCarouselThumbs" class="poi-carousel-thumbs"></div>
-      <div id="poiDescription" class="poi-description"></div>
+
+        <nav id="poiTabMenu" class="poi-tab-menu" aria-label="Seções do POI"></nav>
+      </div>
     </article>
   </div>
 
@@ -85,9 +105,19 @@
     const poiCarousel = document.getElementById('poiCarousel');
     const poiCarouselThumbs = document.getElementById('poiCarouselThumbs');
     const poiDescription = document.getElementById('poiDescription');
+    const poiTabMenu = document.getElementById('poiTabMenu');
     const imageModalBackdrop = document.getElementById('imageModalBackdrop');
     const imageModalImage = document.getElementById('imageModalImage');
     const imageModalClose = document.getElementById('imageModalClose');
+
+    const POI_MODAL_TABS = [
+      { id: 'fotos', label: 'Fotos', icon: 'photos' },
+      { id: 'info', label: 'Info', icon: 'info' },
+      { id: 'personagens', label: 'Personagens', icon: 'characters' },
+      { id: 'lojas', label: 'Lojas', icon: 'stores' }
+    ];
+
+    let activePoiTab = 'info';
 
     let offsetX = 0;
     let offsetY = 0;
@@ -122,6 +152,31 @@
       const target = normalizeType(type);
       const matched = Object.entries(typeConfig).find(([name]) => normalizeType(name) === target);
       return matched ? matched[1].color : '#7f7f7f';
+    }
+
+    function hexToRgb(hexColor) {
+      const hex = String(hexColor || '').replace('#', '').trim();
+      if (!/^[0-9a-fA-F]{3,8}$/.test(hex)) return null;
+      const normalized = hex.length === 3
+        ? hex.split('').map((char) => `${char}${char}`).join('')
+        : hex.slice(0, 6);
+      const value = Number.parseInt(normalized, 16);
+      if (!Number.isFinite(value)) return null;
+      return {
+        r: (value >> 16) & 255,
+        g: (value >> 8) & 255,
+        b: value & 255
+      };
+    }
+
+    function getSoftLabelColor(type) {
+      const rgb = hexToRgb(getTypeColor(type));
+      if (!rgb) return '#e8e8e8';
+      const mix = 0.74;
+      const r = Math.round(rgb.r + ((255 - rgb.r) * mix));
+      const g = Math.round(rgb.g + ((255 - rgb.g) * mix));
+      const b = Math.round(rgb.b + ((255 - rgb.b) * mix));
+      return `rgb(${r}, ${g}, ${b})`;
     }
 
     function getTypeStyle(type) {
@@ -202,6 +257,7 @@
       labelElement.style.fontSize = `${Math.max(6, baseSizePt + sizeOffset)}pt`;
       labelElement.style.fontWeight = style.bold === false ? '500' : '700';
       labelElement.style.fontStyle = style.italic ? 'italic' : 'normal';
+      labelElement.style.color = getSoftLabelColor(type);
     }
 
     async function loadTypeConfig() {
@@ -359,6 +415,8 @@
       }
 
       element.addEventListener('click', () => openPoiModal(location));
+      element.addEventListener('mouseenter', () => element.classList.add('is-hovered'));
+      element.addEventListener('mouseleave', () => element.classList.remove('is-hovered'));
       applyMarkerAnchors(element);
 
       return element;
@@ -375,6 +433,20 @@
         location.type,
         location.name
       ].join('|');
+    }
+
+    function getMapTileSizePx() {
+      const width = naturalWidth > 0 ? naturalWidth * zoom : (mapCanvas.clientWidth || window.innerWidth);
+      const height = naturalHeight > 0 ? naturalHeight * zoom : (mapCanvas.clientHeight || window.innerHeight);
+      return { width, height };
+    }
+
+    function wrapToViewport(rawPosition, tileSize, viewportCenter) {
+      if (!Number.isFinite(tileSize) || tileSize <= 0) return rawPosition;
+
+      let wrapped = positiveModulo(rawPosition, tileSize);
+      wrapped += Math.round((viewportCenter - wrapped) / tileSize) * tileSize;
+      return wrapped;
     }
 
     function renderPOI() {
@@ -404,9 +476,15 @@
           markerCache.set(location.id, marker);
         }
 
+        const tileSize = getMapTileSizePx();
+        const rawX = offsetX + location.x * zoom;
+        const rawY = offsetY + location.y * zoom;
+        const wrappedX = wrapToViewport(rawX, tileSize.width, window.innerWidth / 2);
+        const wrappedY = wrapToViewport(rawY, tileSize.height, window.innerHeight / 2);
+
         marker.style.display = '';
-        marker.style.left = `${offsetX + location.x * zoom}px`;
-        marker.style.top = `${offsetY + location.y * zoom}px`;
+        marker.style.left = `${wrappedX}px`;
+        marker.style.top = `${wrappedY}px`;
 
         const pinIcon = marker.querySelector('.poi-pin-icon');
         if (pinIcon) {
@@ -432,9 +510,11 @@
         item.innerHTML = `
           <div class="poi-entry-top">
             ${iconMarkup}
-            <strong>${location.name}</strong>
+            <div class="poi-entry-text">
+              <strong>${location.name}</strong>
+              <span class="poi-entry-type">${location.type}</span>
+            </div>
           </div>
-          <span>${location.type}</span>
         `;
         const thumb = item.querySelector('.poi-entry-icon');
         if (thumb && thumb.tagName === 'IMG') {
@@ -572,6 +652,47 @@
       }
     }
 
+    function buildTabIcon(kind) {
+      const variants = {
+        photos: 'M3 6h4l2-2h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm4 4a3 3 0 1 0 6 0 3 3 0 0 0-6 0z',
+        info: 'M9 2a7 7 0 1 1 0 14A7 7 0 0 1 9 2zm0 3a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm-1 4h2v4H8V9z',
+        characters: 'M9 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM3 15a6 6 0 0 1 12 0v1H3v-1z',
+        stores: 'M2 7l2-4h10l2 4v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7zm2 4h10v5H4v-5z'
+      };
+      return variants[kind] || variants.info;
+    }
+
+    function setActivePoiTab(tabId) {
+      activePoiTab = tabId;
+      document.querySelectorAll('.poi-tab-panel').forEach((panel) => {
+        const isActive = panel.dataset.tab === tabId;
+        panel.classList.toggle('is-active', isActive);
+        panel.setAttribute('aria-hidden', String(!isActive));
+      });
+
+      [...poiTabMenu.children].forEach((button) => {
+        const isActive = button.dataset.tabId === tabId;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-pressed', String(isActive));
+      });
+    }
+
+    function renderPoiTabMenu() {
+      poiTabMenu.innerHTML = '';
+      POI_MODAL_TABS.forEach((tab) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'poi-tab-btn';
+        button.dataset.tabId = tab.id;
+        button.title = tab.label;
+        button.setAttribute('aria-label', tab.label);
+        button.innerHTML = `<svg viewBox="0 0 18 18" aria-hidden="true"><path d="${buildTabIcon(tab.icon)}"></path></svg>`;
+        button.addEventListener('click', () => setActivePoiTab(tab.id));
+        poiTabMenu.appendChild(button);
+      });
+      setActivePoiTab(activePoiTab);
+    }
+
     async function openPoiModal(location) {
       poiModalTitle.textContent = location.name;
       poiModalMeta.textContent = `${location.type} · X: ${location.x} · Y: ${location.y}`;
@@ -579,6 +700,7 @@
 
       const images = await discoverPoiImages(location.image_prefix);
       renderCarousel(images);
+      setActivePoiTab('info');
 
       poiModalBackdrop.classList.add('visible');
       poiModalBackdrop.setAttribute('aria-hidden', 'false');
@@ -588,9 +710,13 @@
       poiCarousel.innerHTML = '';
       poiCarouselThumbs.innerHTML = '';
       if (!images.length) {
-        poiCarousel.innerHTML = '<p style=\"padding: 14px;\">Sem imagens para este POI.</p>';
+        poiCarousel.classList.add('is-empty');
+        poiCarouselThumbs.classList.add('is-empty');
         return;
       }
+
+      poiCarousel.classList.remove('is-empty');
+      poiCarouselThumbs.classList.remove('is-empty');
 
       let activeIndex = 0;
       const image = document.createElement('img');
@@ -789,6 +915,7 @@
     };
     mapImage.src = 'world_map_telarium.png';
 
+    renderPoiTabMenu();
     resetPosition();
     applyZoom();
     loadTypeConfig()

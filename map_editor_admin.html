@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Editor de mapa (colaborativo)</title>
+  <title>Map Editor Admin</title>
   <link rel="stylesheet" href="mapa.css" />
   <style>
     .editor-panel {
@@ -66,7 +66,7 @@
   </aside>
 
   <section class="editor-panel" aria-label="Criação de POI">
-    <h2>Novo POI (colaborativo)</h2>
+    <h2>Admin · POI</h2>
     <input id="poiName" type="text" placeholder="Nome" />
     <select id="poiType"></select>
     <textarea id="poiDescription" rows="4" placeholder="Descrição"></textarea>
@@ -74,14 +74,16 @@
     <label><input id="selectCoord" type="checkbox" /> Selecionar coordenada clicando no mapa</label>
     <input id="coordX" type="number" placeholder="Coord X" />
     <input id="coordY" type="number" placeholder="Coord Y" />
-    <button id="exportChanges" type="button">Exportar script de alterações</button>
-    <button id="importChanges" type="button">Importar script de alterações</button>
-    <input id="importChangesFile" type="file" accept=".js,.json" hidden />
+    <button id="chooseDir" type="button">Escolher pasta data/locations</button>
+    <button id="resetDir" type="button">Reconfigurar pasta salva</button>
     <button id="savePoi" type="button">Criar POI</button>
     <button id="addNewPoi" type="button">Adicionar novo</button>
     <button id="deletePoi" type="button" hidden>Deletar POI</button>
     <button id="cancelEdit" type="button" hidden>Cancelar edição</button>
-    <p class="editor-status" id="editorStatus">As alterações ficam em memória e podem ser exportadas em um único script JS para revisão/admin.</p>
+    <p class="editor-status" id="editorStatus">Admin: este editor altera os arquivos fonte diretamente via File System Access API.</p>
+    <button id="loadChangeScript" type="button">Carregar script de usuários</button>
+    <input id="changeScriptFile" type="file" accept=".js,.json" hidden />
+    <button id="applyChangeScript" type="button" disabled>Aplicar script ao diretório</button>
   </section>
 
   <div class="zoom-control" aria-label="Controle de zoom">
@@ -112,14 +114,16 @@
     const coordY = document.getElementById('coordY');
     const selectCoord = document.getElementById('selectCoord');
     const savePoi = document.getElementById('savePoi');
-    const exportChanges = document.getElementById('exportChanges');
-    const importChanges = document.getElementById('importChanges');
-    const importChangesFile = document.getElementById('importChangesFile');
+    const chooseDir = document.getElementById('chooseDir');
+    const resetDir = document.getElementById('resetDir');
     const addNewPoi = document.getElementById('addNewPoi');
     const deletePoi = document.getElementById('deletePoi');
     const cancelEdit = document.getElementById('cancelEdit');
     const editorStatus = document.getElementById('editorStatus');
     const previewDot = document.getElementById('previewDot');
+    const loadChangeScript = document.getElementById('loadChangeScript');
+    const changeScriptFile = document.getElementById('changeScriptFile');
+    const applyChangeScript = document.getElementById('applyChangeScript');
 
     let offsetX = 0;
     let offsetY = 0;
@@ -133,6 +137,7 @@
     let typeConfig = {};
     let cachedDirectoryHandle = null;
     let editingPoiId = null;
+    let loadedChangeSet = null;
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 1;
@@ -377,51 +382,105 @@
       previewDot.hidden = false;
     }
 
-
-    const pendingChanges = {
-      schema: 'poi-change-set/v1',
-      created_at: new Date().toISOString(),
-      ops: []
-    };
-
-    function queueChange(operation) {
-      pendingChanges.ops.push({
-        ...operation,
-        changed_at: new Date().toISOString()
-      });
-      editorStatus.textContent = `Alterações pendentes: ${pendingChanges.ops.length}. Exporte o script para compartilhar.`;
-    }
-
-    function downloadTextFile(fileName, content, mimeType = 'text/plain') {
-      const blob = new Blob([content], { type: mimeType });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = fileName;
-      link.click();
-      URL.revokeObjectURL(link.href);
-    }
-
     function slugify(value) {
       return value
         .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '')
+        .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_+|_+$/g, '') || 'novo_poi';
     }
 
-    function toChangeScript(changeSet) {
-      return `window.POI_CHANGESET = ${JSON.stringify(changeSet, null, 2)};
-`;
+    async function getDirectoryStore() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open('poi-editor-db', 1);
+        request.onupgradeneeded = () => {
+          request.result.createObjectStore('settings');
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
     }
 
+    async function saveDirectoryHandle(handle) {
+      const db = await getDirectoryStore();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('settings', 'readwrite');
+        tx.objectStore('settings').put(handle, 'locationsDir');
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    }
+
+    async function loadDirectoryHandle() {
+      const db = await getDirectoryStore();
+      const handle = await new Promise((resolve, reject) => {
+        const tx = db.transaction('settings', 'readonly');
+        const req = tx.objectStore('settings').get('locationsDir');
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+      db.close();
+      return handle;
+    }
+
+    async function clearSavedDirectoryHandle() {
+      const db = await getDirectoryStore();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('settings', 'readwrite');
+        tx.objectStore('settings').delete('locationsDir');
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    }
+
+    async function ensureDirectoryHandle() {
+      if (cachedDirectoryHandle) return cachedDirectoryHandle;
+
+      if ('showDirectoryPicker' in window) {
+        const restored = await loadDirectoryHandle().catch(() => null);
+        if (restored) {
+          const permission = await restored.queryPermission({ mode: 'readwrite' });
+          if (permission === 'granted' || await restored.requestPermission({ mode: 'readwrite' }) === 'granted') {
+            cachedDirectoryHandle = restored;
+            editorStatus.textContent = 'Pasta reutilizada da sessão anterior.';
+            return cachedDirectoryHandle;
+          }
+        }
+      }
+
+      cachedDirectoryHandle = await window.showDirectoryPicker();
+      await saveDirectoryHandle(cachedDirectoryHandle).catch(() => {});
+      editorStatus.textContent = 'Pasta escolhida e salva para próximos POIs.';
+      return cachedDirectoryHandle;
+    }
+
+    async function saveUsingFSApi(fileName, payload) {
+      const dirHandle = await ensureDirectoryHandle();
+      const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(JSON.stringify(payload, null, 2));
+      await writable.close();
+
+      try {
+        const indexHandle = await dirHandle.getFileHandle('index.json', { create: true });
+        const existing = await indexHandle.getFile().then((f) => f.text()).catch(() => '[]');
+        const parsed = JSON.parse(existing || '[]');
+        if (!parsed.includes(fileName)) parsed.push(fileName);
+        const indexWritable = await indexHandle.createWritable();
+        await indexWritable.write(JSON.stringify(parsed, null, 2));
+        await indexWritable.close();
+      } catch {
+        console.warn('Não foi possível atualizar index.json automaticamente.');
+      }
+    }
     function parseChangeSetFromText(rawText) {
       const trimmed = String(rawText || '').trim();
       if (!trimmed) throw new Error('Arquivo vazio.');
 
-      if (trimmed.startsWith('{')) {
-        return JSON.parse(trimmed);
-      }
+      if (trimmed.startsWith('{')) return JSON.parse(trimmed);
 
       const marker = 'window.POI_CHANGESET =';
       const startIndex = trimmed.indexOf(marker);
@@ -430,6 +489,130 @@
       const jsonText = after.endsWith(';') ? after.slice(0, -1) : after;
       return JSON.parse(jsonText);
     }
+
+    async function applyLoadedChangeSet() {
+      if (!loadedChangeSet || !Array.isArray(loadedChangeSet.ops)) {
+        throw new Error('Nenhum script carregado.');
+      }
+
+      const dirHandle = await ensureDirectoryHandle();
+      const indexSet = new Set();
+
+      try {
+        const indexHandle = await dirHandle.getFileHandle('index.json', { create: true });
+        const existing = await indexHandle.getFile().then((f) => f.text()).catch(() => '[]');
+        JSON.parse(existing || '[]').forEach((entry) => indexSet.add(String(entry)));
+      } catch {
+        // segue sem index existente
+      }
+
+      for (const op of loadedChangeSet.ops) {
+        const fileName = String(op.file || '').trim();
+        if (!fileName.endsWith('.json')) continue;
+
+        if (op.op === 'delete') {
+          await dirHandle.removeEntry(fileName).catch(() => {});
+          indexSet.delete(fileName);
+          continue;
+        }
+
+        if (op.op === 'upsert' && op.payload && typeof op.payload === 'object') {
+          const payload = op.payload;
+          const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(JSON.stringify(payload, null, 2));
+          await writable.close();
+          indexSet.add(fileName);
+        }
+      }
+
+      const indexHandle = await dirHandle.getFileHandle('index.json', { create: true });
+      const indexWritable = await indexHandle.createWritable();
+      await indexWritable.write(JSON.stringify([...indexSet].sort(), null, 2));
+      await indexWritable.close();
+    }
+
+
+    chooseDir.addEventListener('click', async () => {
+      if (!('showDirectoryPicker' in window)) {
+        editorStatus.textContent = 'Seu navegador não suporta seleção persistente de pasta.';
+        return;
+      }
+
+      try {
+        cachedDirectoryHandle = await window.showDirectoryPicker();
+        await saveDirectoryHandle(cachedDirectoryHandle).catch(() => {});
+        editorStatus.textContent = 'Pasta salva. Novos POIs usarão este diretório automaticamente.';
+      } catch (error) {
+        editorStatus.textContent = `Seleção de pasta cancelada: ${error.message}`;
+      }
+    });
+
+    resetDir.addEventListener('click', async () => {
+      cachedDirectoryHandle = null;
+      await clearSavedDirectoryHandle().catch(() => {});
+      editorStatus.textContent = 'Pasta salva removida. Escolha uma nova pasta para salvar os POIs.';
+    });
+
+    function saveAsDownload(fileName, payload) {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    async function deleteUsingFSApi(fileName) {
+      const dirHandle = await ensureDirectoryHandle();
+      await dirHandle.removeEntry(fileName);
+
+      try {
+        const indexHandle = await dirHandle.getFileHandle('index.json', { create: true });
+        const existing = await indexHandle.getFile().then((f) => f.text()).catch(() => '[]');
+        const parsed = JSON.parse(existing || '[]').filter((entry) => entry !== fileName);
+        const indexWritable = await indexHandle.createWritable();
+        await indexWritable.write(JSON.stringify(parsed, null, 2));
+        await indexWritable.close();
+      } catch {
+        console.warn('Não foi possível atualizar index.json automaticamente ao deletar.');
+      }
+    }
+
+    loadChangeScript.addEventListener('click', () => {
+      changeScriptFile.click();
+    });
+
+    changeScriptFile.addEventListener('change', async () => {
+      const file = changeScriptFile.files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const parsed = parseChangeSetFromText(text);
+        if (!Array.isArray(parsed.ops)) throw new Error('Script inválido: campo ops ausente.');
+        loadedChangeSet = parsed;
+        applyChangeScript.disabled = false;
+        editorStatus.textContent = `Script carregado com ${parsed.ops.length} operações.`;
+      } catch (error) {
+        loadedChangeSet = null;
+        applyChangeScript.disabled = true;
+        editorStatus.textContent = `Falha ao carregar script: ${error.message}`;
+      } finally {
+        changeScriptFile.value = '';
+      }
+    });
+
+    applyChangeScript.addEventListener('click', async () => {
+      try {
+        await applyLoadedChangeSet();
+        await loadLocations();
+        resetEditorForm();
+        editorStatus.textContent = `Script aplicado com sucesso (${loadedChangeSet?.ops?.length || 0} operações).`;
+      } catch (error) {
+        editorStatus.textContent = `Falha ao aplicar script: ${error.message}`;
+      }
+    });
 
     savePoi.addEventListener('click', async () => {
       const name = poiName.value.trim();
@@ -459,7 +642,13 @@
       const fileName = editingPoiId || `${slugify(name)}.json`;
 
       try {
-        queueChange({ op: 'upsert', file: fileName, payload });
+        if ('showDirectoryPicker' in window) {
+          await saveUsingFSApi(fileName, payload);
+          editorStatus.textContent = `POI salvo: ${fileName}.`;
+        } else {
+          saveAsDownload(fileName, payload);
+          editorStatus.textContent = 'Navegador sem File System Access API: arquivo baixado para mover manualmente.';
+        }
 
         const existingIndex = locations.findIndex((location) => location.id === fileName);
         const nextEntry = { id: fileName, ...payload };
@@ -473,33 +662,6 @@
         loadPoiIntoForm(nextEntry);
       } catch (error) {
         editorStatus.textContent = `Falha ao salvar: ${error.message}`;
-      }
-    });
-
-    exportChanges.addEventListener('click', () => {
-      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-      downloadTextFile(`poi_changes_${stamp}.js`, toChangeScript(pendingChanges), 'application/javascript');
-      editorStatus.textContent = `Script exportado com ${pendingChanges.ops.length} alterações.`;
-    });
-
-    importChanges.addEventListener('click', () => {
-      importChangesFile.click();
-    });
-
-    importChangesFile.addEventListener('change', async () => {
-      const file = importChangesFile.files?.[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        const incoming = parseChangeSetFromText(text);
-        if (!Array.isArray(incoming.ops)) throw new Error('Arquivo inválido: ops ausente.');
-        pendingChanges.ops.push(...incoming.ops);
-        editorStatus.textContent = `Importado: ${incoming.ops.length} alterações. Total pendente: ${pendingChanges.ops.length}.`;
-      } catch (error) {
-        editorStatus.textContent = `Falha ao importar script: ${error.message}`;
-      } finally {
-        importChangesFile.value = '';
       }
     });
 
@@ -518,14 +680,20 @@
       if (!window.confirm(`Deseja deletar o POI ${fileName}?`)) return;
 
       try {
-        queueChange({ op: 'delete', file: fileName });
+        if ('showDirectoryPicker' in window) {
+          await deleteUsingFSApi(fileName);
+        }
 
         locations = locations.filter((location) => location.id !== fileName);
         renderPOIList();
         renderPOI();
         resetEditorForm();
 
-        editorStatus.textContent = `POI marcado para remoção: ${fileName}. Exporte o script de alterações.`;
+        if ('showDirectoryPicker' in window) {
+          editorStatus.textContent = `POI deletado: ${fileName}.`;
+        } else {
+          editorStatus.textContent = 'POI removido da sessão atual. Remova o JSON manualmente no projeto.';
+        }
       } catch (error) {
         editorStatus.textContent = `Falha ao deletar: ${error.message}`;
       }

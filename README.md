@@ -80,3 +80,26 @@ Exemplo:
   "show_name": true
 }
 ```
+
+
+## Fluxo colaborativo + admin
+
+- `map_edit.html`: editor colaborativo (exposto no `index.html`).
+  - Não altera arquivos do repositório diretamente.
+  - Gera um único script JS com mudanças pendentes via botão **Exportar script de alterações**.
+- `map_editor_admin.html`: editor admin (página sem link público no `index.html`).
+  - Permite aplicar o script gerado por usuários diretamente em `data/locations` via File System Access API.
+  - Atualiza os arquivos JSON dos POIs e o `index.json`.
+
+Formato do script exportado:
+
+```js
+window.POI_CHANGESET = {
+  schema: 'poi-change-set/v1',
+  created_at: '...ISO...',
+  ops: [
+    { op: 'upsert', file: 'nome.json', payload: { ... }, changed_at: '...ISO...' },
+    { op: 'delete', file: 'nome.json', changed_at: '...ISO...' }
+  ]
+};
+```
