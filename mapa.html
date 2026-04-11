@@ -47,16 +47,36 @@
 
   <div id="poiModalBackdrop" class="poi-modal-backdrop" aria-hidden="true">
     <article class="poi-modal" role="dialog" aria-modal="true" aria-labelledby="poiModalTitle">
-      <header class="poi-modal-header">
-        <button id="poiModalClose" class="poi-modal-close" type="button">Fechar</button>
-      </header>
-      <div id="poiCarousel" class="poi-carousel"></div>
-      <div id="poiCarouselThumbs" class="poi-carousel-thumbs"></div>
-      <div class="poi-modal-info">
-        <h3 id="poiModalTitle">POI</h3>
-        <small id="poiModalMeta"></small>
+      <div class="poi-modal-layout">
+        <div class="poi-modal-main">
+          <header class="poi-modal-header">
+            <button id="poiModalClose" class="poi-modal-close" type="button">Fechar</button>
+          </header>
+
+          <section id="tabPanelFotos" class="poi-tab-panel" data-tab="fotos" aria-hidden="true">
+            <div id="poiCarousel" class="poi-carousel"></div>
+            <div id="poiCarouselThumbs" class="poi-carousel-thumbs"></div>
+          </section>
+
+          <section id="tabPanelInfo" class="poi-tab-panel" data-tab="info" aria-hidden="false">
+            <div class="poi-modal-info">
+              <h3 id="poiModalTitle">POI</h3>
+              <small id="poiModalMeta"></small>
+            </div>
+            <div id="poiDescription" class="poi-description"></div>
+          </section>
+
+          <section id="tabPanelPersonagens" class="poi-tab-panel" data-tab="personagens" aria-hidden="true">
+            <p class="poi-tab-placeholder">Personagens (placeholder)</p>
+          </section>
+
+          <section id="tabPanelLojas" class="poi-tab-panel" data-tab="lojas" aria-hidden="true">
+            <p class="poi-tab-placeholder">Lojas (placeholder)</p>
+          </section>
+        </div>
+
+        <nav id="poiTabMenu" class="poi-tab-menu" aria-label="Seções do POI"></nav>
       </div>
-      <div id="poiDescription" class="poi-description"></div>
     </article>
   </div>
 
@@ -85,9 +105,19 @@
     const poiCarousel = document.getElementById('poiCarousel');
     const poiCarouselThumbs = document.getElementById('poiCarouselThumbs');
     const poiDescription = document.getElementById('poiDescription');
+    const poiTabMenu = document.getElementById('poiTabMenu');
     const imageModalBackdrop = document.getElementById('imageModalBackdrop');
     const imageModalImage = document.getElementById('imageModalImage');
     const imageModalClose = document.getElementById('imageModalClose');
+
+    const POI_MODAL_TABS = [
+      { id: 'fotos', label: 'Fotos', icon: 'photos' },
+      { id: 'info', label: 'Info', icon: 'info' },
+      { id: 'personagens', label: 'Personagens', icon: 'characters' },
+      { id: 'lojas', label: 'Lojas', icon: 'stores' }
+    ];
+
+    let activePoiTab = 'info';
 
     let offsetX = 0;
     let offsetY = 0;
@@ -622,6 +652,47 @@
       }
     }
 
+    function buildTabIcon(kind) {
+      const variants = {
+        photos: 'M3 6h4l2-2h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm4 4a3 3 0 1 0 6 0 3 3 0 0 0-6 0z',
+        info: 'M9 2a7 7 0 1 1 0 14A7 7 0 0 1 9 2zm0 3a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm-1 4h2v4H8V9z',
+        characters: 'M9 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM3 15a6 6 0 0 1 12 0v1H3v-1z',
+        stores: 'M2 7l2-4h10l2 4v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7zm2 4h10v5H4v-5z'
+      };
+      return variants[kind] || variants.info;
+    }
+
+    function setActivePoiTab(tabId) {
+      activePoiTab = tabId;
+      document.querySelectorAll('.poi-tab-panel').forEach((panel) => {
+        const isActive = panel.dataset.tab === tabId;
+        panel.classList.toggle('is-active', isActive);
+        panel.setAttribute('aria-hidden', String(!isActive));
+      });
+
+      [...poiTabMenu.children].forEach((button) => {
+        const isActive = button.dataset.tabId === tabId;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-pressed', String(isActive));
+      });
+    }
+
+    function renderPoiTabMenu() {
+      poiTabMenu.innerHTML = '';
+      POI_MODAL_TABS.forEach((tab) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'poi-tab-btn';
+        button.dataset.tabId = tab.id;
+        button.title = tab.label;
+        button.setAttribute('aria-label', tab.label);
+        button.innerHTML = `<svg viewBox="0 0 18 18" aria-hidden="true"><path d="${buildTabIcon(tab.icon)}"></path></svg>`;
+        button.addEventListener('click', () => setActivePoiTab(tab.id));
+        poiTabMenu.appendChild(button);
+      });
+      setActivePoiTab(activePoiTab);
+    }
+
     async function openPoiModal(location) {
       poiModalTitle.textContent = location.name;
       poiModalMeta.textContent = `${location.type} · X: ${location.x} · Y: ${location.y}`;
@@ -629,6 +700,7 @@
 
       const images = await discoverPoiImages(location.image_prefix);
       renderCarousel(images);
+      setActivePoiTab('info');
 
       poiModalBackdrop.classList.add('visible');
       poiModalBackdrop.setAttribute('aria-hidden', 'false');
@@ -843,6 +915,7 @@
     };
     mapImage.src = 'world_map_telarium.png';
 
+    renderPoiTabMenu();
     resetPosition();
     applyZoom();
     loadTypeConfig()

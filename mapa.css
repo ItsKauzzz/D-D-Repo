@@ -316,6 +316,69 @@ body .poi-sidebar {
   padding: 14px;
 }
 
+.poi-modal-layout {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.poi-modal-main {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.poi-tab-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: stretch;
+}
+
+.poi-tab-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid #3c3222;
+  background: rgba(0, 0, 0, 0.25);
+  color: #f4efe2;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.poi-tab-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.poi-tab-btn:hover {
+  filter: brightness(1.08);
+}
+
+.poi-tab-btn.is-active {
+  background: #3c3222;
+  border-color: #fff;
+}
+
+.poi-tab-panel {
+  display: none;
+  gap: 10px;
+}
+
+.poi-tab-panel.is-active {
+  display: grid;
+}
+
+.poi-tab-placeholder {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
 .poi-modal-header {
   display: flex;
   justify-content: flex-end;
@@ -474,5 +537,13 @@ body .poi-sidebar {
     bottom: 12px;
     width: min(400px, calc(100vw - 86px));
     max-height: 42vh;
+  }
+
+  .poi-modal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .poi-tab-menu {
+    flex-direction: row;
   }
 }
