@@ -8,9 +8,9 @@
       "show_icon_default": true,
       "show_name_default": true,
       "icons": [
-        "Icon/Cidade/icon_1.png",
-        "Icon/Cidade/icon_2.png",
-        "Icon/Cidade/icon_3.png"
+        "data/locations/icons/cidade_icon_1.png",
+        "data/locations/icons/cidade_icon_2.png",
+        "data/locations/icons/cidade_icon_3.png"
       ],
       "label_style": {
         "size_offset_pt": 2,
@@ -18,16 +18,15 @@
         "italic": false
       }
     },
-
     "Vila": {
       "color": "#5f9ea0",
       "show_pin_default": true,
       "show_icon_default": true,
       "show_name_default": true,
       "icons": [
-        "Icon/Vila/icon_1.png",
-        "Icon/Vila/icon_2.png",
-        "Icon/Vila/icon_3.png"
+        "data/locations/icons/vila_icon_1.png",
+        "data/locations/icons/vila_icon_2.png",
+        "data/locations/icons/vila_icon_3.png"
       ],
       "label_style": {
         "size_offset_pt": -1,
@@ -35,18 +34,17 @@
         "italic": true
       }
     },
-
     "Vila Grande": {
       "color": "#494d7e",
       "show_pin_default": true,
       "show_icon_default": true,
       "show_name_default": true,
       "icons": [
-        "Icon/Vila Grande/icon_1.png",
-        "Icon/Vila Grande/icon_2.png",
-        "Icon/Vila Grande/icon_3.png",
-        "Icon/Vila Grande/icon_4.png",
-        "Icon/Vila Grande/icon_5.png"
+        "data/locations/icons/vila_grande_icon_1.png",
+        "data/locations/icons/vila_grande_icon_2.png",
+        "data/locations/icons/vila_grande_icon_3.png",
+        "data/locations/icons/vila_grande_icon_4.png",
+        "data/locations/icons/vila_grande_icon_5.png"
       ],
       "label_style": {
         "size_offset_pt": 0,
@@ -54,14 +52,13 @@
         "italic": true
       }
     },
-
     "Vila Pequena": {
       "color": "#c96b58",
       "show_pin_default": true,
       "show_icon_default": true,
       "show_name_default": true,
       "icons": [
-        "Icon/Vila Pequena/icon_1.png"
+        "data/locations/icons/vila_pequena_icon_1.png"
       ],
       "label_style": {
         "size_offset_pt": -2,
@@ -69,16 +66,15 @@
         "italic": true
       }
     },
-
     "Acontecimento": {
       "color": "#d3b45d",
       "show_pin_default": false,
       "show_icon_default": true,
       "show_name_default": true,
       "icons": [
-        "Icon/Acontecimento/icon_1.png",
-        "Icon/Acontecimento/icon_2.png",
-        "Icon/Acontecimento/icon_3.png"
+        "data/locations/icons/acontecimento_icon_1.svg",
+        "data/locations/icons/acontecimento_icon_2.svg",
+        "data/locations/icons/acontecimento_icon_3.svg"
       ],
       "label_style": {
         "size_offset_pt": -1,

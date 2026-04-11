@@ -1,10 +1,12 @@
 [
+  "avistamento_de_aranha_gigante.json",
   "capital_aurora.json",
-  "vila_bruma.json",
-  "queda_do_rei.json",
-  "serenia.json",
+  "caravana_perdida.json",
   "clarencourt.json",
   "elmanther.json",
   "esastin.json",
-  "nyonk.json"
+  "nyonk.json",
+  "queda_do_rei.json",
+  "serenia.json",
+  "vila_bruma.json"
 ]

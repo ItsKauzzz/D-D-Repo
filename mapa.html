@@ -36,7 +36,7 @@
 
   <div class="zoom-control" aria-label="Controle de zoom">
     <span class="zoom-label" id="zoomValue">100%</span>
-    <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="100" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
+    <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="300" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
       <div id="zoomThumb" class="zoom-thumb"></div>
     </div>
   </div>
@@ -132,9 +132,10 @@
     let iconSeed = 20260411;
     let iconSizePx = 110;
     const markerCache = new Map();
+    const VIEW_STATE_KEY = 'mapa_view_state_v1';
 
     const MIN_ZOOM = 0.2;
-    const MAX_ZOOM = 1;
+    const MAX_ZOOM = 3;
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -210,9 +211,11 @@
     }
 
     function getLocationIcon(location) {
+      if (location.icon_override) return String(location.icon_override);
       const icons = getTypeIconSet(location.type);
       if (!icons.length) return '';
 
+      if (location.random_icon) return location.random_icon;
       const offset = Number(location.icon_index_offset || 0);
       const baseHash = hashStringToInt(`${iconSeed}:${location.type}:${location.id}:${location.name}`);
       const seededIndex = baseHash % icons.length;
@@ -285,9 +288,27 @@
       if (!filter) return locations;
 
       return locations.filter((location) => {
-        const fullText = `${location.name} ${location.type}`.toLowerCase();
+        const fullText = `${location.name} ${location.type} ${location.description || ''}`.toLowerCase();
         return fullText.includes(filter);
       });
+    }
+
+    function buildSearchMeta(location) {
+      const filter = poiSearch.value.trim().toLowerCase();
+      if (!filter) return String(location.type || '');
+
+      const description = String(location.description || '');
+      const haystack = description.toLowerCase();
+      const index = haystack.indexOf(filter);
+      if (index < 0) return String(location.type || '');
+
+      const radius = 26;
+      const start = Math.max(0, index - radius);
+      const end = Math.min(description.length, index + filter.length + radius);
+      const snippet = description.slice(start, end).replace(/\s+/g, ' ').trim();
+      const prefix = start > 0 ? '... ' : '';
+      const suffix = end < description.length ? ' ...' : '';
+      return `${prefix}${snippet}${suffix} - ${location.type}`;
     }
 
     function renderZoomThumb() {
@@ -315,12 +336,36 @@
     function render() {
       mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
       renderPOI();
+      persistViewState();
     }
 
     function resetPosition() {
       offsetX = 0;
       offsetY = 0;
       render();
+    }
+
+    function persistViewState() {
+      try {
+        localStorage.setItem(VIEW_STATE_KEY, JSON.stringify({ offsetX, offsetY, zoom }));
+      } catch {}
+    }
+
+    function restoreViewState() {
+      try {
+        const raw = localStorage.getItem(VIEW_STATE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        if (!Number.isFinite(parsed?.offsetX) || !Number.isFinite(parsed?.offsetY) || !Number.isFinite(parsed?.zoom)) {
+          return false;
+        }
+        offsetX = Number(parsed.offsetX);
+        offsetY = Number(parsed.offsetY);
+        zoom = clamp(Number(parsed.zoom), MIN_ZOOM, MAX_ZOOM);
+        return true;
+      } catch {
+        return false;
+      }
     }
 
     function focusLocation(location) {
@@ -350,7 +395,7 @@
     function setZoomFromPointer(clientY) {
       const rect = zoomTrack.getBoundingClientRect();
       const ratio = clamp((rect.bottom - clientY) / rect.height, 0, 1);
-      const percent = 20 + ratio * 80;
+      const percent = 20 + ratio * 280;
       setZoomFromPercent(percent);
     }
 
@@ -512,10 +557,12 @@
             ${iconMarkup}
             <div class="poi-entry-text">
               <strong>${location.name}</strong>
-              <span class="poi-entry-type">${location.type}</span>
+              <span class="poi-entry-type"></span>
             </div>
           </div>
         `;
+        const meta = item.querySelector('.poi-entry-type');
+        if (meta) meta.textContent = buildSearchMeta(location);
         const thumb = item.querySelector('.poi-entry-icon');
         if (thumb && thumb.tagName === 'IMG') {
           thumb.addEventListener('error', () => {
@@ -601,7 +648,13 @@
           description: String(data.description || ''),
           image_prefix: String(data.image_prefix || slugFromName(data.name || fileName.replace('.json', ''))),
           images: Array.isArray(data.images) ? data.images : [],
-          icon_index_offset: Number(data.icon_index_offset || 0)
+          icon_index_offset: Number(data.icon_index_offset || 0),
+          icon_override: String(data.icon_override || ''),
+          random_icon: (() => {
+            const icons = getTypeIconSet(type);
+            if (!icons.length) return '';
+            return icons[Math.floor(Math.random() * icons.length)];
+          })()
         };
       }));
 
@@ -911,6 +964,7 @@
     mapImage.onload = () => {
       naturalWidth = mapImage.naturalWidth;
       naturalHeight = mapImage.naturalHeight;
+      restoreViewState();
       applyZoom();
     };
     mapImage.src = 'world_map_telarium.png';
