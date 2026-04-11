@@ -32,6 +32,90 @@
     }
     .editor-panel button { cursor: pointer; background: #3c3222; }
     .editor-status { font-size: 12px; color: #ddd; }
+    .icon-choice-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .icon-choice-preview {
+      height: 34px;
+      border: 2px solid #3c3222;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 8px;
+      font-size: 12px;
+      min-width: 0;
+    }
+    .icon-choice-preview img {
+      width: 26px;
+      height: 26px;
+      object-fit: contain;
+      flex: 0 0 26px;
+    }
+    .icon-choice-preview span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .icon-picker-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      z-index: 80;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .icon-picker-backdrop.visible { display: flex; }
+    .icon-picker {
+      width: min(520px, calc(100vw - 28px));
+      max-height: min(80vh, 680px);
+      overflow: hidden;
+      border-radius: 14px;
+      border: 2px solid #3c3222;
+      background: #69614a;
+      color: #f4efe2;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .icon-picker input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 8px;
+      overflow: auto;
+      max-height: min(58vh, 520px);
+      padding-right: 4px;
+    }
+    .icon-option {
+      border: 2px solid #3c3222;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.28);
+      color: #fff;
+      display: grid;
+      gap: 5px;
+      padding: 8px;
+      cursor: pointer;
+      font-size: 11px;
+      text-align: left;
+    }
+    .icon-option img {
+      width: 100%;
+      height: 54px;
+      object-fit: contain;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+    }
+    .icon-option:hover { border-color: #fff; }
     .preview-dot {
       position: absolute;
       width: 14px;
@@ -71,6 +155,11 @@
     <select id="poiType"></select>
     <textarea id="poiDescription" rows="4" placeholder="Descrição"></textarea>
     <input id="poiImagePrefix" type="text" placeholder="Prefixo de imagens (ex.: aurora)" />
+    <div class="icon-choice-row">
+      <div id="iconChoicePreview" class="icon-choice-preview"><span>Aleatório por categoria</span></div>
+      <button id="openIconPicker" type="button">Ícones</button>
+      <button id="clearIconChoice" type="button">Aleatório</button>
+    </div>
     <label><input id="selectCoord" type="checkbox" /> Selecionar coordenada clicando no mapa</label>
     <input id="coordX" type="number" placeholder="Coord X" />
     <input id="coordY" type="number" placeholder="Coord Y" />
@@ -94,6 +183,13 @@
     <div id="poiLayer" class="poi-layer" aria-hidden="true"></div>
     <div id="previewDot" class="preview-dot" hidden></div>
   </div>
+  <div id="iconPickerBackdrop" class="icon-picker-backdrop" aria-hidden="true">
+    <article class="icon-picker" role="dialog" aria-modal="true" aria-label="Selecionar ícone">
+      <button id="closeIconPicker" type="button">Fechar</button>
+      <input id="iconPickerSearch" type="search" placeholder="Buscar ícone..." />
+      <div id="iconGrid" class="icon-grid"></div>
+    </article>
+  </div>
 
   <script>
     const mapCanvas = document.getElementById('mapCanvas');
@@ -109,6 +205,13 @@
     const poiImagePrefix = document.getElementById('poiImagePrefix');
     const coordX = document.getElementById('coordX');
     const coordY = document.getElementById('coordY');
+    const iconChoicePreview = document.getElementById('iconChoicePreview');
+    const openIconPicker = document.getElementById('openIconPicker');
+    const clearIconChoice = document.getElementById('clearIconChoice');
+    const iconPickerBackdrop = document.getElementById('iconPickerBackdrop');
+    const closeIconPicker = document.getElementById('closeIconPicker');
+    const iconPickerSearch = document.getElementById('iconPickerSearch');
+    const iconGrid = document.getElementById('iconGrid');
     const selectCoord = document.getElementById('selectCoord');
     const savePoi = document.getElementById('savePoi');
     const chooseDir = document.getElementById('chooseDir');
@@ -131,6 +234,7 @@
     let typeConfig = {};
     let cachedDirectoryHandle = null;
     let editingPoiId = null;
+    let selectedIconPath = '';
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 1;
@@ -154,6 +258,66 @@
       const target = normalizeType(type);
       const matched = Object.entries(typeConfig).find(([name]) => normalizeType(name) === target);
       return matched?.[1] || {};
+    }
+
+    function getTypeIcons(type) {
+      const defaults = getTypeDefaults(type);
+      return Array.isArray(defaults.icons) ? defaults.icons : [];
+    }
+
+    function getRandomTypeIcon(type) {
+      const icons = getTypeIcons(type);
+      if (!icons.length) return '';
+      const index = Math.floor(Math.random() * icons.length);
+      return icons[index];
+    }
+
+    function updateIconChoicePreview() {
+      iconChoicePreview.innerHTML = '';
+      const icon = selectedIconPath || '';
+      if (!icon) {
+        iconChoicePreview.innerHTML = '<span>Aleatório por categoria</span>';
+        return;
+      }
+      const img = document.createElement('img');
+      img.src = icon;
+      img.alt = 'Ícone selecionado';
+      img.addEventListener('error', () => img.remove());
+      const text = document.createElement('span');
+      text.textContent = icon.split('/').pop() || icon;
+      iconChoicePreview.append(img, text);
+    }
+
+    function getFilteredIconsForPicker() {
+      const type = poiType.value;
+      const icons = getTypeIcons(type);
+      const query = iconPickerSearch.value.trim().toLowerCase();
+      if (!query) return icons;
+      return icons.filter((iconPath) => iconPath.toLowerCase().includes(query));
+    }
+
+    function renderIconPicker() {
+      iconGrid.innerHTML = '';
+      const icons = getFilteredIconsForPicker();
+      if (!icons.length) {
+        const empty = document.createElement('p');
+        empty.textContent = 'Nenhum ícone encontrado para esse filtro.';
+        iconGrid.appendChild(empty);
+        return;
+      }
+      icons.forEach((iconPath) => {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'icon-option';
+        option.innerHTML = `<img src="${iconPath}" alt="${iconPath}"/><span>${iconPath.split('/').pop() || iconPath}</span>`;
+        option.addEventListener('click', () => {
+          selectedIconPath = iconPath;
+          updateIconChoicePreview();
+          iconPickerBackdrop.classList.remove('visible');
+          iconPickerBackdrop.setAttribute('aria-hidden', 'true');
+        });
+        iconGrid.appendChild(option);
+      });
     }
 
     function applyLabelStyle(labelElement, type) {
@@ -294,10 +458,12 @@
       poiImagePrefix.value = '';
       coordX.value = '';
       coordY.value = '';
+      selectedIconPath = '';
       savePoi.textContent = 'Criar POI';
       deletePoi.hidden = true;
       cancelEdit.hidden = true;
       updatePreviewDot();
+      updateIconChoicePreview();
     }
 
     function loadPoiIntoForm(location) {
@@ -308,10 +474,12 @@
       poiImagePrefix.value = location.image_prefix || '';
       coordX.value = String(location.x ?? '');
       coordY.value = String(location.y ?? '');
+      selectedIconPath = String(location.icon_override || '');
       savePoi.textContent = 'Salvar alterações';
       deletePoi.hidden = false;
       cancelEdit.hidden = false;
       updatePreviewDot();
+      updateIconChoicePreview();
     }
 
     async function loadTypeConfig() {
@@ -356,7 +524,8 @@
           show_pin: typeof data.show_pin === 'boolean' ? data.show_pin : defaults.show_pin_default !== false,
           show_name: typeof data.show_name === 'boolean' ? data.show_name : defaults.show_name_default !== false,
           description: String(data.description || ''),
-          image_prefix: String(data.image_prefix || '')
+          image_prefix: String(data.image_prefix || ''),
+          icon_override: String(data.icon_override || '')
         };
       }));
       locations = entries;
@@ -537,6 +706,7 @@
         type,
         description,
         image_prefix: imagePrefix,
+        icon_override: selectedIconPath || getRandomTypeIcon(type),
         show_pin: typeDefaults.show_pin_default !== false,
         show_name: typeDefaults.show_name_default !== false
       };
@@ -604,6 +774,30 @@
     cancelEdit.addEventListener('click', () => {
       resetEditorForm();
       editorStatus.textContent = 'Edição cancelada.';
+    });
+
+    openIconPicker.addEventListener('click', () => {
+      iconPickerBackdrop.classList.add('visible');
+      iconPickerBackdrop.setAttribute('aria-hidden', 'false');
+      iconPickerSearch.value = '';
+      renderIconPicker();
+    });
+
+    closeIconPicker.addEventListener('click', () => {
+      iconPickerBackdrop.classList.remove('visible');
+      iconPickerBackdrop.setAttribute('aria-hidden', 'true');
+    });
+
+    clearIconChoice.addEventListener('click', () => {
+      selectedIconPath = '';
+      updateIconChoicePreview();
+      editorStatus.textContent = 'Exceção removida: ao salvar, será escolhido um ícone aleatório da categoria.';
+    });
+
+    iconPickerSearch.addEventListener('input', renderIconPicker);
+    poiType.addEventListener('change', () => {
+      if (!selectedIconPath) updateIconChoicePreview();
+      if (iconPickerBackdrop.classList.contains('visible')) renderIconPicker();
     });
 
     mapCanvas.addEventListener('click', (event) => {

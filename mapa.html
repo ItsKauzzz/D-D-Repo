@@ -210,9 +210,11 @@
     }
 
     function getLocationIcon(location) {
+      if (location.icon_override) return String(location.icon_override);
       const icons = getTypeIconSet(location.type);
       if (!icons.length) return '';
 
+      if (location.random_icon) return location.random_icon;
       const offset = Number(location.icon_index_offset || 0);
       const baseHash = hashStringToInt(`${iconSeed}:${location.type}:${location.id}:${location.name}`);
       const seededIndex = baseHash % icons.length;
@@ -601,7 +603,13 @@
           description: String(data.description || ''),
           image_prefix: String(data.image_prefix || slugFromName(data.name || fileName.replace('.json', ''))),
           images: Array.isArray(data.images) ? data.images : [],
-          icon_index_offset: Number(data.icon_index_offset || 0)
+          icon_index_offset: Number(data.icon_index_offset || 0),
+          icon_override: String(data.icon_override || ''),
+          random_icon: (() => {
+            const icons = getTypeIconSet(type);
+            if (!icons.length) return '';
+            return icons[Math.floor(Math.random() * icons.length)];
+          })()
         };
       }));
 
