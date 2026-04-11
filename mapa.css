@@ -149,6 +149,24 @@ body .poi-sidebar {
   overflow-wrap: anywhere;
 }
 
+.poi-entry-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.poi-entry-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  object-fit: contain;
+}
+
+.poi-entry-icon.is-empty {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .poi-entry span {
   color: #dddbd3;
   font-size: 12px;
