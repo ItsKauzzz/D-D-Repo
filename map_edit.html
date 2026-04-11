@@ -22,7 +22,8 @@
     }
     .editor-panel button,
     .editor-panel input,
-    .editor-panel select {
+    .editor-panel select,
+    .editor-panel textarea {
       border-radius: 8px;
       border: 2px solid #3c3222;
       background: rgba(0, 0, 0, 0.25);
@@ -68,6 +69,8 @@
     <h2>Novo POI</h2>
     <input id="poiName" type="text" placeholder="Nome" />
     <select id="poiType"></select>
+    <textarea id="poiDescription" rows="4" placeholder="Descrição"></textarea>
+    <input id="poiImagePrefix" type="text" placeholder="Prefixo de imagens (ex.: aurora)" />
     <label><input id="selectCoord" type="checkbox" /> Selecionar coordenada clicando no mapa</label>
     <input id="coordX" type="number" placeholder="Coord X" />
     <input id="coordY" type="number" placeholder="Coord Y" />
@@ -98,6 +101,8 @@
     const poiSearch = document.getElementById('poiSearch');
     const poiName = document.getElementById('poiName');
     const poiType = document.getElementById('poiType');
+    const poiDescription = document.getElementById('poiDescription');
+    const poiImagePrefix = document.getElementById('poiImagePrefix');
     const coordX = document.getElementById('coordX');
     const coordY = document.getElementById('coordY');
     const selectCoord = document.getElementById('selectCoord');
@@ -432,6 +437,8 @@
     savePoi.addEventListener('click', async () => {
       const name = poiName.value.trim();
       const type = poiType.value;
+      const description = poiDescription.value.trim();
+      const imagePrefix = poiImagePrefix.value.trim();
       const x = Number(coordX.value);
       const y = Number(coordY.value);
 
@@ -446,6 +453,8 @@
         y,
         name,
         type,
+        description,
+        image_prefix: imagePrefix,
         show_pin: typeDefaults.show_pin_default !== false,
         show_name: typeDefaults.show_name_default !== false
       };

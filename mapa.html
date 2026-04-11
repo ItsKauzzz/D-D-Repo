@@ -41,6 +41,27 @@
     <div id="poiLayer" class="poi-layer" aria-hidden="true"></div>
   </div>
 
+  <div id="poiModalBackdrop" class="poi-modal-backdrop" aria-hidden="true">
+    <article class="poi-modal" role="dialog" aria-modal="true" aria-labelledby="poiModalTitle">
+      <header class="poi-modal-header">
+        <div>
+          <h3 id="poiModalTitle">POI</h3>
+          <small id="poiModalMeta"></small>
+        </div>
+        <button id="poiModalClose" class="poi-modal-close" type="button">Fechar</button>
+      </header>
+      <div id="poiCarousel" class="poi-carousel"></div>
+      <div id="poiDescription" class="poi-description"></div>
+    </article>
+  </div>
+
+  <div id="imageModalBackdrop" class="image-modal-backdrop" aria-hidden="true">
+    <article class="image-modal" role="dialog" aria-modal="true">
+      <button id="imageModalClose" class="poi-modal-close" type="button">Fechar imagem</button>
+      <img id="imageModalImage" alt="Imagem expandida do POI" />
+    </article>
+  </div>
+
   <script>
     const mapCanvas = document.getElementById('mapCanvas');
     const zoomTrack = document.getElementById('zoomTrack');
@@ -51,6 +72,15 @@
     const togglePins = document.getElementById('togglePins');
     const toggleNames = document.getElementById('toggleNames');
     const poiSearch = document.getElementById('poiSearch');
+    const poiModalBackdrop = document.getElementById('poiModalBackdrop');
+    const poiModalClose = document.getElementById('poiModalClose');
+    const poiModalTitle = document.getElementById('poiModalTitle');
+    const poiModalMeta = document.getElementById('poiModalMeta');
+    const poiCarousel = document.getElementById('poiCarousel');
+    const poiDescription = document.getElementById('poiDescription');
+    const imageModalBackdrop = document.getElementById('imageModalBackdrop');
+    const imageModalImage = document.getElementById('imageModalImage');
+    const imageModalClose = document.getElementById('imageModalClose');
 
     let offsetX = 0;
     let offsetY = 0;
@@ -210,6 +240,7 @@
       const element = document.createElement('article');
       element.className = 'poi-item';
       element.dataset.id = location.id;
+      element.title = `${location.name} (${location.type})`;
 
       const color = getTypeColor(location.type);
       element.style.setProperty('--poi-color', color);
@@ -234,6 +265,8 @@
       if (!showPin && !showName) {
         element.classList.add('is-hidden');
       }
+
+      element.addEventListener('click', () => openPoiModal(location));
 
       return element;
     }
@@ -328,13 +361,123 @@
           name: String(data.name || 'Sem nome'),
           type: String(data.type || 'desconhecido'),
           show_pin: data.show_pin !== false,
-          show_name: data.show_name !== false
+          show_name: data.show_name !== false,
+          description: String(data.description || ''),
+          image_prefix: String(data.image_prefix || slugFromName(data.name || fileName.replace('.json', ''))),
+          images: Array.isArray(data.images) ? data.images : []
         };
       }));
 
       locations = entries;
       renderPOIList();
       renderPOI();
+    }
+
+    function slugFromName(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+    }
+
+    async function discoverPoiImages(prefix) {
+      if (!prefix) return [];
+
+      if (prefix.startsWith('http') || prefix.includes('/')) {
+        return [prefix];
+      }
+
+      if (prefix.includes('.')) {
+        return [`data/locations/images/${prefix}`];
+      }
+
+      const fromJson = locations.find((loc) => loc.image_prefix === prefix)?.images || [];
+      const explicit = fromJson.map((name) => `data/locations/images/${name}`);
+      if (explicit.length) return explicit;
+
+      try {
+        const response = await fetch('data/locations/images/');
+        const html = await response.text();
+        const hrefMatches = html.match(/href\\s*=\\s*[\"']([^\"']+)[\"']/gi) || [];
+        const candidates = hrefMatches
+          .map((rawHref) => rawHref.replace(/href\\s*=\\s*[\"']|[\"']/gi, ''))
+          .map((href) => decodeURIComponent(href.split('?')[0].split('#')[0].split('/').pop() || ''))
+          .filter((fileName) => fileName.startsWith(`${prefix}_image_`))
+          .filter((fileName) => /(png|jpg|jpeg|gif|webp)$/i.test(fileName))
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        return candidates.map((fileName) => `data/locations/images/${fileName}`);
+      } catch {
+        return [];
+      }
+    }
+
+    async function openPoiModal(location) {
+      poiModalTitle.textContent = location.name;
+      poiModalMeta.textContent = `${location.type} · X: ${location.x} · Y: ${location.y}`;
+      poiDescription.textContent = location.description || 'Sem descrição.';
+
+      const images = await discoverPoiImages(location.image_prefix);
+      renderCarousel(images);
+
+      poiModalBackdrop.classList.add('visible');
+      poiModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function renderCarousel(images) {
+      poiCarousel.innerHTML = '';
+      if (!images.length) {
+        poiCarousel.innerHTML = '<p style=\"padding: 14px;\">Sem imagens para este POI.</p>';
+        return;
+      }
+
+      let activeIndex = 0;
+      const image = document.createElement('img');
+      image.src = images[activeIndex];
+      image.alt = 'Imagem do POI';
+      image.addEventListener('click', () => openImageModal(images[activeIndex]));
+
+      const prev = document.createElement('button');
+      prev.className = 'poi-carousel-nav prev';
+      prev.type = 'button';
+      prev.textContent = '‹';
+      prev.addEventListener('click', () => {
+        activeIndex = (activeIndex - 1 + images.length) % images.length;
+        image.src = images[activeIndex];
+      });
+
+      const next = document.createElement('button');
+      next.className = 'poi-carousel-nav next';
+      next.type = 'button';
+      next.textContent = '›';
+      next.addEventListener('click', () => {
+        activeIndex = (activeIndex + 1) % images.length;
+        image.src = images[activeIndex];
+      });
+
+      poiCarousel.appendChild(image);
+      if (images.length > 1) {
+        poiCarousel.appendChild(prev);
+        poiCarousel.appendChild(next);
+      }
+    }
+
+    function openImageModal(src) {
+      imageModalImage.src = src;
+      imageModalBackdrop.classList.add('visible');
+      imageModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closePoiModal() {
+      poiModalBackdrop.classList.remove('visible');
+      poiModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    function closeImageModal() {
+      imageModalBackdrop.classList.remove('visible');
+      imageModalBackdrop.setAttribute('aria-hidden', 'true');
+      imageModalImage.removeAttribute('src');
     }
 
     mapCanvas.addEventListener('mousedown', (event) => {
@@ -442,6 +585,14 @@
 
     togglePins.addEventListener('change', renderPOI);
     toggleNames.addEventListener('change', renderPOI);
+    poiModalClose.addEventListener('click', closePoiModal);
+    imageModalClose.addEventListener('click', closeImageModal);
+    poiModalBackdrop.addEventListener('click', (event) => {
+      if (event.target === poiModalBackdrop) closePoiModal();
+    });
+    imageModalBackdrop.addEventListener('click', (event) => {
+      if (event.target === imageModalBackdrop) closeImageModal();
+    });
     const mapImage = new Image();
     mapImage.onload = () => {
       naturalWidth = mapImage.naturalWidth;

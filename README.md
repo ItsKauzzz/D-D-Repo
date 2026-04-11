@@ -28,8 +28,19 @@ Cada arquivo JSON deve conter:
 - `x` e `y` (coordenadas no mapa)
 - `name`
 - `type` (ex.: `Cidade`, `Vila`, `Acontecimento`)
+- `description`
+- `image_prefix` (prefixo para buscar imagens em `data/locations/images`)
 - `show_pin` (boolean)
 - `show_name` (boolean)
+
+### Galeria de imagens
+
+As imagens devem ficar em `data/locations/images` e seguir o padrão:
+`<image_prefix>_image_<numero>.<extensão>`
+
+Exemplo:
+- `aurora_image_1.jpg`
+- `aurora_image_2.jpg`
 
 Exemplo:
 
@@ -39,6 +50,8 @@ Exemplo:
   "y": 840,
   "name": "Cidade de Aurora",
   "type": "Cidade",
+  "description": "Capital comercial de Telarium.",
+  "image_prefix": "aurora",
   "show_pin": true,
   "show_name": true
 }
