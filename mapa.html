@@ -144,6 +144,7 @@
     const MAP_TEXTURE_FILE = 'world_map_telarium.png';
     const GLOBE_RADIUS = 5;
     const MARKER_RADIUS = 5.06;
+    const GLOBE_TEXTURE_IS_MIRRORED = false;
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 3;
@@ -714,7 +715,8 @@
 
     function getUvForLocation(location) {
       if (!naturalWidth || !naturalHeight) return null;
-      const u = positiveModulo(location.x, naturalWidth) / naturalWidth;
+      const normalizedU = positiveModulo(location.x, naturalWidth) / naturalWidth;
+      const u = GLOBE_TEXTURE_IS_MIRRORED ? 1 - normalizedU : normalizedU;
       const v = clamp(location.y / naturalHeight, 0, 1);
       return { u, v };
     }
@@ -756,7 +758,8 @@
       textureLoader.load(MAP_TEXTURE_FILE, (texture) => {
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.wrapS = THREE.RepeatWrapping;
-        texture.repeat.x = -1;
+        texture.repeat.x = GLOBE_TEXTURE_IS_MIRRORED ? -1 : 1;
+        texture.offset.x = GLOBE_TEXTURE_IS_MIRRORED ? 1 : 0;
         const sphereGeometry = new THREE.SphereGeometry(GLOBE_RADIUS, 96, 64);
         const sphereMaterial = new THREE.MeshStandardMaterial({ map: texture });
         globeSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
