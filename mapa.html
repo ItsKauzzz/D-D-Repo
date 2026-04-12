@@ -6,7 +6,6 @@
   <title>Mapa-múndi</title>
   <link rel="stylesheet" href="mapa.css" />
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-  <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
   <div class="topbar">
@@ -156,12 +155,19 @@
     let globeScene;
     let globeCamera;
     let globeRenderer;
-    let globeControls;
     let globeSphere;
     let globeRaycaster;
     let globePointer;
     let globePoiGroup;
     let globeAnimationFrame = null;
+    let globeAzimuth = 0;
+    let globePolar = Math.PI / 2;
+    let globeDistance = 12;
+    let globeDragging = false;
+    let globePointerDown = false;
+    let globeDidDrag = false;
+    let globeLastX = 0;
+    let globeLastY = 0;
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -744,13 +750,7 @@
       globeRenderer.setPixelRatio(window.devicePixelRatio || 1);
       globeRenderer.setSize(globeContainer.clientWidth, globeContainer.clientHeight);
       globeContainer.appendChild(globeRenderer.domElement);
-
-      globeControls = new THREE.OrbitControls(globeCamera, globeRenderer.domElement);
-      globeControls.enablePan = false;
-      globeControls.minDistance = MIN_CAMERA_DISTANCE;
-      globeControls.maxDistance = MAX_CAMERA_DISTANCE;
-      globeControls.enableDamping = true;
-      globeControls.dampingFactor = 0.06;
+      updateGlobeCamera();
 
       const textureLoader = new THREE.TextureLoader();
       textureLoader.load(MAP_TEXTURE_FILE, (texture) => {
@@ -765,13 +765,19 @@
       });
 
       globeContainer.addEventListener('click', onGlobeClick);
+      globeContainer.addEventListener('mousedown', onGlobePointerDown);
+      globeContainer.addEventListener('touchstart', onGlobeTouchStart, { passive: true });
+      globeContainer.addEventListener('wheel', onGlobeWheel, { passive: false });
+      window.addEventListener('mousemove', onGlobePointerMove);
+      window.addEventListener('mouseup', onGlobePointerUp);
+      window.addEventListener('touchmove', onGlobeTouchMove, { passive: true });
+      window.addEventListener('touchend', onGlobeTouchEnd, { passive: true });
       globeReady = true;
       renderGlobeFrame();
     }
 
     function renderGlobeFrame() {
       if (!globeReady || !is3DMode) return;
-      globeControls.update();
       globeRenderer.render(globeScene, globeCamera);
       globeAnimationFrame = requestAnimationFrame(renderGlobeFrame);
     }
@@ -781,6 +787,69 @@
         cancelAnimationFrame(globeAnimationFrame);
         globeAnimationFrame = null;
       }
+    }
+
+    function updateGlobeCamera() {
+      const polar = clamp(globePolar, 0.08, Math.PI - 0.08);
+      const x = globeDistance * Math.sin(polar) * Math.sin(globeAzimuth);
+      const y = globeDistance * Math.cos(polar);
+      const z = globeDistance * Math.sin(polar) * Math.cos(globeAzimuth);
+      globeCamera.position.set(x, y, z);
+      globeCamera.lookAt(0, 0, 0);
+      globePolar = polar;
+    }
+
+    function onGlobePointerDown(event) {
+      if (!is3DMode) return;
+      globeDragging = true;
+      globePointerDown = true;
+      globeDidDrag = false;
+      globeLastX = event.clientX;
+      globeLastY = event.clientY;
+    }
+
+    function onGlobePointerMove(event) {
+      if (!is3DMode || !globeDragging) return;
+      const deltaX = event.clientX - globeLastX;
+      const deltaY = event.clientY - globeLastY;
+      if (Math.abs(deltaX) + Math.abs(deltaY) > 2) globeDidDrag = true;
+      globeAzimuth -= deltaX * 0.008;
+      globePolar += deltaY * 0.008;
+      globeLastX = event.clientX;
+      globeLastY = event.clientY;
+      updateGlobeCamera();
+      if (globeRenderer && globeScene) globeRenderer.render(globeScene, globeCamera);
+    }
+
+    function onGlobePointerUp() {
+      globeDragging = false;
+      setTimeout(() => {
+        globePointerDown = false;
+      }, 0);
+    }
+
+    function onGlobeTouchStart(event) {
+      if (!is3DMode || !event.touches.length) return;
+      const touch = event.touches[0];
+      onGlobePointerDown({ clientX: touch.clientX, clientY: touch.clientY });
+    }
+
+    function onGlobeTouchMove(event) {
+      if (!is3DMode || !globeDragging || !event.touches.length) return;
+      const touch = event.touches[0];
+      onGlobePointerMove({ clientX: touch.clientX, clientY: touch.clientY });
+    }
+
+    function onGlobeTouchEnd() {
+      onGlobePointerUp();
+    }
+
+    function onGlobeWheel(event) {
+      if (!is3DMode) return;
+      event.preventDefault();
+      globeDistance = clamp(globeDistance + (event.deltaY * 0.01), MIN_CAMERA_DISTANCE, MAX_CAMERA_DISTANCE);
+      updateGlobeCamera();
+      if (globeRenderer && globeScene) globeRenderer.render(globeScene, globeCamera);
     }
 
     function clearGlobePOIs() {
@@ -814,6 +883,7 @@
 
     function onGlobeClick(event) {
       if (!is3DMode || !globeRenderer || !globeCamera || !globePoiGroup) return;
+      if (globePointerDown || globeDidDrag) return;
       const rect = globeRenderer.domElement.getBoundingClientRect();
       globePointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       globePointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -826,13 +896,13 @@
     }
 
     function focusLocationIn3D(location) {
-      if (!globeControls) return;
       const markerPoint = getSpherePositionFromLocation(location, GLOBE_RADIUS);
       if (!markerPoint) return;
-      globeControls.target.copy(markerPoint);
       const direction = markerPoint.clone().normalize();
-      globeCamera.position.copy(direction.multiplyScalar(11));
-      globeControls.update();
+      globeAzimuth = Math.atan2(direction.x, direction.z);
+      globePolar = Math.acos(clamp(direction.y, -1, 1));
+      globeDistance = clamp(globeDistance, MIN_CAMERA_DISTANCE, MAX_CAMERA_DISTANCE);
+      updateGlobeCamera();
       if (globeRenderer && globeScene) globeRenderer.render(globeScene, globeCamera);
     }
 
