@@ -34,6 +34,10 @@
         <input id="toggle3D" type="checkbox" />
         Visualização 3D
       </label>
+      <label>
+        <input id="toggle3DIcons" type="checkbox" />
+        Mostrar ícones no 3D
+      </label>
     </div>
 
     <ul id="poiList" class="poi-list"></ul>
@@ -104,6 +108,7 @@
     const toggleIcons = document.getElementById('toggleIcons');
     const toggleNames = document.getElementById('toggleNames');
     const toggle3D = document.getElementById('toggle3D');
+    const toggle3DIcons = document.getElementById('toggle3DIcons');
     const poiSearch = document.getElementById('poiSearch');
     const globeContainer = document.getElementById('globeContainer');
     const poiModalBackdrop = document.getElementById('poiModalBackdrop');
@@ -931,7 +936,7 @@
     }
 
     function createGlobeIconSprite(location, position) {
-      if (!toggleIcons.checked || !location.show_icon || !globeTextureLoader) return null;
+      if (!toggle3DIcons.checked || !location.show_icon || !globeTextureLoader) return null;
       const iconSrc = getLocationIcon(location);
       if (!iconSrc) return null;
 
@@ -1340,8 +1345,8 @@
     toggleIcons.addEventListener('change', () => {
       renderPOI();
       renderPOIList();
-      renderGlobePOIs();
     });
+    toggle3DIcons.addEventListener('change', renderGlobePOIs);
     toggleNames.addEventListener('change', () => {
       renderPOI();
       renderGlobePOIs();
