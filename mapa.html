@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mapa-múndi</title>
   <link rel="stylesheet" href="mapa.css" />
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 </head>
 <body>
   <div class="topbar">
@@ -29,6 +30,14 @@
         <input id="toggleNames" type="checkbox" checked />
         Mostrar nomes
       </label>
+      <label>
+        <input id="toggle3D" type="checkbox" />
+        Visualização 3D
+      </label>
+      <label>
+        <input id="toggle3DIcons" type="checkbox" />
+        Mostrar ícones no 3D
+      </label>
     </div>
 
     <ul id="poiList" class="poi-list"></ul>
@@ -43,6 +52,7 @@
 
   <div id="mapCanvas" aria-label="Mapa-múndi em tela cheia">
     <div id="poiLayer" class="poi-layer" aria-hidden="true"></div>
+    <div id="globeContainer" class="globe-container" aria-hidden="true"></div>
   </div>
 
   <div id="poiModalBackdrop" class="poi-modal-backdrop" aria-hidden="true">
@@ -97,7 +107,10 @@
     const togglePins = document.getElementById('togglePins');
     const toggleIcons = document.getElementById('toggleIcons');
     const toggleNames = document.getElementById('toggleNames');
+    const toggle3D = document.getElementById('toggle3D');
+    const toggle3DIcons = document.getElementById('toggle3DIcons');
     const poiSearch = document.getElementById('poiSearch');
+    const globeContainer = document.getElementById('globeContainer');
     const poiModalBackdrop = document.getElementById('poiModalBackdrop');
     const poiModalClose = document.getElementById('poiModalClose');
     const poiModalTitle = document.getElementById('poiModalTitle');
@@ -133,9 +146,40 @@
     let iconSizePx = 110;
     const markerCache = new Map();
     const VIEW_STATE_KEY = 'mapa_view_state_v1';
+    const MAP_TEXTURE_FILE = 'world_map_telarium.png';
+    const GLOBE_RADIUS = 5;
+    const MARKER_RADIUS = 5.06;
+    const GLOBE_TEXTURE_IS_MIRRORED = false;
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 3;
+    const MIN_CAMERA_DISTANCE = 8;
+    const MAX_CAMERA_DISTANCE = 18;
+    const GLOBE_PAN_SENSITIVITY = 0.0045;
+
+    let is3DMode = false;
+    let globeReady = false;
+    let globeScene;
+    let globeCamera;
+    let globeRenderer;
+    let globeSphere;
+    let globeRaycaster;
+    let globePointer;
+    let globePoiGroup;
+    let globeLabelLayer;
+    let globeLabelEntries = [];
+    let globeTextureLoader;
+    const globeIconTextureCache = new Map();
+    const globeIconTexturePending = new Set();
+    let globeAnimationFrame = null;
+    let globeAzimuth = 0;
+    let globePolar = Math.PI / 2;
+    let globeDistance = 12;
+    let globeDragging = false;
+    let globePointerDown = false;
+    let globeDidDrag = false;
+    let globeLastX = 0;
+    let globeLastY = 0;
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -324,6 +368,10 @@
     }
 
     function applyZoom() {
+      if (is3DMode) {
+        renderZoomThumb();
+        return;
+      }
       if (naturalWidth && naturalHeight) {
         mapCanvas.style.backgroundSize = `${naturalWidth * zoom}px ${naturalHeight * zoom}px`;
       } else {
@@ -334,6 +382,7 @@
     }
 
     function render() {
+      if (is3DMode) return;
       mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
       renderPOI();
       persistViewState();
@@ -369,6 +418,10 @@
     }
 
     function focusLocation(location) {
+      if (is3DMode) {
+        focusLocationIn3D(location);
+        return;
+      }
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
       offsetX = centerX - (location.x * zoom);
@@ -400,6 +453,7 @@
     }
 
     function setZoomFromWheel(deltaY, clientX, clientY) {
+      if (is3DMode) return;
       const zoomStep = 0.06;
       const direction = deltaY > 0 ? -1 : 1;
       const nextZoom = clamp(zoom + (direction * zoomStep), MIN_ZOOM, MAX_ZOOM);
@@ -495,6 +549,10 @@
     }
 
     function renderPOI() {
+      if (is3DMode) {
+        poiLayer.innerHTML = '';
+        return;
+      }
       const visibleLocations = getFilteredLocations();
       const visibleIds = new Set(visibleLocations.map((location) => location.id));
 
@@ -663,6 +721,338 @@
       poiLayer.innerHTML = '';
       renderPOIList();
       renderPOI();
+      renderGlobePOIs();
+    }
+
+    function getUvForLocation(location) {
+      if (!naturalWidth || !naturalHeight) return null;
+      const normalizedU = positiveModulo(location.x, naturalWidth) / naturalWidth;
+      const u = GLOBE_TEXTURE_IS_MIRRORED ? 1 - normalizedU : normalizedU;
+      const v = clamp(location.y / naturalHeight, 0, 1);
+      return { u, v };
+    }
+
+    function getSpherePositionFromLocation(location, radius = MARKER_RADIUS) {
+      const uv = getUvForLocation(location);
+      if (!uv) return null;
+      const phi = uv.u * Math.PI * 2;
+      const theta = uv.v * Math.PI;
+      const sinTheta = Math.sin(theta);
+      return new THREE.Vector3(
+        -radius * Math.cos(phi) * sinTheta,
+        radius * Math.cos(theta),
+        radius * Math.sin(phi) * sinTheta
+      );
+    }
+
+    function ensureGlobeReady() {
+      if (globeReady || !window.THREE) return;
+      globeScene = new THREE.Scene();
+      globeCamera = new THREE.PerspectiveCamera(45, globeContainer.clientWidth / globeContainer.clientHeight, 0.1, 100);
+      globeCamera.position.set(0, 0, 12);
+      globeScene.add(new THREE.AmbientLight(0xffffff, 0.95));
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      keyLight.position.set(8, 6, 10);
+      globeScene.add(keyLight);
+      globePoiGroup = new THREE.Group();
+      globeScene.add(globePoiGroup);
+      globeRaycaster = new THREE.Raycaster();
+      globePointer = new THREE.Vector2();
+
+      globeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      globeRenderer.setPixelRatio(window.devicePixelRatio || 1);
+      globeRenderer.setSize(globeContainer.clientWidth, globeContainer.clientHeight);
+      globeContainer.appendChild(globeRenderer.domElement);
+      globeLabelLayer = document.createElement('div');
+      globeLabelLayer.className = 'globe-label-layer';
+      globeContainer.appendChild(globeLabelLayer);
+      updateGlobeCamera();
+
+      globeTextureLoader = new THREE.TextureLoader();
+      globeTextureLoader.load(MAP_TEXTURE_FILE, (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.repeat.x = GLOBE_TEXTURE_IS_MIRRORED ? -1 : 1;
+        texture.offset.x = GLOBE_TEXTURE_IS_MIRRORED ? 1 : 0;
+        const sphereGeometry = new THREE.SphereGeometry(GLOBE_RADIUS, 96, 64);
+        const sphereMaterial = new THREE.MeshStandardMaterial({ map: texture });
+        globeSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        globeScene.add(globeSphere);
+        renderGlobePOIs();
+      });
+
+      globeContainer.addEventListener('click', onGlobeClick);
+      globeContainer.addEventListener('mousedown', onGlobePointerDown);
+      globeContainer.addEventListener('touchstart', onGlobeTouchStart, { passive: true });
+      globeContainer.addEventListener('wheel', onGlobeWheel, { passive: false });
+      window.addEventListener('mousemove', onGlobePointerMove);
+      window.addEventListener('mouseup', onGlobePointerUp);
+      window.addEventListener('touchmove', onGlobeTouchMove, { passive: true });
+      window.addEventListener('touchend', onGlobeTouchEnd, { passive: true });
+      globeReady = true;
+      renderGlobeFrame();
+    }
+
+    function renderGlobeFrame() {
+      if (!globeReady || !is3DMode) return;
+      updateGlobeLabels();
+      globeRenderer.render(globeScene, globeCamera);
+      globeAnimationFrame = requestAnimationFrame(renderGlobeFrame);
+    }
+
+    function stopGlobeFrame() {
+      if (globeAnimationFrame) {
+        cancelAnimationFrame(globeAnimationFrame);
+        globeAnimationFrame = null;
+      }
+    }
+
+    function updateGlobeCamera() {
+      const polar = clamp(globePolar, 0.08, Math.PI - 0.08);
+      const x = globeDistance * Math.sin(polar) * Math.sin(globeAzimuth);
+      const y = globeDistance * Math.cos(polar);
+      const z = globeDistance * Math.sin(polar) * Math.cos(globeAzimuth);
+      globeCamera.position.set(x, y, z);
+      globeCamera.lookAt(0, 0, 0);
+      globePolar = polar;
+    }
+
+    function onGlobePointerDown(event) {
+      if (!is3DMode) return;
+      globeDragging = true;
+      globePointerDown = true;
+      globeDidDrag = false;
+      globeLastX = event.clientX;
+      globeLastY = event.clientY;
+    }
+
+    function onGlobePointerMove(event) {
+      if (!is3DMode || !globeDragging) return;
+      const deltaX = event.clientX - globeLastX;
+      const deltaY = event.clientY - globeLastY;
+      if (Math.abs(deltaX) + Math.abs(deltaY) > 2) globeDidDrag = true;
+      globeAzimuth -= deltaX * GLOBE_PAN_SENSITIVITY;
+      globePolar -= deltaY * GLOBE_PAN_SENSITIVITY;
+      globeLastX = event.clientX;
+      globeLastY = event.clientY;
+      updateGlobeCamera();
+      if (globeRenderer && globeScene) globeRenderer.render(globeScene, globeCamera);
+    }
+
+    function onGlobePointerUp() {
+      globeDragging = false;
+      setTimeout(() => {
+        globePointerDown = false;
+      }, 0);
+    }
+
+    function onGlobeTouchStart(event) {
+      if (!is3DMode || !event.touches.length) return;
+      const touch = event.touches[0];
+      onGlobePointerDown({ clientX: touch.clientX, clientY: touch.clientY });
+    }
+
+    function onGlobeTouchMove(event) {
+      if (!is3DMode || !globeDragging || !event.touches.length) return;
+      const touch = event.touches[0];
+      onGlobePointerMove({ clientX: touch.clientX, clientY: touch.clientY });
+    }
+
+    function onGlobeTouchEnd() {
+      onGlobePointerUp();
+    }
+
+    function onGlobeWheel(event) {
+      if (!is3DMode) return;
+      event.preventDefault();
+      globeDistance = clamp(globeDistance + (event.deltaY * 0.01), MIN_CAMERA_DISTANCE, MAX_CAMERA_DISTANCE);
+      updateGlobeCamera();
+      if (globeRenderer && globeScene) globeRenderer.render(globeScene, globeCamera);
+    }
+
+    function clearGlobePOIs() {
+      if (!globePoiGroup) return;
+      while (globePoiGroup.children.length) {
+        const child = globePoiGroup.children[0];
+        if (!child) continue;
+        globePoiGroup.remove(child);
+        child.geometry?.dispose?.();
+        child.material?.dispose?.();
+      }
+    }
+
+    function clearGlobeLabels() {
+      if (!globeLabelLayer) return;
+      globeLabelLayer.innerHTML = '';
+      globeLabelEntries = [];
+    }
+
+    function updateGlobeLabels() {
+      if (!globeLabelLayer || !globeCamera || !is3DMode) return;
+      const width = globeContainer.clientWidth || 1;
+      const height = globeContainer.clientHeight || 1;
+
+      globeLabelEntries.forEach((entry) => {
+        const anchor = getSpherePositionFromLocation(entry.location, GLOBE_RADIUS);
+        if (!anchor) {
+          entry.element.style.display = 'none';
+          return;
+        }
+
+        const toCamera = globeCamera.position.clone().sub(anchor).normalize();
+        const normal = anchor.clone().normalize();
+        const isFrontFacing = normal.dot(toCamera) > 0;
+        if (!isFrontFacing) {
+          entry.element.style.display = 'none';
+          return;
+        }
+
+        const projected = anchor.clone().project(globeCamera);
+        const isInClipSpace = projected.z >= -1 && projected.z <= 1;
+        if (!isInClipSpace) {
+          entry.element.style.display = 'none';
+          return;
+        }
+
+        const screenX = (projected.x * 0.5 + 0.5) * width;
+        const screenY = (-projected.y * 0.5 + 0.5) * height;
+        const distance = globeCamera.position.distanceTo(anchor);
+        const proximity = clamp((MAX_CAMERA_DISTANCE - distance) / (MAX_CAMERA_DISTANCE - MIN_CAMERA_DISTANCE), 0, 1);
+        const style = getTypeStyle(entry.location.type);
+        const baseSizePt = 10 + Number(style.size_offset_pt || 0);
+        const baseSizePx = Math.max(6, baseSizePt) * (4 / 3);
+        const fontSize = baseSizePx * (0.75 + (proximity * 0.8));
+        const opacity = 0.45 + (proximity * 0.55);
+
+        entry.element.style.display = 'block';
+        entry.element.style.left = `${screenX}px`;
+        entry.element.style.top = `${screenY}px`;
+        entry.element.style.fontSize = `${fontSize.toFixed(1)}px`;
+        entry.element.style.fontWeight = style.bold === false ? '500' : '700';
+        entry.element.style.fontStyle = style.italic ? 'italic' : 'normal';
+        entry.element.style.color = getSoftLabelColor(entry.location.type);
+        entry.element.style.opacity = opacity.toFixed(2);
+      });
+    }
+
+    function createGlobeIconSprite(location, position) {
+      if (!toggle3DIcons.checked || !location.show_icon || !globeTextureLoader) return null;
+      const iconSrc = getLocationIcon(location);
+      if (!iconSrc) return null;
+
+      const cachedTexture = globeIconTextureCache.get(iconSrc);
+      if (!cachedTexture) {
+        if (!globeIconTexturePending.has(iconSrc)) {
+          globeIconTexturePending.add(iconSrc);
+          globeTextureLoader.load(iconSrc, (loadedTexture) => {
+            loadedTexture.colorSpace = THREE.SRGBColorSpace;
+            globeIconTextureCache.set(iconSrc, loadedTexture);
+            globeIconTexturePending.delete(iconSrc);
+            if (is3DMode) renderGlobePOIs();
+          }, undefined, () => {
+            globeIconTexturePending.delete(iconSrc);
+          });
+        }
+        return null;
+      }
+
+      const spriteMaterial = new THREE.SpriteMaterial({
+        map: cachedTexture,
+        transparent: true,
+        depthTest: true,
+        depthWrite: false
+      });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      const iconScale = 0.55;
+      sprite.scale.set(iconScale, iconScale, 1);
+      sprite.position.copy(position.clone().normalize().multiplyScalar(MARKER_RADIUS + 0.12));
+      sprite.userData.locationId = location.id;
+      return sprite;
+    }
+
+    function renderGlobePOIs() {
+      if (!globePoiGroup || !naturalWidth || !naturalHeight) return;
+      clearGlobePOIs();
+      clearGlobeLabels();
+      getFilteredLocations().forEach((location) => {
+        const position = getSpherePositionFromLocation(location);
+        if (!position) return;
+
+        if (location.show_pin && togglePins.checked) {
+          const rgb = hexToRgb(getTypeColor(location.type)) || { r: 160, g: 160, b: 160 };
+          const marker = new THREE.Mesh(
+            new THREE.SphereGeometry(0.075, 16, 12),
+            new THREE.MeshStandardMaterial({ color: new THREE.Color(rgb.r / 255, rgb.g / 255, rgb.b / 255) })
+          );
+          marker.position.copy(position);
+          marker.userData.locationId = location.id;
+          globePoiGroup.add(marker);
+        }
+
+        const iconSprite = createGlobeIconSprite(location, position);
+        if (iconSprite) globePoiGroup.add(iconSprite);
+
+        if (location.show_name && toggleNames.checked && globeLabelLayer) {
+          const label = document.createElement('button');
+          label.type = 'button';
+          label.className = 'globe-poi-label';
+          label.textContent = location.name;
+          label.addEventListener('click', () => openPoiModal(location));
+          globeLabelLayer.appendChild(label);
+          globeLabelEntries.push({ location, element: label });
+        }
+      });
+      updateGlobeLabels();
+    }
+
+    function onGlobeClick(event) {
+      if (!is3DMode || !globeRenderer || !globeCamera || !globePoiGroup) return;
+      if (globePointerDown || globeDidDrag) return;
+      const rect = globeRenderer.domElement.getBoundingClientRect();
+      globePointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      globePointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      globeRaycaster.setFromCamera(globePointer, globeCamera);
+      const intersects = globeRaycaster.intersectObjects(globePoiGroup.children, false);
+      if (!intersects.length) return;
+      const id = intersects[0].object?.userData?.locationId;
+      const location = locations.find((entry) => entry.id === id);
+      if (location) openPoiModal(location);
+    }
+
+    function focusLocationIn3D(location) {
+      const markerPoint = getSpherePositionFromLocation(location, GLOBE_RADIUS);
+      if (!markerPoint) return;
+      const direction = markerPoint.clone().normalize();
+      globeAzimuth = Math.atan2(direction.x, direction.z);
+      globePolar = Math.acos(clamp(direction.y, -1, 1));
+      globeDistance = clamp(globeDistance, MIN_CAMERA_DISTANCE, MAX_CAMERA_DISTANCE);
+      updateGlobeCamera();
+      if (globeRenderer && globeScene) globeRenderer.render(globeScene, globeCamera);
+    }
+
+    function focusViewportCenterIn3D() {
+      if (!naturalWidth || !naturalHeight) return;
+      const centerScreenX = window.innerWidth / 2;
+      const centerScreenY = window.innerHeight / 2;
+      const worldX = positiveModulo((centerScreenX - offsetX) / zoom, naturalWidth);
+      const worldY = clamp((centerScreenY - offsetY) / zoom, 0, naturalHeight);
+      focusLocationIn3D({ x: worldX, y: worldY });
+    }
+
+    function setViewMode3D(enabled) {
+      is3DMode = Boolean(enabled);
+      document.body.classList.toggle('is-3d-mode', is3DMode);
+      mapCanvas.classList.toggle('dragging', false);
+      dragging = false;
+      if (is3DMode) {
+        ensureGlobeReady();
+        focusViewportCenterIn3D();
+        renderGlobePOIs();
+        renderGlobeFrame();
+      } else {
+        stopGlobeFrame();
+        render();
+      }
     }
 
     function slugFromName(value) {
@@ -844,6 +1234,7 @@
     }
 
     mapCanvas.addEventListener('mousedown', (event) => {
+      if (is3DMode) return;
       dragging = true;
       mapCanvas.classList.add('dragging');
       lastX = event.clientX;
@@ -851,6 +1242,7 @@
     });
 
     window.addEventListener('mousemove', (event) => {
+      if (is3DMode) return;
       if (!dragging) return;
 
       const deltaX = event.clientX - lastX;
@@ -871,11 +1263,13 @@
     });
 
     mapCanvas.addEventListener('wheel', (event) => {
+      if (is3DMode) return;
       event.preventDefault();
       setZoomFromWheel(event.deltaY, event.clientX, event.clientY);
     }, { passive: false });
 
     mapCanvas.addEventListener('touchstart', (event) => {
+      if (is3DMode) return;
       if (!event.touches.length) return;
       const touch = event.touches[0];
       dragging = true;
@@ -884,6 +1278,7 @@
     }, { passive: true });
 
     mapCanvas.addEventListener('touchmove', (event) => {
+      if (is3DMode) return;
       if (!dragging || !event.touches.length) return;
       const touch = event.touches[0];
       const deltaX = touch.clientX - lastX;
@@ -897,17 +1292,20 @@
     }, { passive: true });
 
     mapCanvas.addEventListener('touchend', () => {
+      if (is3DMode) return;
       dragging = false;
     }, { passive: true });
 
     let zoomDragging = false;
 
     zoomTrack.addEventListener('mousedown', (event) => {
+      if (is3DMode) return;
       zoomDragging = true;
       setZoomFromPointer(event.clientY);
     });
 
     window.addEventListener('mousemove', (event) => {
+      if (is3DMode) return;
       if (!zoomDragging) return;
       setZoomFromPointer(event.clientY);
     });
@@ -917,12 +1315,14 @@
     });
 
     zoomTrack.addEventListener('touchstart', (event) => {
+      if (is3DMode) return;
       if (!event.touches.length) return;
       zoomDragging = true;
       setZoomFromPointer(event.touches[0].clientY);
     }, { passive: true });
 
     window.addEventListener('touchmove', (event) => {
+      if (is3DMode) return;
       if (!zoomDragging || !event.touches.length) return;
       setZoomFromPointer(event.touches[0].clientY);
     }, { passive: true });
@@ -932,6 +1332,7 @@
     }, { passive: true });
 
     zoomTrack.addEventListener('keydown', (event) => {
+      if (is3DMode) return;
       if (event.key === 'ArrowUp' || event.key === 'ArrowRight') {
         setZoomFromPercent((zoom * 100) + 2);
         event.preventDefault();
@@ -944,14 +1345,23 @@
     poiSearch.addEventListener('input', () => {
       renderPOIList();
       renderPOI();
+      renderGlobePOIs();
     });
 
-    togglePins.addEventListener('change', renderPOI);
+    togglePins.addEventListener('change', () => {
+      renderPOI();
+      renderGlobePOIs();
+    });
     toggleIcons.addEventListener('change', () => {
       renderPOI();
       renderPOIList();
     });
-    toggleNames.addEventListener('change', renderPOI);
+    toggle3DIcons.addEventListener('change', renderGlobePOIs);
+    toggleNames.addEventListener('change', () => {
+      renderPOI();
+      renderGlobePOIs();
+    });
+    toggle3D.addEventListener('change', () => setViewMode3D(toggle3D.checked));
     poiModalClose.addEventListener('click', closePoiModal);
     imageModalClose.addEventListener('click', closeImageModal);
     poiModalBackdrop.addEventListener('click', (event) => {
@@ -971,8 +1381,23 @@
       console.warn('Não foi possível carregar world_map_telarium.png para medir o tile; usando fallback de viewport.');
       restoreViewState();
       applyZoom();
+      renderGlobePOIs();
     };
-    mapImage.src = 'world_map_telarium.png';
+    mapImage.src = MAP_TEXTURE_FILE;
+
+    window.addEventListener('resize', () => {
+      if (!globeReady || !globeRenderer || !globeCamera) return;
+      const width = globeContainer.clientWidth;
+      const height = globeContainer.clientHeight;
+      if (!width || !height) return;
+      globeCamera.aspect = width / height;
+      globeCamera.updateProjectionMatrix();
+      globeRenderer.setSize(width, height);
+      if (is3DMode) {
+        updateGlobeLabels();
+        globeRenderer.render(globeScene, globeCamera);
+      }
+    });
 
     renderPoiTabMenu();
     resetPosition();

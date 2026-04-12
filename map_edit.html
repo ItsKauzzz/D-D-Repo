@@ -20,6 +20,30 @@
       display: grid;
       gap: 10px;
     }
+    .editor-panel.is-hidden {
+      display: none;
+    }
+    .editor-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .editor-panel-header h2 {
+      margin: 0;
+    }
+    .editor-close-btn {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border-radius: 8px;
+      border: 2px solid #3c3222;
+      background: rgba(0, 0, 0, 0.25);
+      color: #fff;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+    }
     .editor-panel button,
     .editor-panel input,
     .editor-panel select,
@@ -31,7 +55,48 @@
       padding: 8px;
     }
     .editor-panel button { cursor: pointer; background: #3c3222; }
+    .editor-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .editor-icon-btn {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      line-height: 1;
+      border-radius: 8px;
+      border: 2px solid #3c3222;
+      background: rgba(0, 0, 0, 0.25);
+      color: #fff;
+      cursor: pointer;
+    }
+    .editor-icon-btn:hover {
+      border-color: #f4efe2;
+      background: rgba(255, 255, 255, 0.1);
+    }
     .editor-status { font-size: 12px; color: #ddd; }
+    .poi-item.is-selected .poi-pin {
+      box-shadow: 0 0 0 3px #ff9f1c, 0 1px 4px rgba(0, 0, 0, 0.45);
+      filter: brightness(1.08);
+    }
+    .poi-item.is-selected .poi-pin-icon {
+      filter: drop-shadow(0 0 4px rgba(255, 159, 28, 0.9));
+    }
+    .poi-item.is-selected .poi-name {
+      text-shadow: 0 0 6px rgba(255, 159, 28, 0.9);
+      color: #ffd49a;
+      font-weight: 800;
+    }
+    .poi-entry.is-selected {
+      outline: 2px solid #ff9f1c;
+      outline-offset: 1px;
+      background: rgba(255, 159, 28, 0.14);
+    }
     .icon-choice-row {
       display: grid;
       grid-template-columns: 1fr auto auto;
@@ -206,6 +271,28 @@
       transform: translate(-50%, -50%);
       pointer-events: none;
     }
+    .last-click-dot {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border: 2px solid #111;
+      border-radius: 50%;
+      background: #f2c94c;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 4;
+    }
+    .last-click-info {
+      display: block;
+      font-size: 12px;
+      color: #e8e0cf;
+    }
+    #mapCanvas {
+      cursor: crosshair !important;
+    }
+    #mapCanvas.dragging {
+      cursor: move !important;
+    }
     .add-poi-fab {
       position: fixed;
       right: 16px;
@@ -249,7 +336,10 @@
   </aside>
 
   <section class="editor-panel" aria-label="Criação de POI">
-    <h2>Novo POI</h2>
+    <div class="editor-panel-header">
+      <h2 id="editorTitle">Editar POI</h2>
+      <button id="closeEditorPanel" class="editor-close-btn" type="button" title="Fechar editor" aria-label="Fechar editor">✕</button>
+    </div>
     <input id="poiName" type="text" placeholder="Nome" />
     <select id="poiType"></select>
     <textarea id="poiDescription" rows="4" placeholder="Descrição"></textarea>
@@ -259,15 +349,18 @@
       <button id="openIconPicker" type="button">Ícones</button>
       <button id="clearIconChoice" type="button">Aleatório</button>
     </div>
-    <label><input id="selectCoord" type="checkbox" /> Selecionar coordenada clicando no mapa</label>
     <input id="coordX" type="number" placeholder="Coord X" />
     <input id="coordY" type="number" placeholder="Coord Y" />
+    <small id="lastClickInfo" class="last-click-info">Último clique: nenhum</small>
     <button id="chooseDir" type="button">Escolher pasta data/locations</button>
-    <button id="exportData" type="button">Exportar dados</button>
-    <button id="importData" type="button">Importar dados</button>
-    <button id="savePoi" type="button">Criar POI</button>
-    <button id="deletePoi" type="button" hidden>Deletar POI</button>
-    <button id="cancelEdit" type="button" hidden>Cancelar edição</button>
+    <div class="editor-actions" aria-label="Ações do POI">
+      <button id="recenterPoiFromClick" class="editor-icon-btn" type="button" title="Reajustar posição para último clique" aria-label="Reajustar posição para último clique">🎯</button>
+      <button id="exportData" class="editor-icon-btn" type="button" title="Exportar dados" aria-label="Exportar dados">📤</button>
+      <button id="importData" class="editor-icon-btn" type="button" title="Importar dados" aria-label="Importar dados">📥</button>
+      <button id="savePoi" class="editor-icon-btn" type="button" title="Salvar POI atual" aria-label="Salvar POI atual">💾</button>
+      <button id="saveAllPois" class="editor-icon-btn" type="button" title="Salvar todos os POIs" aria-label="Salvar todos os POIs">🗂️</button>
+      <button id="deletePoi" class="editor-icon-btn" type="button" title="Deletar POI atual" aria-label="Deletar POI atual" hidden>🗑️</button>
+    </div>
     <p class="editor-status" id="editorStatus">Dica: para gravar direto em `data/locations`, execute localmente em Chrome e use File System Access API.</p>
   </section>
 
@@ -281,6 +374,7 @@
   <div id="mapCanvas" aria-label="Editor de mapa">
     <div id="poiLayer" class="poi-layer" aria-hidden="true"></div>
     <div id="previewDot" class="preview-dot" hidden></div>
+    <div id="lastClickDot" class="last-click-dot" hidden></div>
   </div>
   <div id="iconPickerBackdrop" class="icon-picker-backdrop" aria-hidden="true">
     <article class="icon-picker" role="dialog" aria-modal="true" aria-label="Selecionar ícone">
@@ -310,12 +404,16 @@
     const poiLayer = document.getElementById('poiLayer');
     const poiList = document.getElementById('poiList');
     const poiSearch = document.getElementById('poiSearch');
+    const editorPanel = document.querySelector('.editor-panel');
+    const editorTitle = document.getElementById('editorTitle');
+    const closeEditorPanel = document.getElementById('closeEditorPanel');
     const poiName = document.getElementById('poiName');
     const poiType = document.getElementById('poiType');
     const poiDescription = document.getElementById('poiDescription');
     const poiImagePrefix = document.getElementById('poiImagePrefix');
     const coordX = document.getElementById('coordX');
     const coordY = document.getElementById('coordY');
+    const lastClickInfo = document.getElementById('lastClickInfo');
     const iconChoicePreview = document.getElementById('iconChoicePreview');
     const openIconPicker = document.getElementById('openIconPicker');
     const clearIconChoice = document.getElementById('clearIconChoice');
@@ -325,17 +423,18 @@
     const iconGrid = document.getElementById('iconGrid');
     const iconZoomSlider = document.getElementById('iconZoomSlider');
     const iconZoomValue = document.getElementById('iconZoomValue');
-    const selectCoord = document.getElementById('selectCoord');
+    const recenterPoiFromClick = document.getElementById('recenterPoiFromClick');
     const savePoi = document.getElementById('savePoi');
     const chooseDir = document.getElementById('chooseDir');
     const exportData = document.getElementById('exportData');
     const importData = document.getElementById('importData');
+    const saveAllPois = document.getElementById('saveAllPois');
     const importDataInput = document.getElementById('importDataInput');
     const addPoiFab = document.getElementById('addPoiFab');
     const deletePoi = document.getElementById('deletePoi');
-    const cancelEdit = document.getElementById('cancelEdit');
     const editorStatus = document.getElementById('editorStatus');
     const previewDot = document.getElementById('previewDot');
+    const lastClickDot = document.getElementById('lastClickDot');
 
     let offsetX = 0;
     let offsetY = 0;
@@ -349,9 +448,14 @@
     let typeConfig = {};
     let cachedDirectoryHandle = null;
     let editingPoiId = null;
+    let selectedPoiId = null;
+    let editorMode = 'edit';
     let selectedIconPath = '';
     let iconPreviewSize = 54;
     let iconSeed = 20260411;
+    let lastClickedWorldCoord = null;
+    let iconCatalog = [];
+    let iconCatalogLoaded = false;
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 3;
@@ -382,7 +486,7 @@
       return Array.isArray(defaults.icons) ? defaults.icons : [];
     }
 
-    function getAllIcons() {
+    function getIconsFromTypeConfig() {
       const entries = Object.entries(typeConfig);
       const all = entries.flatMap(([type, cfg]) => {
         const icons = Array.isArray(cfg?.icons) ? cfg.icons : [];
@@ -393,6 +497,63 @@
         if (!unique.has(entry.path)) unique.set(entry.path, entry);
       });
       return [...unique.values()];
+    }
+
+    async function listDirectoryEntries(path) {
+      const response = await fetch(path);
+      if (!response.ok) throw new Error(`Falha ao listar diretório: ${path}`);
+      const html = await response.text();
+      const hrefMatches = html.match(/href\s*=\s*["']([^"']+)["']/gi) || [];
+      return hrefMatches
+        .map((rawHref) => rawHref.replace(/href\s*=\s*["']|["']/gi, ''))
+        .map((href) => decodeURIComponent(href.split('?')[0].split('#')[0]))
+        .filter((href) => href && href !== '../');
+    }
+
+    function inferIconTypeFromPath(iconPath) {
+      const cleanPath = String(iconPath || '').replace(/^\/+/, '');
+      const segments = cleanPath.split('/');
+      if (segments.length >= 2 && segments[0].toLowerCase() === 'icon') {
+        return segments[1] || 'Custom';
+      }
+      return 'Custom';
+    }
+
+    async function loadIconCatalog() {
+      if (iconCatalogLoaded) return iconCatalog;
+
+      const discovered = new Map();
+      const pushIcon = (path, typeHint = '') => {
+        const normalizedPath = String(path || '').replace(/^\/+/, '');
+        if (!normalizedPath || discovered.has(normalizedPath)) return;
+        const type = typeHint || inferIconTypeFromPath(normalizedPath);
+        discovered.set(normalizedPath, { type, path: normalizedPath });
+      };
+
+      getIconsFromTypeConfig().forEach((entry) => pushIcon(entry.path, entry.type));
+
+      try {
+        const rootEntries = await listDirectoryEntries('Icon/');
+        const folders = rootEntries.filter((href) => href.endsWith('/'));
+
+        for (const folderHref of folders) {
+          const folderName = folderHref.replace(/\/$/, '');
+          if (!folderName) continue;
+          const folderPath = `Icon/${folderName}/`;
+          const fileEntries = await listDirectoryEntries(folderPath);
+          fileEntries
+            .filter((fileName) => /(png|svg|jpg|jpeg|webp)$/i.test(fileName))
+            .forEach((fileName) => {
+              pushIcon(`${folderPath}${fileName}`, folderName);
+            });
+        }
+      } catch (error) {
+        console.debug('Não foi possível listar todos os ícones da pasta Icon/. Usando catálogo da configuração.', error);
+      }
+
+      iconCatalog = [...discovered.values()];
+      iconCatalogLoaded = true;
+      return iconCatalog;
     }
 
     function hashStringToInt(input) {
@@ -447,7 +608,7 @@
     }
 
     function getFilteredIconsForPicker() {
-      const icons = getAllIcons();
+      const icons = iconCatalog.length ? iconCatalog : getIconsFromTypeConfig();
       const query = iconPickerSearch.value.trim().toLowerCase();
       if (!query) return icons;
       return icons.filter((entry) => `${entry.type} ${entry.path}`.toLowerCase().includes(query));
@@ -532,6 +693,11 @@
       mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
       renderPOI();
       updatePreviewDot();
+      updateLastClickIndicator();
+    }
+
+    function setEditorPanelVisible(visible) {
+      editorPanel.classList.toggle('is-hidden', !visible);
     }
 
     function applyZoom() {
@@ -609,6 +775,7 @@
       const element = document.createElement('article');
       element.className = 'poi-item';
       element.style.setProperty('--poi-color', getTypeColor(location.type));
+      if (selectedPoiId === location.id) element.classList.add('is-selected');
 
       if (location.show_pin !== false) {
         const pin = document.createElement('span');
@@ -650,6 +817,7 @@
       element.addEventListener('click', () => {
         focusLocation(location);
         loadPoiIntoForm(location);
+        setEditorPanelVisible(true);
       });
       return element;
     }
@@ -673,6 +841,7 @@
       getFilteredLocations().forEach((location) => {
         const item = document.createElement('li');
         item.className = 'poi-entry';
+        if (selectedPoiId === location.id) item.classList.add('is-selected');
         item.tabIndex = 0;
         item.style.setProperty('--poi-color', getTypeColor(location.type));
         const title = document.createElement('strong');
@@ -684,28 +853,36 @@
         item.addEventListener('click', () => {
           focusLocation(location);
           loadPoiIntoForm(location);
+          setEditorPanelVisible(true);
         });
         poiList.appendChild(item);
       });
     }
 
-    function resetEditorForm() {
+    function resetEditorForm(mode = 'edit') {
+      editorMode = mode;
       editingPoiId = null;
+      selectedPoiId = null;
       poiName.value = '';
       poiDescription.value = '';
       poiImagePrefix.value = '';
       coordX.value = '';
       coordY.value = '';
       selectedIconPath = '';
-      savePoi.textContent = 'Criar POI';
+      savePoi.title = 'Criar POI';
+      savePoi.setAttribute('aria-label', 'Criar POI');
       deletePoi.hidden = true;
-      cancelEdit.hidden = true;
+      editorTitle.textContent = mode === 'new' ? 'Novo POI' : 'Editar POI';
       updatePreviewDot();
       updateIconChoicePreview();
+      renderPOIList();
+      renderPOI();
     }
 
     function loadPoiIntoForm(location) {
+      editorMode = 'edit';
       editingPoiId = location.id;
+      selectedPoiId = location.id;
       poiName.value = location.name || '';
       poiType.value = location.type || poiType.value;
       poiDescription.value = location.description || '';
@@ -713,11 +890,14 @@
       coordX.value = String(location.x ?? '');
       coordY.value = String(location.y ?? '');
       selectedIconPath = String(location.icon_override || '');
-      savePoi.textContent = 'Salvar alterações';
+      savePoi.title = 'Salvar alterações do POI';
+      savePoi.setAttribute('aria-label', 'Salvar alterações do POI');
       deletePoi.hidden = false;
-      cancelEdit.hidden = false;
+      editorTitle.textContent = 'Editar POI';
       updatePreviewDot();
       updateIconChoicePreview();
+      renderPOIList();
+      renderPOI();
     }
 
     async function loadTypeConfig() {
@@ -782,6 +962,19 @@
       previewDot.style.left = `${screen.x}px`;
       previewDot.style.top = `${screen.y}px`;
       previewDot.hidden = false;
+    }
+
+    function updateLastClickIndicator() {
+      if (!lastClickedWorldCoord) {
+        lastClickDot.hidden = true;
+        lastClickInfo.textContent = 'Último clique: nenhum';
+        return;
+      }
+      const screen = screenFromWorld(lastClickedWorldCoord.x, lastClickedWorldCoord.y);
+      lastClickDot.style.left = `${screen.x}px`;
+      lastClickDot.style.top = `${screen.y}px`;
+      lastClickDot.hidden = false;
+      lastClickInfo.textContent = `Último clique: X ${lastClickedWorldCoord.x} · Y ${lastClickedWorldCoord.y}`;
     }
 
     function slugify(value) {
@@ -945,6 +1138,21 @@
       URL.revokeObjectURL(link.href);
     }
 
+    function buildPersistedPayload(location) {
+      return {
+        x: Number(location.x || 0),
+        y: Number(location.y || 0),
+        name: String(location.name || ''),
+        type: String(location.type || ''),
+        description: String(location.description || ''),
+        image_prefix: String(location.image_prefix || ''),
+        icon_override: String(location.icon_override || ''),
+        show_pin: location.show_pin !== false,
+        show_icon: location.show_icon !== false,
+        show_name: location.show_name !== false
+      };
+    }
+
     function normalizeImportedPoi(rawEntry) {
       const type = String(rawEntry.type || poiType.value || 'Desconhecido');
       const defaults = getTypeDefaults(type);
@@ -1065,8 +1273,47 @@
       }
     });
 
+    saveAllPois.addEventListener('click', async () => {
+      if (!locations.length) {
+        editorStatus.textContent = 'Não há POIs carregados para salvar.';
+        return;
+      }
+
+      if ('showDirectoryPicker' in window) {
+        try {
+          for (const location of locations) {
+            await saveUsingFSApi(location.id, buildPersistedPayload(location));
+          }
+          editorStatus.textContent = `Todos os POIs salvos: ${locations.length} arquivo(s).`;
+          return;
+        } catch (error) {
+          editorStatus.textContent = `Falha ao salvar tudo no diretório: ${error.message}`;
+          return;
+        }
+      }
+
+      const exported = locations.map((location) => ({
+        file_name: location.id,
+        ...buildPersistedPayload(location)
+      }));
+      saveAsDownload('poi_full_export.json', {
+        version: 1,
+        exported_at: new Date().toISOString(),
+        pois: exported
+      });
+      editorStatus.textContent = 'Navegador sem FS API: foi gerado export único com todos os POIs.';
+    });
+
     addPoiFab.addEventListener('click', () => {
-      resetEditorForm();
+      if (!lastClickedWorldCoord) {
+        editorStatus.textContent = 'Clique no mapa para definir a posição e depois use o botão + para criar um novo POI.';
+        return;
+      }
+      resetEditorForm('new');
+      setEditorPanelVisible(true);
+      coordX.value = String(lastClickedWorldCoord.x);
+      coordY.value = String(lastClickedWorldCoord.y);
+      updatePreviewDot();
       editorStatus.textContent = 'Pronto para criar um novo POI.';
     });
 
@@ -1099,12 +1346,14 @@
       }
     });
 
-    cancelEdit.addEventListener('click', () => {
-      resetEditorForm();
-      editorStatus.textContent = 'Edição cancelada.';
+    closeEditorPanel.addEventListener('click', () => {
+      resetEditorForm('edit');
+      setEditorPanelVisible(false);
+      editorStatus.textContent = 'Editor fechado.';
     });
 
-    openIconPicker.addEventListener('click', () => {
+    openIconPicker.addEventListener('click', async () => {
+      await loadIconCatalog();
       iconPickerBackdrop.classList.add('visible');
       iconPickerBackdrop.setAttribute('aria-hidden', 'false');
       iconPickerSearch.value = '';
@@ -1133,11 +1382,39 @@
     });
 
     mapCanvas.addEventListener('click', (event) => {
-      if (!selectCoord.checked) return;
       const world = worldFromScreen(event.clientX, event.clientY);
-      coordX.value = String(world.x);
-      coordY.value = String(world.y);
+      lastClickedWorldCoord = world;
+      updateLastClickIndicator();
+      if (editorMode === 'new') {
+        coordX.value = String(world.x);
+        coordY.value = String(world.y);
+        updatePreviewDot();
+      }
+    });
+
+    recenterPoiFromClick.addEventListener('click', () => {
+      if (!lastClickedWorldCoord) {
+        editorStatus.textContent = 'Clique em uma posição do mapa antes de recentralizar o POI.';
+        return;
+      }
+
+      coordX.value = String(lastClickedWorldCoord.x);
+      coordY.value = String(lastClickedWorldCoord.y);
       updatePreviewDot();
+
+      if (editingPoiId) {
+        const target = locations.find((entry) => entry.id === editingPoiId);
+        if (target) {
+          target.x = lastClickedWorldCoord.x;
+          target.y = lastClickedWorldCoord.y;
+          renderPOI();
+          renderPOIList();
+        }
+        editorStatus.textContent = 'POI reposicionado para o último clique (salve para persistir no JSON).';
+        return;
+      }
+
+      editorStatus.textContent = 'Coordenadas atualizadas para o último clique.';
     });
 
     coordX.addEventListener('input', updatePreviewDot);

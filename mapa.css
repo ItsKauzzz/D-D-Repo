@@ -22,6 +22,48 @@ body {
   will-change: background-position, background-size;
 }
 
+#mapCanvas .globe-container {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: none;
+}
+
+#mapCanvas .globe-label-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.globe-poi-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #f4efe2;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+}
+
+body.is-3d-mode #mapCanvas {
+  background-image: none;
+  cursor: default;
+}
+
+body.is-3d-mode #mapCanvas .globe-container {
+  display: block;
+}
+
+body.is-3d-mode #mapCanvas .poi-layer {
+  display: none;
+}
+
 #mapCanvas.dragging {
   cursor: grabbing;
 }
@@ -495,6 +537,10 @@ body .poi-sidebar {
   flex-direction: column;
   align-items: center;
   gap: 10px;
+}
+
+body.is-3d-mode .zoom-control {
+  display: none;
 }
 
 .zoom-label {

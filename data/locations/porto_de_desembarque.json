@@ -1,0 +1,12 @@
+{
+  "x": 5956,
+  "y": 1822,
+  "name": "Porto de Desembarque",
+  "type": "Local",
+  "description": "Um porto que começou a ser construido para ser um dos maiores portos mercantis de Planitia, foi desembargado há muitos anos por falta de investimento. Desde então, o porto conta apenas com uma estrutura rudimentar e alguns galpões abandonados",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/cidade_icon_3.png",
+  "show_pin": true,
+  "show_icon": false,
+  "show_name": true
+}

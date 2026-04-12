@@ -81,6 +81,22 @@
         "bold": false,
         "italic": false
       }
+    },
+    "Local": {
+      "color": "#87569e",
+      "show_pin_default": true,
+      "show_icon_default": false,
+      "show_name_default": true,
+      "icons": [
+        "data/locations/icons/cidade_icon_1.png",
+        "data/locations/icons/cidade_icon_2.png",
+        "data/locations/icons/cidade_icon_3.png"
+      ],
+      "label_style": {
+        "size_offset_pt": -1,
+        "bold": true,
+        "italic": true
+      }
     }
   }
 }
