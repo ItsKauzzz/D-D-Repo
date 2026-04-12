@@ -163,6 +163,9 @@
     let globePoiGroup;
     let globeLabelLayer;
     let globeLabelEntries = [];
+    let globeTextureLoader;
+    const globeIconTextureCache = new Map();
+    const globeIconTexturePending = new Set();
     let globeAnimationFrame = null;
     let globeAzimuth = 0;
     let globePolar = Math.PI / 2;
@@ -760,8 +763,8 @@
       globeContainer.appendChild(globeLabelLayer);
       updateGlobeCamera();
 
-      const textureLoader = new THREE.TextureLoader();
-      textureLoader.load(MAP_TEXTURE_FILE, (texture) => {
+      globeTextureLoader = new THREE.TextureLoader();
+      globeTextureLoader.load(MAP_TEXTURE_FILE, (texture) => {
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.wrapS = THREE.RepeatWrapping;
         texture.repeat.x = GLOBE_TEXTURE_IS_MIRRORED ? -1 : 1;
@@ -910,15 +913,56 @@
         const screenY = (-projected.y * 0.5 + 0.5) * height;
         const distance = globeCamera.position.distanceTo(anchor);
         const proximity = clamp((MAX_CAMERA_DISTANCE - distance) / (MAX_CAMERA_DISTANCE - MIN_CAMERA_DISTANCE), 0, 1);
-        const fontSize = 10 + (proximity * 10);
+        const style = getTypeStyle(entry.location.type);
+        const baseSizePt = 10 + Number(style.size_offset_pt || 0);
+        const baseSizePx = Math.max(6, baseSizePt) * (4 / 3);
+        const fontSize = baseSizePx * (0.75 + (proximity * 0.8));
         const opacity = 0.45 + (proximity * 0.55);
 
         entry.element.style.display = 'block';
         entry.element.style.left = `${screenX}px`;
         entry.element.style.top = `${screenY}px`;
         entry.element.style.fontSize = `${fontSize.toFixed(1)}px`;
+        entry.element.style.fontWeight = style.bold === false ? '500' : '700';
+        entry.element.style.fontStyle = style.italic ? 'italic' : 'normal';
+        entry.element.style.color = getSoftLabelColor(entry.location.type);
         entry.element.style.opacity = opacity.toFixed(2);
       });
+    }
+
+    function createGlobeIconSprite(location, position) {
+      if (!toggleIcons.checked || !location.show_icon || !globeTextureLoader) return null;
+      const iconSrc = getLocationIcon(location);
+      if (!iconSrc) return null;
+
+      const cachedTexture = globeIconTextureCache.get(iconSrc);
+      if (!cachedTexture) {
+        if (!globeIconTexturePending.has(iconSrc)) {
+          globeIconTexturePending.add(iconSrc);
+          globeTextureLoader.load(iconSrc, (loadedTexture) => {
+            loadedTexture.colorSpace = THREE.SRGBColorSpace;
+            globeIconTextureCache.set(iconSrc, loadedTexture);
+            globeIconTexturePending.delete(iconSrc);
+            if (is3DMode) renderGlobePOIs();
+          }, undefined, () => {
+            globeIconTexturePending.delete(iconSrc);
+          });
+        }
+        return null;
+      }
+
+      const spriteMaterial = new THREE.SpriteMaterial({
+        map: cachedTexture,
+        transparent: true,
+        depthTest: true,
+        depthWrite: false
+      });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      const iconScale = 0.55;
+      sprite.scale.set(iconScale, iconScale, 1);
+      sprite.position.copy(position.clone().normalize().multiplyScalar(MARKER_RADIUS + 0.12));
+      sprite.userData.locationId = location.id;
+      return sprite;
     }
 
     function renderGlobePOIs() {
@@ -939,6 +983,9 @@
           marker.userData.locationId = location.id;
           globePoiGroup.add(marker);
         }
+
+        const iconSprite = createGlobeIconSprite(location, position);
+        if (iconSprite) globePoiGroup.add(iconSprite);
 
         if (location.show_name && toggleNames.checked && globeLabelLayer) {
           const label = document.createElement('button');
@@ -1293,6 +1340,7 @@
     toggleIcons.addEventListener('change', () => {
       renderPOI();
       renderPOIList();
+      renderGlobePOIs();
     });
     toggleNames.addEventListener('change', () => {
       renderPOI();
