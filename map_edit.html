@@ -56,6 +56,21 @@
       background: rgba(255, 255, 255, 0.1);
     }
     .editor-status { font-size: 12px; color: #ddd; }
+    .poi-item.is-selected .poi-pin {
+      box-shadow: 0 0 0 3px #ff9f1c, 0 1px 4px rgba(0, 0, 0, 0.45);
+      filter: brightness(1.08);
+    }
+    .poi-item.is-selected .poi-pin-icon {
+      filter: drop-shadow(0 0 4px rgba(255, 159, 28, 0.9));
+    }
+    .poi-item.is-selected .poi-name {
+      text-shadow: 0 0 6px rgba(255, 159, 28, 0.9);
+    }
+    .poi-entry.is-selected {
+      outline: 2px solid #ff9f1c;
+      outline-offset: 1px;
+      background: rgba(255, 159, 28, 0.14);
+    }
     .icon-choice-row {
       display: grid;
       grid-template-columns: 1fr auto auto;
@@ -289,7 +304,7 @@
   </aside>
 
   <section class="editor-panel" aria-label="Criação de POI">
-    <h2>Novo POI</h2>
+    <h2 id="editorTitle">Editar POI</h2>
     <input id="poiName" type="text" placeholder="Nome" />
     <select id="poiType"></select>
     <textarea id="poiDescription" rows="4" placeholder="Descrição"></textarea>
@@ -356,6 +371,7 @@
     const poiLayer = document.getElementById('poiLayer');
     const poiList = document.getElementById('poiList');
     const poiSearch = document.getElementById('poiSearch');
+    const editorTitle = document.getElementById('editorTitle');
     const poiName = document.getElementById('poiName');
     const poiType = document.getElementById('poiType');
     const poiDescription = document.getElementById('poiDescription');
@@ -399,6 +415,7 @@
     let typeConfig = {};
     let cachedDirectoryHandle = null;
     let editingPoiId = null;
+    let selectedPoiId = null;
     let selectedIconPath = '';
     let iconPreviewSize = 54;
     let iconSeed = 20260411;
@@ -720,6 +737,7 @@
       const element = document.createElement('article');
       element.className = 'poi-item';
       element.style.setProperty('--poi-color', getTypeColor(location.type));
+      if (selectedPoiId === location.id) element.classList.add('is-selected');
 
       if (location.show_pin !== false) {
         const pin = document.createElement('span');
@@ -784,6 +802,7 @@
       getFilteredLocations().forEach((location) => {
         const item = document.createElement('li');
         item.className = 'poi-entry';
+        if (selectedPoiId === location.id) item.classList.add('is-selected');
         item.tabIndex = 0;
         item.style.setProperty('--poi-color', getTypeColor(location.type));
         const title = document.createElement('strong');
@@ -800,8 +819,9 @@
       });
     }
 
-    function resetEditorForm() {
+    function resetEditorForm(mode = 'edit') {
       editingPoiId = null;
+      selectedPoiId = null;
       poiName.value = '';
       poiDescription.value = '';
       poiImagePrefix.value = '';
@@ -812,12 +832,16 @@
       savePoi.setAttribute('aria-label', 'Criar POI');
       deletePoi.hidden = true;
       cancelEdit.hidden = true;
+      editorTitle.textContent = mode === 'new' ? 'Novo POI' : 'Editar POI';
       updatePreviewDot();
       updateIconChoicePreview();
+      renderPOIList();
+      renderPOI();
     }
 
     function loadPoiIntoForm(location) {
       editingPoiId = location.id;
+      selectedPoiId = location.id;
       poiName.value = location.name || '';
       poiType.value = location.type || poiType.value;
       poiDescription.value = location.description || '';
@@ -829,8 +853,11 @@
       savePoi.setAttribute('aria-label', 'Salvar alterações do POI');
       deletePoi.hidden = false;
       cancelEdit.hidden = false;
+      editorTitle.textContent = 'Editar POI';
       updatePreviewDot();
       updateIconChoicePreview();
+      renderPOIList();
+      renderPOI();
     }
 
     async function loadTypeConfig() {
@@ -1238,7 +1265,14 @@
     });
 
     addPoiFab.addEventListener('click', () => {
-      resetEditorForm();
+      if (!lastClickedWorldCoord) {
+        editorStatus.textContent = 'Clique no mapa para definir a posição e depois use o botão + para criar um novo POI.';
+        return;
+      }
+      resetEditorForm('new');
+      coordX.value = String(lastClickedWorldCoord.x);
+      coordY.value = String(lastClickedWorldCoord.y);
+      updatePreviewDot();
       editorStatus.textContent = 'Pronto para criar um novo POI.';
     });
 
@@ -1272,7 +1306,7 @@
     });
 
     cancelEdit.addEventListener('click', () => {
-      resetEditorForm();
+      resetEditorForm('edit');
       editorStatus.textContent = 'Edição cancelada.';
     });
 
