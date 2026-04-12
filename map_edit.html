@@ -31,6 +31,30 @@
       padding: 8px;
     }
     .editor-panel button { cursor: pointer; background: #3c3222; }
+    .editor-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .editor-icon-btn {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      line-height: 1;
+      border-radius: 8px;
+      border: 2px solid #3c3222;
+      background: rgba(0, 0, 0, 0.25);
+      color: #fff;
+      cursor: pointer;
+    }
+    .editor-icon-btn:hover {
+      border-color: #f4efe2;
+      background: rgba(255, 255, 255, 0.1);
+    }
     .editor-status { font-size: 12px; color: #ddd; }
     .icon-choice-row {
       display: grid;
@@ -279,13 +303,15 @@
     <input id="coordX" type="number" placeholder="Coord X" />
     <input id="coordY" type="number" placeholder="Coord Y" />
     <small id="lastClickInfo" class="last-click-info">Último clique: nenhum</small>
-    <button id="recenterPoiFromClick" type="button">Recentralizar POI na posição clicada do mouse</button>
     <button id="chooseDir" type="button">Escolher pasta data/locations</button>
-    <button id="exportData" type="button">Exportar dados</button>
-    <button id="importData" type="button">Importar dados</button>
-    <button id="saveAllPois" type="button">Salvar tudo</button>
-    <button id="savePoi" type="button">Criar POI</button>
-    <button id="deletePoi" type="button" hidden>Deletar POI</button>
+    <div class="editor-actions" aria-label="Ações do POI">
+      <button id="recenterPoiFromClick" class="editor-icon-btn" type="button" title="Reajustar posição para último clique" aria-label="Reajustar posição para último clique">🎯</button>
+      <button id="exportData" class="editor-icon-btn" type="button" title="Exportar dados" aria-label="Exportar dados">📤</button>
+      <button id="importData" class="editor-icon-btn" type="button" title="Importar dados" aria-label="Importar dados">📥</button>
+      <button id="savePoi" class="editor-icon-btn" type="button" title="Salvar POI atual" aria-label="Salvar POI atual">💾</button>
+      <button id="saveAllPois" class="editor-icon-btn" type="button" title="Salvar todos os POIs" aria-label="Salvar todos os POIs">🗂️</button>
+      <button id="deletePoi" class="editor-icon-btn" type="button" title="Deletar POI atual" aria-label="Deletar POI atual" hidden>🗑️</button>
+    </div>
     <button id="cancelEdit" type="button" hidden>Cancelar edição</button>
     <p class="editor-status" id="editorStatus">Dica: para gravar direto em `data/locations`, execute localmente em Chrome e use File System Access API.</p>
   </section>
@@ -782,7 +808,8 @@
       coordX.value = '';
       coordY.value = '';
       selectedIconPath = '';
-      savePoi.textContent = 'Criar POI';
+      savePoi.title = 'Criar POI';
+      savePoi.setAttribute('aria-label', 'Criar POI');
       deletePoi.hidden = true;
       cancelEdit.hidden = true;
       updatePreviewDot();
@@ -798,7 +825,8 @@
       coordX.value = String(location.x ?? '');
       coordY.value = String(location.y ?? '');
       selectedIconPath = String(location.icon_override || '');
-      savePoi.textContent = 'Salvar alterações';
+      savePoi.title = 'Salvar alterações do POI';
+      savePoi.setAttribute('aria-label', 'Salvar alterações do POI');
       deletePoi.hidden = false;
       cancelEdit.hidden = false;
       updatePreviewDot();
