@@ -1,11 +1,11 @@
 {
-  "x": 5585,
-  "y": 765,
+  "x": 5556,
+  "y": 1157,
   "name": "Serenia",
   "type": "Cidade",
   "description": "",
   "image_prefix": "",
-  "icon_override": "",
+  "icon_override": "data/locations/icons/cidade_icon_3.png",
   "show_pin": true,
   "show_icon": true,
   "show_name": true

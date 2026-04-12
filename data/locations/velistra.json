@@ -1,0 +1,12 @@
+{
+  "x": 6433,
+  "y": 3997,
+  "name": "Velistra",
+  "type": "Cidade",
+  "description": "Velistra permanece espalhada entre a costa fragmentada e suas ilhotas, mas já não transmite a mesma tranquilidade de antes. O mar, que antes guiava seu povo, agora é observado com cautela. Ainda dita o ritmo da vida — mercados, partidas e retornos continuam ligados às marés —, mas há uma tensão constante, quase imperceptível para estrangeiros, porém evidente para quem nasceu ali.\n\nAs comunidades continuam descentralizadas, conectadas por rotas que não existem em mapas comuns. Barcos pequenos ainda cruzam entre enseadas e formações rochosas, conduzidos por navegadores que conhecem o oceano como poucos. Mas esse conhecimento, antes fonte de respeito, passou a ser tratado com desconfiança por forças externas. O que era tradição agora é visto como algo difícil de controlar — e, por isso, perigoso.\n\nNos últimos anos, mudanças sutis alteraram o comportamento dos velistreanos. Algumas áreas de pesca foram abandonadas sem explicação clara. Símbolos de madeira e conchas começaram a aparecer nas margens, marcando limites invisíveis. Rituais antigos, antes esquecidos, voltaram a ser praticados antes de qualquer viagem ao mar.\n\nOs mais velhos falam pouco, mas quando falam, mencionam padrões antigos retornando — sinais que não pertencem apenas ao presente. Dizem que o mar não está apenas agitado. Está atento.\n\nPara quem observa de fora, Velistra ainda parece fragmentada. Mas por trás dessa aparência, existe uma leitura constante do oceano — e agora, mais do que nunca, uma tentativa silenciosa de evitar algo que poucos conseguem explicar.",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/cidade_icon_3.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}
