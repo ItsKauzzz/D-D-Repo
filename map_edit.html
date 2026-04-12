@@ -20,6 +20,30 @@
       display: grid;
       gap: 10px;
     }
+    .editor-panel.is-hidden {
+      display: none;
+    }
+    .editor-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .editor-panel-header h2 {
+      margin: 0;
+    }
+    .editor-close-btn {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border-radius: 8px;
+      border: 2px solid #3c3222;
+      background: rgba(0, 0, 0, 0.25);
+      color: #fff;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+    }
     .editor-panel button,
     .editor-panel input,
     .editor-panel select,
@@ -65,6 +89,8 @@
     }
     .poi-item.is-selected .poi-name {
       text-shadow: 0 0 6px rgba(255, 159, 28, 0.9);
+      color: #ffd49a;
+      font-weight: 800;
     }
     .poi-entry.is-selected {
       outline: 2px solid #ff9f1c;
@@ -261,6 +287,12 @@
       font-size: 12px;
       color: #e8e0cf;
     }
+    #mapCanvas {
+      cursor: crosshair !important;
+    }
+    #mapCanvas.dragging {
+      cursor: move !important;
+    }
     .add-poi-fab {
       position: fixed;
       right: 16px;
@@ -304,7 +336,10 @@
   </aside>
 
   <section class="editor-panel" aria-label="Criação de POI">
-    <h2 id="editorTitle">Editar POI</h2>
+    <div class="editor-panel-header">
+      <h2 id="editorTitle">Editar POI</h2>
+      <button id="closeEditorPanel" class="editor-close-btn" type="button" title="Fechar editor" aria-label="Fechar editor">✕</button>
+    </div>
     <input id="poiName" type="text" placeholder="Nome" />
     <select id="poiType"></select>
     <textarea id="poiDescription" rows="4" placeholder="Descrição"></textarea>
@@ -314,7 +349,6 @@
       <button id="openIconPicker" type="button">Ícones</button>
       <button id="clearIconChoice" type="button">Aleatório</button>
     </div>
-    <label><input id="selectCoord" type="checkbox" /> Selecionar coordenada clicando no mapa</label>
     <input id="coordX" type="number" placeholder="Coord X" />
     <input id="coordY" type="number" placeholder="Coord Y" />
     <small id="lastClickInfo" class="last-click-info">Último clique: nenhum</small>
@@ -327,7 +361,6 @@
       <button id="saveAllPois" class="editor-icon-btn" type="button" title="Salvar todos os POIs" aria-label="Salvar todos os POIs">🗂️</button>
       <button id="deletePoi" class="editor-icon-btn" type="button" title="Deletar POI atual" aria-label="Deletar POI atual" hidden>🗑️</button>
     </div>
-    <button id="cancelEdit" type="button" hidden>Cancelar edição</button>
     <p class="editor-status" id="editorStatus">Dica: para gravar direto em `data/locations`, execute localmente em Chrome e use File System Access API.</p>
   </section>
 
@@ -371,7 +404,9 @@
     const poiLayer = document.getElementById('poiLayer');
     const poiList = document.getElementById('poiList');
     const poiSearch = document.getElementById('poiSearch');
+    const editorPanel = document.querySelector('.editor-panel');
     const editorTitle = document.getElementById('editorTitle');
+    const closeEditorPanel = document.getElementById('closeEditorPanel');
     const poiName = document.getElementById('poiName');
     const poiType = document.getElementById('poiType');
     const poiDescription = document.getElementById('poiDescription');
@@ -388,7 +423,6 @@
     const iconGrid = document.getElementById('iconGrid');
     const iconZoomSlider = document.getElementById('iconZoomSlider');
     const iconZoomValue = document.getElementById('iconZoomValue');
-    const selectCoord = document.getElementById('selectCoord');
     const recenterPoiFromClick = document.getElementById('recenterPoiFromClick');
     const savePoi = document.getElementById('savePoi');
     const chooseDir = document.getElementById('chooseDir');
@@ -398,7 +432,6 @@
     const importDataInput = document.getElementById('importDataInput');
     const addPoiFab = document.getElementById('addPoiFab');
     const deletePoi = document.getElementById('deletePoi');
-    const cancelEdit = document.getElementById('cancelEdit');
     const editorStatus = document.getElementById('editorStatus');
     const previewDot = document.getElementById('previewDot');
     const lastClickDot = document.getElementById('lastClickDot');
@@ -416,6 +449,7 @@
     let cachedDirectoryHandle = null;
     let editingPoiId = null;
     let selectedPoiId = null;
+    let editorMode = 'edit';
     let selectedIconPath = '';
     let iconPreviewSize = 54;
     let iconSeed = 20260411;
@@ -662,6 +696,10 @@
       updateLastClickIndicator();
     }
 
+    function setEditorPanelVisible(visible) {
+      editorPanel.classList.toggle('is-hidden', !visible);
+    }
+
     function applyZoom() {
       if (naturalWidth && naturalHeight) {
         mapCanvas.style.backgroundSize = `${naturalWidth * zoom}px ${naturalHeight * zoom}px`;
@@ -779,6 +817,7 @@
       element.addEventListener('click', () => {
         focusLocation(location);
         loadPoiIntoForm(location);
+        setEditorPanelVisible(true);
       });
       return element;
     }
@@ -814,12 +853,14 @@
         item.addEventListener('click', () => {
           focusLocation(location);
           loadPoiIntoForm(location);
+          setEditorPanelVisible(true);
         });
         poiList.appendChild(item);
       });
     }
 
     function resetEditorForm(mode = 'edit') {
+      editorMode = mode;
       editingPoiId = null;
       selectedPoiId = null;
       poiName.value = '';
@@ -831,7 +872,6 @@
       savePoi.title = 'Criar POI';
       savePoi.setAttribute('aria-label', 'Criar POI');
       deletePoi.hidden = true;
-      cancelEdit.hidden = true;
       editorTitle.textContent = mode === 'new' ? 'Novo POI' : 'Editar POI';
       updatePreviewDot();
       updateIconChoicePreview();
@@ -840,6 +880,7 @@
     }
 
     function loadPoiIntoForm(location) {
+      editorMode = 'edit';
       editingPoiId = location.id;
       selectedPoiId = location.id;
       poiName.value = location.name || '';
@@ -852,7 +893,6 @@
       savePoi.title = 'Salvar alterações do POI';
       savePoi.setAttribute('aria-label', 'Salvar alterações do POI');
       deletePoi.hidden = false;
-      cancelEdit.hidden = false;
       editorTitle.textContent = 'Editar POI';
       updatePreviewDot();
       updateIconChoicePreview();
@@ -1270,6 +1310,7 @@
         return;
       }
       resetEditorForm('new');
+      setEditorPanelVisible(true);
       coordX.value = String(lastClickedWorldCoord.x);
       coordY.value = String(lastClickedWorldCoord.y);
       updatePreviewDot();
@@ -1305,9 +1346,10 @@
       }
     });
 
-    cancelEdit.addEventListener('click', () => {
+    closeEditorPanel.addEventListener('click', () => {
       resetEditorForm('edit');
-      editorStatus.textContent = 'Edição cancelada.';
+      setEditorPanelVisible(false);
+      editorStatus.textContent = 'Editor fechado.';
     });
 
     openIconPicker.addEventListener('click', async () => {
@@ -1343,10 +1385,11 @@
       const world = worldFromScreen(event.clientX, event.clientY);
       lastClickedWorldCoord = world;
       updateLastClickIndicator();
-      if (!selectCoord.checked) return;
-      coordX.value = String(world.x);
-      coordY.value = String(world.y);
-      updatePreviewDot();
+      if (editorMode === 'new') {
+        coordX.value = String(world.x);
+        coordY.value = String(world.y);
+        updatePreviewDot();
+      }
     });
 
     recenterPoiFromClick.addEventListener('click', () => {
