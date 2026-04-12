@@ -377,6 +377,8 @@
     let iconPreviewSize = 54;
     let iconSeed = 20260411;
     let lastClickedWorldCoord = null;
+    let iconCatalog = [];
+    let iconCatalogLoaded = false;
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 3;
@@ -407,7 +409,7 @@
       return Array.isArray(defaults.icons) ? defaults.icons : [];
     }
 
-    function getAllIcons() {
+    function getIconsFromTypeConfig() {
       const entries = Object.entries(typeConfig);
       const all = entries.flatMap(([type, cfg]) => {
         const icons = Array.isArray(cfg?.icons) ? cfg.icons : [];
@@ -418,6 +420,63 @@
         if (!unique.has(entry.path)) unique.set(entry.path, entry);
       });
       return [...unique.values()];
+    }
+
+    async function listDirectoryEntries(path) {
+      const response = await fetch(path);
+      if (!response.ok) throw new Error(`Falha ao listar diretório: ${path}`);
+      const html = await response.text();
+      const hrefMatches = html.match(/href\s*=\s*["']([^"']+)["']/gi) || [];
+      return hrefMatches
+        .map((rawHref) => rawHref.replace(/href\s*=\s*["']|["']/gi, ''))
+        .map((href) => decodeURIComponent(href.split('?')[0].split('#')[0]))
+        .filter((href) => href && href !== '../');
+    }
+
+    function inferIconTypeFromPath(iconPath) {
+      const cleanPath = String(iconPath || '').replace(/^\/+/, '');
+      const segments = cleanPath.split('/');
+      if (segments.length >= 2 && segments[0].toLowerCase() === 'icon') {
+        return segments[1] || 'Custom';
+      }
+      return 'Custom';
+    }
+
+    async function loadIconCatalog() {
+      if (iconCatalogLoaded) return iconCatalog;
+
+      const discovered = new Map();
+      const pushIcon = (path, typeHint = '') => {
+        const normalizedPath = String(path || '').replace(/^\/+/, '');
+        if (!normalizedPath || discovered.has(normalizedPath)) return;
+        const type = typeHint || inferIconTypeFromPath(normalizedPath);
+        discovered.set(normalizedPath, { type, path: normalizedPath });
+      };
+
+      getIconsFromTypeConfig().forEach((entry) => pushIcon(entry.path, entry.type));
+
+      try {
+        const rootEntries = await listDirectoryEntries('Icon/');
+        const folders = rootEntries.filter((href) => href.endsWith('/'));
+
+        for (const folderHref of folders) {
+          const folderName = folderHref.replace(/\/$/, '');
+          if (!folderName) continue;
+          const folderPath = `Icon/${folderName}/`;
+          const fileEntries = await listDirectoryEntries(folderPath);
+          fileEntries
+            .filter((fileName) => /(png|svg|jpg|jpeg|webp)$/i.test(fileName))
+            .forEach((fileName) => {
+              pushIcon(`${folderPath}${fileName}`, folderName);
+            });
+        }
+      } catch (error) {
+        console.debug('Não foi possível listar todos os ícones da pasta Icon/. Usando catálogo da configuração.', error);
+      }
+
+      iconCatalog = [...discovered.values()];
+      iconCatalogLoaded = true;
+      return iconCatalog;
     }
 
     function hashStringToInt(input) {
@@ -472,7 +531,7 @@
     }
 
     function getFilteredIconsForPicker() {
-      const icons = getAllIcons();
+      const icons = iconCatalog.length ? iconCatalog : getIconsFromTypeConfig();
       const query = iconPickerSearch.value.trim().toLowerCase();
       if (!query) return icons;
       return icons.filter((entry) => `${entry.type} ${entry.path}`.toLowerCase().includes(query));
@@ -1189,7 +1248,8 @@
       editorStatus.textContent = 'Edição cancelada.';
     });
 
-    openIconPicker.addEventListener('click', () => {
+    openIconPicker.addEventListener('click', async () => {
+      await loadIconCatalog();
       iconPickerBackdrop.classList.add('visible');
       iconPickerBackdrop.setAttribute('aria-hidden', 'false');
       iconPickerSearch.value = '';
