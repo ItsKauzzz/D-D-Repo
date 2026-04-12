@@ -1,0 +1,12 @@
+{
+  "x": 6002,
+  "y": 1258,
+  "name": "Pântano dos Salgueiros",
+  "type": "Região",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/cidade_icon_3.png",
+  "show_pin": false,
+  "show_icon": false,
+  "show_name": true
+}

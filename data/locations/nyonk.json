@@ -1,11 +1,11 @@
 {
-  "x": 5529,
-  "y": 1517,
-  "name": "Riacho Cristalino",
+  "x": 5668,
+  "y": 1372,
+  "name": "Nyonk",
   "type": "Vila Pequena",
-  "description": "Uma vila pequena e não tão próspera. Existem relatos de homens encapuzados de alguma seita estranha nas proximidades da cidade",
+  "description": "Vila de halflings minusculos onde controversialmente o grande mago Kryspin teve suas origens, mundialmente conhecido por magias de alteração na voz e dispositivos de comunicação magicos muito semelhantes a pedras.",
   "image_prefix": "",
-  "icon_override": "data/locations/icons/vila_icon_2.png",
+  "icon_override": "data/locations/icons/vila_pequena_icon_1.png",
   "show_pin": true,
   "show_icon": true,
   "show_name": true

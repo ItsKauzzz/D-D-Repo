@@ -1,12 +1,12 @@
 {
-  "x": -2420,
-  "y": 1562,
+  "x": -2350,
+  "y": 1657,
   "name": "Jardim Sagrado de Elmanther",
-  "type": "Acontecimento",
+  "type": "Região",
   "description": "No meio da floresta verdejante existe um jardim ancestral sagrado para os elfos de Elmanther. Além de plantas e vegetações misticas, existem arvores que são consideradas sagradas e milagrosas na região. Essas árvores são tão poderosas que algumas delas possuem até mesmo vida e controle total sobre suas raizes e folhas.",
   "image_prefix": "",
   "icon_override": "data/locations/icons/acontecimento_icon_3.svg",
   "show_pin": false,
-  "show_icon": true,
+  "show_icon": false,
   "show_name": true
 }

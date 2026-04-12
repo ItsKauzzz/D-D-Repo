@@ -1,0 +1,12 @@
+{
+  "x": 5526,
+  "y": 1524,
+  "name": "Riacho Cristalino",
+  "type": "Vila Pequena",
+  "description": "Uma pequena vila pacata, com pouquissimos moradores. Relatos recentes afirmam que uma espécie de culto estava se criando na região, mas até o momento são apenas boatos. \n\nMoradores também relata recorrentemente o desaparecimento de crianças pelas redondezas.",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/vila_pequena_icon_1.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}

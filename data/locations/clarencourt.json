@@ -5,7 +5,7 @@
   "type": "Vila",
   "description": "Clarencourt é uma cidade satélite de Serenia. Ele é comumente conhecida por ser uma cidade universitária voltada para as artes, como pintura, musica, dança, performances, atuações e outras.\n\nO comercio, economia e a agricultura dependem majoritariamente de importações de insumos da cidade de Serenia, em troca de pagamentos da verba publica que é coletada com os valores das mensalidades dos estudantes.",
   "image_prefix": "",
-  "icon_override": "data/locations/icons/cidade_icon_1.png",
+  "icon_override": "data/locations/icons/vila_icon_1.png",
   "show_pin": true,
   "show_icon": true,
   "show_name": true

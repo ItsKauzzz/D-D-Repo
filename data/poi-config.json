@@ -97,6 +97,22 @@
         "bold": true,
         "italic": true
       }
+    },
+    "Região": {
+      "color": "#ba6070",
+      "show_pin_default": false,
+      "show_icon_default": false,
+      "show_name_default": true,
+      "icons": [
+        "data/locations/icons/cidade_icon_1.png",
+        "data/locations/icons/cidade_icon_2.png",
+        "data/locations/icons/cidade_icon_3.png"
+      ],
+      "label_style": {
+        "size_offset_pt": 2,
+        "bold": false,
+        "italic": true
+      }
     }
   }
 }
