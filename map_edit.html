@@ -262,6 +262,7 @@
     <label><input id="selectCoord" type="checkbox" /> Selecionar coordenada clicando no mapa</label>
     <input id="coordX" type="number" placeholder="Coord X" />
     <input id="coordY" type="number" placeholder="Coord Y" />
+    <button id="recenterPoiFromClick" type="button">Recentralizar POI na posição clicada do mouse</button>
     <button id="chooseDir" type="button">Escolher pasta data/locations</button>
     <button id="exportData" type="button">Exportar dados</button>
     <button id="importData" type="button">Importar dados</button>
@@ -326,6 +327,7 @@
     const iconZoomSlider = document.getElementById('iconZoomSlider');
     const iconZoomValue = document.getElementById('iconZoomValue');
     const selectCoord = document.getElementById('selectCoord');
+    const recenterPoiFromClick = document.getElementById('recenterPoiFromClick');
     const savePoi = document.getElementById('savePoi');
     const chooseDir = document.getElementById('chooseDir');
     const exportData = document.getElementById('exportData');
@@ -352,6 +354,7 @@
     let selectedIconPath = '';
     let iconPreviewSize = 54;
     let iconSeed = 20260411;
+    let lastClickedWorldCoord = null;
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 3;
@@ -1133,11 +1136,37 @@
     });
 
     mapCanvas.addEventListener('click', (event) => {
-      if (!selectCoord.checked) return;
       const world = worldFromScreen(event.clientX, event.clientY);
+      lastClickedWorldCoord = world;
+      if (!selectCoord.checked) return;
       coordX.value = String(world.x);
       coordY.value = String(world.y);
       updatePreviewDot();
+    });
+
+    recenterPoiFromClick.addEventListener('click', () => {
+      if (!lastClickedWorldCoord) {
+        editorStatus.textContent = 'Clique em uma posição do mapa antes de recentralizar o POI.';
+        return;
+      }
+
+      coordX.value = String(lastClickedWorldCoord.x);
+      coordY.value = String(lastClickedWorldCoord.y);
+      updatePreviewDot();
+
+      if (editingPoiId) {
+        const target = locations.find((entry) => entry.id === editingPoiId);
+        if (target) {
+          target.x = lastClickedWorldCoord.x;
+          target.y = lastClickedWorldCoord.y;
+          renderPOI();
+          renderPOIList();
+        }
+        editorStatus.textContent = 'POI reposicionado para o último clique (salve para persistir no JSON).';
+        return;
+      }
+
+      editorStatus.textContent = 'Coordenadas atualizadas para o último clique.';
     });
 
     coordX.addEventListener('input', updatePreviewDot);

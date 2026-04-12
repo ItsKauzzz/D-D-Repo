@@ -150,6 +150,7 @@
     const MAX_ZOOM = 3;
     const MIN_CAMERA_DISTANCE = 8;
     const MAX_CAMERA_DISTANCE = 18;
+    const GLOBE_PAN_SENSITIVITY = 0.0045;
 
     let is3DMode = false;
     let globeReady = false;
@@ -816,8 +817,8 @@
       const deltaX = event.clientX - globeLastX;
       const deltaY = event.clientY - globeLastY;
       if (Math.abs(deltaX) + Math.abs(deltaY) > 2) globeDidDrag = true;
-      globeAzimuth -= deltaX * 0.008;
-      globePolar += deltaY * 0.008;
+      globeAzimuth -= deltaX * GLOBE_PAN_SENSITIVITY;
+      globePolar -= deltaY * GLOBE_PAN_SENSITIVITY;
       globeLastX = event.clientX;
       globeLastY = event.clientY;
       updateGlobeCamera();
