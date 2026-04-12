@@ -161,6 +161,8 @@
     let globeRaycaster;
     let globePointer;
     let globePoiGroup;
+    let globeLabelLayer;
+    let globeLabelEntries = [];
     let globeAnimationFrame = null;
     let globeAzimuth = 0;
     let globePolar = Math.PI / 2;
@@ -753,6 +755,9 @@
       globeRenderer.setPixelRatio(window.devicePixelRatio || 1);
       globeRenderer.setSize(globeContainer.clientWidth, globeContainer.clientHeight);
       globeContainer.appendChild(globeRenderer.domElement);
+      globeLabelLayer = document.createElement('div');
+      globeLabelLayer.className = 'globe-label-layer';
+      globeContainer.appendChild(globeLabelLayer);
       updateGlobeCamera();
 
       const textureLoader = new THREE.TextureLoader();
@@ -782,6 +787,7 @@
 
     function renderGlobeFrame() {
       if (!globeReady || !is3DMode) return;
+      updateGlobeLabels();
       globeRenderer.render(globeScene, globeCamera);
       globeAnimationFrame = requestAnimationFrame(renderGlobeFrame);
     }
@@ -867,22 +873,84 @@
       }
     }
 
+    function clearGlobeLabels() {
+      if (!globeLabelLayer) return;
+      globeLabelLayer.innerHTML = '';
+      globeLabelEntries = [];
+    }
+
+    function updateGlobeLabels() {
+      if (!globeLabelLayer || !globeCamera || !is3DMode) return;
+      const width = globeContainer.clientWidth || 1;
+      const height = globeContainer.clientHeight || 1;
+
+      globeLabelEntries.forEach((entry) => {
+        const anchor = getSpherePositionFromLocation(entry.location, GLOBE_RADIUS);
+        if (!anchor) {
+          entry.element.style.display = 'none';
+          return;
+        }
+
+        const toCamera = globeCamera.position.clone().sub(anchor).normalize();
+        const normal = anchor.clone().normalize();
+        const isFrontFacing = normal.dot(toCamera) > 0;
+        if (!isFrontFacing) {
+          entry.element.style.display = 'none';
+          return;
+        }
+
+        const projected = anchor.clone().project(globeCamera);
+        const isInClipSpace = projected.z >= -1 && projected.z <= 1;
+        if (!isInClipSpace) {
+          entry.element.style.display = 'none';
+          return;
+        }
+
+        const screenX = (projected.x * 0.5 + 0.5) * width;
+        const screenY = (-projected.y * 0.5 + 0.5) * height;
+        const distance = globeCamera.position.distanceTo(anchor);
+        const proximity = clamp((MAX_CAMERA_DISTANCE - distance) / (MAX_CAMERA_DISTANCE - MIN_CAMERA_DISTANCE), 0, 1);
+        const fontSize = 10 + (proximity * 10);
+        const opacity = 0.45 + (proximity * 0.55);
+
+        entry.element.style.display = 'block';
+        entry.element.style.left = `${screenX}px`;
+        entry.element.style.top = `${screenY}px`;
+        entry.element.style.fontSize = `${fontSize.toFixed(1)}px`;
+        entry.element.style.opacity = opacity.toFixed(2);
+      });
+    }
+
     function renderGlobePOIs() {
       if (!globePoiGroup || !naturalWidth || !naturalHeight) return;
       clearGlobePOIs();
+      clearGlobeLabels();
       getFilteredLocations().forEach((location) => {
-        if (!location.show_pin || !togglePins.checked) return;
         const position = getSpherePositionFromLocation(location);
         if (!position) return;
-        const rgb = hexToRgb(getTypeColor(location.type)) || { r: 160, g: 160, b: 160 };
-        const marker = new THREE.Mesh(
-          new THREE.SphereGeometry(0.075, 16, 12),
-          new THREE.MeshStandardMaterial({ color: new THREE.Color(rgb.r / 255, rgb.g / 255, rgb.b / 255) })
-        );
-        marker.position.copy(position);
-        marker.userData.locationId = location.id;
-        globePoiGroup.add(marker);
+
+        if (location.show_pin && togglePins.checked) {
+          const rgb = hexToRgb(getTypeColor(location.type)) || { r: 160, g: 160, b: 160 };
+          const marker = new THREE.Mesh(
+            new THREE.SphereGeometry(0.075, 16, 12),
+            new THREE.MeshStandardMaterial({ color: new THREE.Color(rgb.r / 255, rgb.g / 255, rgb.b / 255) })
+          );
+          marker.position.copy(position);
+          marker.userData.locationId = location.id;
+          globePoiGroup.add(marker);
+        }
+
+        if (location.show_name && toggleNames.checked && globeLabelLayer) {
+          const label = document.createElement('button');
+          label.type = 'button';
+          label.className = 'globe-poi-label';
+          label.textContent = location.name;
+          label.addEventListener('click', () => openPoiModal(location));
+          globeLabelLayer.appendChild(label);
+          globeLabelEntries.push({ location, element: label });
+        }
       });
+      updateGlobeLabels();
     }
 
     function onGlobeClick(event) {
@@ -1226,7 +1294,10 @@
       renderPOI();
       renderPOIList();
     });
-    toggleNames.addEventListener('change', renderPOI);
+    toggleNames.addEventListener('change', () => {
+      renderPOI();
+      renderGlobePOIs();
+    });
     toggle3D.addEventListener('change', () => setViewMode3D(toggle3D.checked));
     poiModalClose.addEventListener('click', closePoiModal);
     imageModalClose.addEventListener('click', closeImageModal);
@@ -1259,7 +1330,10 @@
       globeCamera.aspect = width / height;
       globeCamera.updateProjectionMatrix();
       globeRenderer.setSize(width, height);
-      if (is3DMode) globeRenderer.render(globeScene, globeCamera);
+      if (is3DMode) {
+        updateGlobeLabels();
+        globeRenderer.render(globeScene, globeCamera);
+      }
     });
 
     renderPoiTabMenu();

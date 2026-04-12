@@ -206,6 +206,22 @@
       transform: translate(-50%, -50%);
       pointer-events: none;
     }
+    .last-click-dot {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border: 2px solid #111;
+      border-radius: 50%;
+      background: #f2c94c;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 4;
+    }
+    .last-click-info {
+      display: block;
+      font-size: 12px;
+      color: #e8e0cf;
+    }
     .add-poi-fab {
       position: fixed;
       right: 16px;
@@ -262,10 +278,12 @@
     <label><input id="selectCoord" type="checkbox" /> Selecionar coordenada clicando no mapa</label>
     <input id="coordX" type="number" placeholder="Coord X" />
     <input id="coordY" type="number" placeholder="Coord Y" />
+    <small id="lastClickInfo" class="last-click-info">Último clique: nenhum</small>
     <button id="recenterPoiFromClick" type="button">Recentralizar POI na posição clicada do mouse</button>
     <button id="chooseDir" type="button">Escolher pasta data/locations</button>
     <button id="exportData" type="button">Exportar dados</button>
     <button id="importData" type="button">Importar dados</button>
+    <button id="saveAllPois" type="button">Salvar tudo</button>
     <button id="savePoi" type="button">Criar POI</button>
     <button id="deletePoi" type="button" hidden>Deletar POI</button>
     <button id="cancelEdit" type="button" hidden>Cancelar edição</button>
@@ -282,6 +300,7 @@
   <div id="mapCanvas" aria-label="Editor de mapa">
     <div id="poiLayer" class="poi-layer" aria-hidden="true"></div>
     <div id="previewDot" class="preview-dot" hidden></div>
+    <div id="lastClickDot" class="last-click-dot" hidden></div>
   </div>
   <div id="iconPickerBackdrop" class="icon-picker-backdrop" aria-hidden="true">
     <article class="icon-picker" role="dialog" aria-modal="true" aria-label="Selecionar ícone">
@@ -317,6 +336,7 @@
     const poiImagePrefix = document.getElementById('poiImagePrefix');
     const coordX = document.getElementById('coordX');
     const coordY = document.getElementById('coordY');
+    const lastClickInfo = document.getElementById('lastClickInfo');
     const iconChoicePreview = document.getElementById('iconChoicePreview');
     const openIconPicker = document.getElementById('openIconPicker');
     const clearIconChoice = document.getElementById('clearIconChoice');
@@ -332,12 +352,14 @@
     const chooseDir = document.getElementById('chooseDir');
     const exportData = document.getElementById('exportData');
     const importData = document.getElementById('importData');
+    const saveAllPois = document.getElementById('saveAllPois');
     const importDataInput = document.getElementById('importDataInput');
     const addPoiFab = document.getElementById('addPoiFab');
     const deletePoi = document.getElementById('deletePoi');
     const cancelEdit = document.getElementById('cancelEdit');
     const editorStatus = document.getElementById('editorStatus');
     const previewDot = document.getElementById('previewDot');
+    const lastClickDot = document.getElementById('lastClickDot');
 
     let offsetX = 0;
     let offsetY = 0;
@@ -535,6 +557,7 @@
       mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
       renderPOI();
       updatePreviewDot();
+      updateLastClickIndicator();
     }
 
     function applyZoom() {
@@ -787,6 +810,19 @@
       previewDot.hidden = false;
     }
 
+    function updateLastClickIndicator() {
+      if (!lastClickedWorldCoord) {
+        lastClickDot.hidden = true;
+        lastClickInfo.textContent = 'Último clique: nenhum';
+        return;
+      }
+      const screen = screenFromWorld(lastClickedWorldCoord.x, lastClickedWorldCoord.y);
+      lastClickDot.style.left = `${screen.x}px`;
+      lastClickDot.style.top = `${screen.y}px`;
+      lastClickDot.hidden = false;
+      lastClickInfo.textContent = `Último clique: X ${lastClickedWorldCoord.x} · Y ${lastClickedWorldCoord.y}`;
+    }
+
     function slugify(value) {
       return value
         .normalize('NFD')
@@ -948,6 +984,21 @@
       URL.revokeObjectURL(link.href);
     }
 
+    function buildPersistedPayload(location) {
+      return {
+        x: Number(location.x || 0),
+        y: Number(location.y || 0),
+        name: String(location.name || ''),
+        type: String(location.type || ''),
+        description: String(location.description || ''),
+        image_prefix: String(location.image_prefix || ''),
+        icon_override: String(location.icon_override || ''),
+        show_pin: location.show_pin !== false,
+        show_icon: location.show_icon !== false,
+        show_name: location.show_name !== false
+      };
+    }
+
     function normalizeImportedPoi(rawEntry) {
       const type = String(rawEntry.type || poiType.value || 'Desconhecido');
       const defaults = getTypeDefaults(type);
@@ -1068,6 +1119,37 @@
       }
     });
 
+    saveAllPois.addEventListener('click', async () => {
+      if (!locations.length) {
+        editorStatus.textContent = 'Não há POIs carregados para salvar.';
+        return;
+      }
+
+      if ('showDirectoryPicker' in window) {
+        try {
+          for (const location of locations) {
+            await saveUsingFSApi(location.id, buildPersistedPayload(location));
+          }
+          editorStatus.textContent = `Todos os POIs salvos: ${locations.length} arquivo(s).`;
+          return;
+        } catch (error) {
+          editorStatus.textContent = `Falha ao salvar tudo no diretório: ${error.message}`;
+          return;
+        }
+      }
+
+      const exported = locations.map((location) => ({
+        file_name: location.id,
+        ...buildPersistedPayload(location)
+      }));
+      saveAsDownload('poi_full_export.json', {
+        version: 1,
+        exported_at: new Date().toISOString(),
+        pois: exported
+      });
+      editorStatus.textContent = 'Navegador sem FS API: foi gerado export único com todos os POIs.';
+    });
+
     addPoiFab.addEventListener('click', () => {
       resetEditorForm();
       editorStatus.textContent = 'Pronto para criar um novo POI.';
@@ -1138,6 +1220,7 @@
     mapCanvas.addEventListener('click', (event) => {
       const world = worldFromScreen(event.clientX, event.clientY);
       lastClickedWorldCoord = world;
+      updateLastClickIndicator();
       if (!selectCoord.checked) return;
       coordX.value = String(world.x);
       coordY.value = String(world.y);
