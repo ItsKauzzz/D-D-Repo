@@ -352,6 +352,7 @@
     let selectedIconPath = '';
     let iconPreviewSize = 54;
     let iconSeed = 20260411;
+    let availableIcons = [];
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 3;
@@ -382,12 +383,24 @@
       return Array.isArray(defaults.icons) ? defaults.icons : [];
     }
 
+    function inferIconTypeFromPath(iconPath) {
+      const fileName = String(iconPath || '').split('/').pop()?.toLowerCase() || '';
+      if (fileName.startsWith('cidade_')) return 'Cidade';
+      if (fileName.startsWith('vila_grande_')) return 'Vila Grande';
+      if (fileName.startsWith('vila_pequena_')) return 'Vila Pequena';
+      if (fileName.startsWith('vila_')) return 'Vila';
+      if (fileName.startsWith('acontecimento_')) return 'Acontecimento';
+      if (fileName.startsWith('preset_')) return 'Preset';
+      return 'Outros';
+    }
+
     function getAllIcons() {
       const entries = Object.entries(typeConfig);
-      const all = entries.flatMap(([type, cfg]) => {
+      const typedIcons = entries.flatMap(([type, cfg]) => {
         const icons = Array.isArray(cfg?.icons) ? cfg.icons : [];
         return icons.map((path) => ({ type, path: String(path) }));
       });
+      const all = [...typedIcons, ...availableIcons];
       const unique = new Map();
       all.forEach((entry) => {
         if (!unique.has(entry.path)) unique.set(entry.path, entry);
@@ -451,6 +464,35 @@
       const query = iconPickerSearch.value.trim().toLowerCase();
       if (!query) return icons;
       return icons.filter((entry) => `${entry.type} ${entry.path}`.toLowerCase().includes(query));
+    }
+
+    async function loadAvailableIcons() {
+      const discovered = new Set();
+      try {
+        const response = await fetch('data/locations/icons/');
+        const html = await response.text();
+        const hrefMatches = html.match(/href\s*=\s*["']([^"']+)["']/gi) || [];
+        hrefMatches.forEach((rawHref) => {
+          const href = rawHref.replace(/href\s*=\s*["']|["']/gi, '');
+          const fileName = decodeURIComponent(href.split('?')[0].split('#')[0].split('/').pop() || '');
+          if (/\.(png|svg|webp|jpg|jpeg)$/i.test(fileName)) {
+            discovered.add(`data/locations/icons/${fileName}`);
+          }
+        });
+      } catch {}
+
+      try {
+        const fallback = await fetch('data/locations/icons/index.json');
+        (await fallback.json()).forEach((fileName) => {
+          if (/\.(png|svg|webp|jpg|jpeg)$/i.test(fileName)) {
+            discovered.add(`data/locations/icons/${String(fileName)}`);
+          }
+        });
+      } catch {}
+
+      availableIcons = [...discovered]
+        .sort((a, b) => a.localeCompare(b))
+        .map((path) => ({ path, type: inferIconTypeFromPath(path) }));
     }
 
     function applyIconPickerZoom() {
@@ -564,8 +606,7 @@
 
     function getMapTileSizePx() {
       const width = naturalWidth > 0 ? naturalWidth * zoom : (mapCanvas.clientWidth || window.innerWidth);
-      const height = naturalHeight > 0 ? naturalHeight * zoom : (mapCanvas.clientHeight || window.innerHeight);
-      return { width, height };
+      return { width };
     }
 
     function wrapToViewport(rawPosition, tileSize, viewportCenter) {
@@ -661,7 +702,7 @@
         const marker = createLocationElement(location);
         const screen = screenFromWorld(location.x, location.y);
         const wrappedX = wrapToViewport(screen.x, tileSize.width, window.innerWidth / 2);
-        const wrappedY = wrapToViewport(screen.y, tileSize.height, window.innerHeight / 2);
+        const wrappedY = screen.y;
         marker.style.left = `${wrappedX}px`;
         marker.style.top = `${wrappedY}px`;
         poiLayer.appendChild(marker);
@@ -1191,7 +1232,7 @@
     };
     mapImage.src = 'world_map_telarium.png';
 
-    Promise.all([loadTypeConfig(), loadLocations()]).then(() => {
+    Promise.all([loadTypeConfig(), loadAvailableIcons(), loadLocations()]).then(() => {
       renderPOIList();
       renderPOI();
       resetEditorForm();

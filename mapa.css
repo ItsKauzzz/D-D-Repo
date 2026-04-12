@@ -15,11 +15,25 @@ body {
   cursor: grab;
   background-color: #000;
   background-image: url('world_map_telarium.png');
-  background-repeat: repeat;
+  background-repeat: repeat-x;
   background-size: auto;
   background-position: 0 0;
   touch-action: none;
   will-change: background-position, background-size;
+}
+
+body.is-spherical #mapCanvas {
+  clip-path: ellipse(44% 43% at 50% 52%);
+}
+
+body.is-spherical #mapCanvas::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 48%, transparent 0 56%, rgba(0, 0, 0, 0.55) 76%, rgba(0, 0, 0, 0.88) 100%),
+    radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.16), transparent 34%);
 }
 
 #mapCanvas.dragging {
@@ -42,15 +56,19 @@ body {
   backdrop-filter: blur(2px);
 }
 
-.topbar a {
+.topbar a,
+.topbar button {
   border: 0;
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 14px;
   cursor: pointer;
-  text-decoration: none;
   color: #fff;
   background: #2c7be5;
+}
+
+.topbar a {
+  text-decoration: none;
 }
 
 body .poi-sidebar {
