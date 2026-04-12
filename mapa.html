@@ -39,13 +39,12 @@
         <span aria-hidden="true">🔠</span>
       </label>
       <label class="icon-toggle" title="Fundo escuro nos nomes (2D)">
-        <input id="toggleNameBackdrop" type="checkbox" />
+        <input id="toggleNameBackdrop" type="checkbox" checked />
         <span aria-hidden="true">🕶️</span>
       </label>
     </div>
 
     <div class="type-filters" aria-label="Filtro por tipo">
-      <button id="typeFilterAll" class="type-filter-chip is-active" type="button">Todos</button>
       <div id="typeFilters" class="type-filter-list"></div>
     </div>
 
@@ -119,7 +118,6 @@
     const toggle3D = document.getElementById('toggle3D');
     const toggle3DNames = document.getElementById('toggle3DNames');
     const toggleNameBackdrop = document.getElementById('toggleNameBackdrop');
-    const typeFilterAll = document.getElementById('typeFilterAll');
     const typeFilters = document.getElementById('typeFilters');
     const poiSearch = document.getElementById('poiSearch');
     const globeContainer = document.getElementById('globeContainer');
@@ -343,17 +341,13 @@
       const filter = poiSearch.value.trim().toLowerCase();
       return locations.filter((location) => {
         const typeKey = normalizeType(location.type);
-        if (selectedTypes.size && !selectedTypes.has(typeKey)) {
+        if (!selectedTypes.has(typeKey)) {
           return false;
         }
         if (!filter) return true;
         const fullText = `${location.name} ${location.type} ${location.description || ''}`.toLowerCase();
         return fullText.includes(filter);
       });
-    }
-
-    function syncAllTypesFilterState() {
-      typeFilterAll.classList.toggle('is-active', selectedTypes.size === 0);
     }
 
     function toggleTypeFilter(typeKey) {
@@ -363,7 +357,6 @@
       } else {
         selectedTypes.add(typeKey);
       }
-      syncAllTypesFilterState();
       renderPOIList();
       renderPOI();
       renderGlobePOIs();
@@ -375,6 +368,14 @@
       const discoveredTypes = [...new Set(locations.map((location) => String(location.type || 'Desconhecido')))]
         .sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
+      const discoveredTypeKeys = discoveredTypes.map((typeLabel) => normalizeType(typeLabel));
+      [...selectedTypes].forEach((typeKey) => {
+        if (!discoveredTypeKeys.includes(typeKey)) selectedTypes.delete(typeKey);
+      });
+      if (selectedTypes.size === 0) {
+        discoveredTypeKeys.forEach((typeKey) => selectedTypes.add(typeKey));
+      }
+
       discoveredTypes.forEach((typeLabel) => {
         const typeKey = normalizeType(typeLabel);
         const chip = document.createElement('button');
@@ -385,11 +386,10 @@
         chip.classList.toggle('is-active', selectedTypes.has(typeKey));
         chip.addEventListener('click', () => {
           toggleTypeFilter(typeKey);
-          chip.classList.toggle('is-active', selectedTypes.has(typeKey));
+          renderTypeFilters();
         });
         typeFilters.appendChild(chip);
       });
-      syncAllTypesFilterState();
     }
 
     function buildSearchMeta(location) {
@@ -1363,14 +1363,6 @@
     });
 
     poiSearch.addEventListener('input', () => {
-      renderPOIList();
-      renderPOI();
-      renderGlobePOIs();
-    });
-    typeFilterAll.addEventListener('click', () => {
-      selectedTypes.clear();
-      syncAllTypesFilterState();
-      renderTypeFilters();
       renderPOIList();
       renderPOI();
       renderGlobePOIs();

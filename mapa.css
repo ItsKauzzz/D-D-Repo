@@ -390,7 +390,7 @@ body .poi-sidebar {
 .poi-name.has-backdrop {
   padding: 2px 6px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.6);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
 }
 
