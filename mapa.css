@@ -139,15 +139,75 @@ body .poi-sidebar {
 }
 
 .poi-switches {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  font-size: 13px;
 }
 
-.poi-switches label {
-  display: flex;
+.icon-toggle {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 2px solid rgba(60, 50, 34, 0.9);
+  background: rgba(0, 0, 0, 0.25);
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.icon-toggle input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+}
+
+.icon-toggle span {
+  font-size: 16px;
+  line-height: 1;
+  filter: grayscale(0.95);
+  opacity: 0.7;
+}
+
+.icon-toggle:has(input:checked) {
+  background: rgba(44, 123, 229, 0.45);
+  border-color: rgba(147, 199, 255, 0.95);
+}
+
+.icon-toggle:has(input:checked) span {
+  opacity: 1;
+  filter: none;
+}
+
+.type-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.type-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.type-filter-chip {
+  border: 1px solid rgba(243, 237, 224, 0.35);
+  border-radius: 999px;
+  padding: 5px 10px;
+  color: #f4efe2;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.type-filter-chip.is-active {
+  border-color: var(--chip-color, #9ecbff);
+  background: color-mix(in srgb, var(--chip-color, #2c7be5) 30%, rgba(0, 0, 0, 0.35));
 }
 
 .poi-list {
@@ -325,6 +385,13 @@ body .poi-sidebar {
   white-space: nowrap;
   transform: translate(-50%, -100%);
   z-index: 4;
+}
+
+.poi-name.has-backdrop {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.7);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
 }
 
 .poi-modal-backdrop,
