@@ -18,6 +18,10 @@
 
     <div class="poi-switches">
       <label>
+        <input id="toggle3d" type="checkbox" />
+        Visualização 3D
+      </label>
+      <label>
         <input id="togglePins" type="checkbox" checked />
         Mostrar pins
       </label>
@@ -42,6 +46,7 @@
   </div>
 
   <div id="mapCanvas" aria-label="Mapa-múndi em tela cheia">
+    <div id="globeCanvas" class="globe-canvas" aria-hidden="true"></div>
     <div id="poiLayer" class="poi-layer" aria-hidden="true"></div>
   </div>
 
@@ -97,7 +102,9 @@
     const togglePins = document.getElementById('togglePins');
     const toggleIcons = document.getElementById('toggleIcons');
     const toggleNames = document.getElementById('toggleNames');
+    const toggle3d = document.getElementById('toggle3d');
     const poiSearch = document.getElementById('poiSearch');
+    const globeCanvas = document.getElementById('globeCanvas');
     const poiModalBackdrop = document.getElementById('poiModalBackdrop');
     const poiModalClose = document.getElementById('poiModalClose');
     const poiModalTitle = document.getElementById('poiModalTitle');
@@ -131,8 +138,17 @@
     let typeConfig = {};
     let iconSeed = 20260411;
     let iconSizePx = 110;
+    let is3DActive = false;
     const markerCache = new Map();
     const VIEW_STATE_KEY = 'mapa_view_state_v1';
+    const MAP_TEXTURE_SRC = 'world_map_telarium.png';
+    const GLB_MODEL_SRC = 'Teralium.glb';
+    const GLOBE_RADIUS = 100;
+    let threeReady = false;
+    let threeState = null;
+    let globeFrameHandle = null;
+    let fallbackSphereMesh = null;
+    let globeReferenceObject = null;
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 3;
@@ -324,6 +340,7 @@
     }
 
     function applyZoom() {
+      if (is3DActive) return;
       if (naturalWidth && naturalHeight) {
         mapCanvas.style.backgroundSize = `${naturalWidth * zoom}px ${naturalHeight * zoom}px`;
       } else {
@@ -334,6 +351,11 @@
     }
 
     function render() {
+      if (is3DActive) {
+        renderPOI();
+        persistViewState();
+        return;
+      }
       mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
       renderPOI();
       persistViewState();
@@ -369,6 +391,10 @@
     }
 
     function focusLocation(location) {
+      if (is3DActive) {
+        focusLocation3D(location);
+        return;
+      }
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
       offsetX = centerX - (location.x * zoom);
@@ -521,15 +547,26 @@
           markerCache.set(location.id, marker);
         }
 
-        const tileSize = getMapTileSizePx();
-        const rawX = offsetX + location.x * zoom;
-        const rawY = offsetY + location.y * zoom;
-        const wrappedX = wrapToViewport(rawX, tileSize.width, window.innerWidth / 2);
-        const wrappedY = wrapToViewport(rawY, tileSize.height, window.innerHeight / 2);
+        if (is3DActive && threeState?.camera && globeReferenceObject) {
+          const projected = projectLocationToGlobe(location);
+          if (projected?.visible) {
+            marker.style.display = '';
+            marker.style.left = `${projected.x}px`;
+            marker.style.top = `${projected.y}px`;
+          } else {
+            marker.style.display = 'none';
+          }
+        } else {
+          const tileSize = getMapTileSizePx();
+          const rawX = offsetX + location.x * zoom;
+          const rawY = offsetY + location.y * zoom;
+          const wrappedX = wrapToViewport(rawX, tileSize.width, window.innerWidth / 2);
+          const wrappedY = wrapToViewport(rawY, tileSize.height, window.innerHeight / 2);
 
-        marker.style.display = '';
-        marker.style.left = `${wrappedX}px`;
-        marker.style.top = `${wrappedY}px`;
+          marker.style.display = '';
+          marker.style.left = `${wrappedX}px`;
+          marker.style.top = `${wrappedY}px`;
+        }
 
         const pinIcon = marker.querySelector('.poi-pin-icon');
         if (pinIcon) {
@@ -537,6 +574,182 @@
         }
         applyMarkerAnchors(marker);
       });
+    }
+
+    function locationToSphereVector(location) {
+      const width = naturalWidth || 1;
+      const height = naturalHeight || 1;
+      const u = Number(location.x || 0) / width;
+      const v = Number(location.y || 0) / height;
+      const lon = (u - 0.5) * Math.PI * 2;
+      const lat = (0.5 - v) * Math.PI;
+      const cosLat = Math.cos(lat);
+      const x = GLOBE_RADIUS * cosLat * Math.sin(lon);
+      const y = GLOBE_RADIUS * Math.sin(lat);
+      const z = GLOBE_RADIUS * cosLat * Math.cos(lon);
+      return new window.THREE.Vector3(x, y, z);
+    }
+
+    function projectLocationToGlobe(location) {
+      if (!threeState?.camera || !globeReferenceObject || !window.THREE) return null;
+
+      const localPoint = locationToSphereVector(location);
+      const worldPoint = localPoint.applyMatrix4(globeReferenceObject.matrixWorld);
+      const center = new window.THREE.Vector3();
+      globeReferenceObject.getWorldPosition(center);
+
+      const normal = worldPoint.clone().sub(center).normalize();
+      const cameraDir = threeState.camera.position.clone().sub(worldPoint).normalize();
+      const facing = normal.dot(cameraDir);
+      if (facing <= 0) return { visible: false };
+
+      const ndc = worldPoint.clone().project(threeState.camera);
+      const x = (ndc.x + 1) * 0.5 * window.innerWidth;
+      const y = (1 - ndc.y) * 0.5 * window.innerHeight;
+
+      const inBounds = ndc.z >= -1 && ndc.z <= 1;
+      return { visible: inBounds, x, y };
+    }
+
+    async function ensureThreeLoaded() {
+      if (threeReady && window.THREE?.OrbitControls && window.THREE?.GLTFLoader) return;
+      const scripts = [
+        'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js',
+        'https://cdn.jsdelivr.net/npm/three@0.162.0/examples/js/controls/OrbitControls.js',
+        'https://cdn.jsdelivr.net/npm/three@0.162.0/examples/js/loaders/GLTFLoader.js'
+      ];
+
+      for (const src of scripts) {
+        if ([...document.scripts].some((tag) => tag.src === src)) continue;
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = src;
+          script.async = true;
+          script.onload = resolve;
+          script.onerror = () => reject(new Error(`Falha ao carregar ${src}`));
+          document.head.appendChild(script);
+        });
+      }
+      threeReady = true;
+    }
+
+    function buildFallbackTexturedSphere() {
+      const textureLoader = new window.THREE.TextureLoader();
+      return new Promise((resolve) => {
+        textureLoader.load(
+          MAP_TEXTURE_SRC,
+          (texture) => {
+            texture.colorSpace = window.THREE.SRGBColorSpace;
+            const geometry = new window.THREE.SphereGeometry(GLOBE_RADIUS, 96, 64);
+            const material = new window.THREE.MeshStandardMaterial({ map: texture, roughness: 0.95, metalness: 0.02 });
+            const mesh = new window.THREE.Mesh(geometry, material);
+            resolve(mesh);
+          },
+          undefined,
+          () => {
+            const geometry = new window.THREE.SphereGeometry(GLOBE_RADIUS, 96, 64);
+            const material = new window.THREE.MeshStandardMaterial({ color: '#6f7e8b', roughness: 1 });
+            resolve(new window.THREE.Mesh(geometry, material));
+          }
+        );
+      });
+    }
+
+    async function init3DMode() {
+      if (threeState) return;
+      await ensureThreeLoaded();
+
+      const scene = new window.THREE.Scene();
+      scene.background = new window.THREE.Color(0x000000);
+
+      const camera = new window.THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+      camera.position.set(0, 0, 290);
+
+      const renderer = new window.THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      globeCanvas.innerHTML = '';
+      globeCanvas.appendChild(renderer.domElement);
+
+      const controls = new window.THREE.OrbitControls(camera, renderer.domElement);
+      controls.enablePan = false;
+      controls.enableDamping = true;
+      controls.minDistance = 180;
+      controls.maxDistance = 420;
+
+      const ambient = new window.THREE.AmbientLight(0xffffff, 0.9);
+      const key = new window.THREE.DirectionalLight(0xffffff, 1.05);
+      key.position.set(200, 160, 120);
+      scene.add(ambient, key);
+
+      const globeGroup = new window.THREE.Group();
+      scene.add(globeGroup);
+
+      let globeObject = null;
+      try {
+        const gltf = await new Promise((resolve, reject) => {
+          const loader = new window.THREE.GLTFLoader();
+          loader.load(GLB_MODEL_SRC, resolve, undefined, reject);
+        });
+        globeObject = gltf.scene;
+        const box = new window.THREE.Box3().setFromObject(globeObject);
+        const size = new window.THREE.Vector3();
+        box.getSize(size);
+        const maxSide = Math.max(size.x, size.y, size.z) || 1;
+        const scale = (GLOBE_RADIUS * 2) / maxSide;
+        globeObject.scale.setScalar(scale);
+      } catch (error) {
+        console.warn('Não foi possível carregar Teralium.glb. Usando esfera UV fallback.', error);
+        globeObject = await buildFallbackTexturedSphere();
+        fallbackSphereMesh = globeObject;
+      }
+
+      globeGroup.add(globeObject);
+      globeReferenceObject = globeObject;
+
+      threeState = { scene, camera, renderer, controls, globeGroup };
+    }
+
+    function focusLocation3D(location) {
+      if (!threeState?.camera || !globeReferenceObject || !window.THREE) return;
+      const point = locationToSphereVector(location).applyMatrix4(globeReferenceObject.matrixWorld);
+      const direction = point.clone().normalize();
+      const distance = threeState.camera.position.length() || 290;
+      threeState.camera.position.copy(direction.multiplyScalar(distance));
+      threeState.controls.target.set(0, 0, 0);
+      threeState.controls.update();
+      renderPOI();
+    }
+
+    function animate3D() {
+      if (!is3DActive || !threeState) return;
+      threeState.controls.update();
+      threeState.renderer.render(threeState.scene, threeState.camera);
+      renderPOI();
+      globeFrameHandle = requestAnimationFrame(animate3D);
+    }
+
+    async function set3DMode(active) {
+      if (active === is3DActive) return;
+      is3DActive = active;
+      mapCanvas.classList.toggle('is-3d', active);
+      globeCanvas.setAttribute('aria-hidden', String(!active));
+
+      if (active) {
+        await init3DMode();
+        zoomTrack.style.display = 'none';
+        if (threeState) {
+          threeState.renderer.setSize(window.innerWidth, window.innerHeight);
+          animate3D();
+        }
+      } else {
+        zoomTrack.style.display = '';
+        if (globeFrameHandle) cancelAnimationFrame(globeFrameHandle);
+        globeFrameHandle = null;
+        applyZoom();
+        mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
+      }
+      renderPOI();
     }
 
     function renderPOIList() {
@@ -844,6 +1057,7 @@
     }
 
     mapCanvas.addEventListener('mousedown', (event) => {
+      if (is3DActive) return;
       dragging = true;
       mapCanvas.classList.add('dragging');
       lastX = event.clientX;
@@ -851,6 +1065,7 @@
     });
 
     window.addEventListener('mousemove', (event) => {
+      if (is3DActive) return;
       if (!dragging) return;
 
       const deltaX = event.clientX - lastX;
@@ -871,11 +1086,13 @@
     });
 
     mapCanvas.addEventListener('wheel', (event) => {
+      if (is3DActive) return;
       event.preventDefault();
       setZoomFromWheel(event.deltaY, event.clientX, event.clientY);
     }, { passive: false });
 
     mapCanvas.addEventListener('touchstart', (event) => {
+      if (is3DActive) return;
       if (!event.touches.length) return;
       const touch = event.touches[0];
       dragging = true;
@@ -884,6 +1101,7 @@
     }, { passive: true });
 
     mapCanvas.addEventListener('touchmove', (event) => {
+      if (is3DActive) return;
       if (!dragging || !event.touches.length) return;
       const touch = event.touches[0];
       const deltaX = touch.clientX - lastX;
@@ -903,11 +1121,13 @@
     let zoomDragging = false;
 
     zoomTrack.addEventListener('mousedown', (event) => {
+      if (is3DActive) return;
       zoomDragging = true;
       setZoomFromPointer(event.clientY);
     });
 
     window.addEventListener('mousemove', (event) => {
+      if (is3DActive) return;
       if (!zoomDragging) return;
       setZoomFromPointer(event.clientY);
     });
@@ -917,12 +1137,14 @@
     });
 
     zoomTrack.addEventListener('touchstart', (event) => {
+      if (is3DActive) return;
       if (!event.touches.length) return;
       zoomDragging = true;
       setZoomFromPointer(event.touches[0].clientY);
     }, { passive: true });
 
     window.addEventListener('touchmove', (event) => {
+      if (is3DActive) return;
       if (!zoomDragging || !event.touches.length) return;
       setZoomFromPointer(event.touches[0].clientY);
     }, { passive: true });
@@ -932,6 +1154,7 @@
     }, { passive: true });
 
     zoomTrack.addEventListener('keydown', (event) => {
+      if (is3DActive) return;
       if (event.key === 'ArrowUp' || event.key === 'ArrowRight') {
         setZoomFromPercent((zoom * 100) + 2);
         event.preventDefault();
@@ -952,6 +1175,13 @@
       renderPOIList();
     });
     toggleNames.addEventListener('change', renderPOI);
+    toggle3d.addEventListener('change', () => {
+      set3DMode(toggle3d.checked).catch((error) => {
+        console.error('Falha ao alternar visualização 3D:', error);
+        toggle3d.checked = false;
+        set3DMode(false);
+      });
+    });
     poiModalClose.addEventListener('click', closePoiModal);
     imageModalClose.addEventListener('click', closeImageModal);
     poiModalBackdrop.addEventListener('click', (event) => {
@@ -972,7 +1202,16 @@
       restoreViewState();
       applyZoom();
     };
-    mapImage.src = 'world_map_telarium.png';
+    mapImage.src = MAP_TEXTURE_SRC;
+
+    window.addEventListener('resize', () => {
+      if (threeState) {
+        threeState.camera.aspect = window.innerWidth / window.innerHeight;
+        threeState.camera.updateProjectionMatrix();
+        threeState.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+      renderPOI();
+    });
 
     renderPoiTabMenu();
     resetPosition();

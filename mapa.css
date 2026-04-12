@@ -22,6 +22,22 @@ body {
   will-change: background-position, background-size;
 }
 
+#mapCanvas.is-3d {
+  background-image: none;
+  cursor: default;
+}
+
+.globe-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: none;
+}
+
+#mapCanvas.is-3d .globe-canvas {
+  display: block;
+}
+
 #mapCanvas.dragging {
   cursor: grabbing;
 }
@@ -205,6 +221,7 @@ body .poi-sidebar {
   inset: 0;
   pointer-events: none;
   transform: translateZ(0);
+  z-index: 3;
 }
 
 .poi-item {
