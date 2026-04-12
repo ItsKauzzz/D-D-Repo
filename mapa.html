@@ -6,6 +6,7 @@
   <title>Mapa-múndi</title>
   <link rel="stylesheet" href="mapa.css" />
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
   <div class="topbar">
@@ -41,7 +42,7 @@
 
   <div class="zoom-control" aria-label="Controle de zoom">
     <span class="zoom-label" id="zoomValue">100%</span>
-    <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="300" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
+    <div id="zoomTrack" class="zoom-track" role="slider" aria-valuemin="20" aria-valuemax="500" aria-valuenow="100" tabindex="0" aria-label="Zoom do mapa">
       <div id="zoomThumb" class="zoom-thumb"></div>
     </div>
   </div>
@@ -141,12 +142,13 @@
     let iconSizePx = 110;
     const markerCache = new Map();
     const VIEW_STATE_KEY = 'mapa_view_state_v1';
-    const MAP_TEXTURE_FILE = 'world_map_telarium.png';
+    const MAP_TEXTURE_FALLBACK_FILE = 'world_map_telarium.png';
+    const GLB_MODEL_FILE = 'teralium.glb';
     const GLOBE_RADIUS = 5;
     const MARKER_RADIUS = 5.06;
 
     const MIN_ZOOM = 0.2;
-    const MAX_ZOOM = 3;
+    const MAX_ZOOM = 5;
     const MIN_CAMERA_DISTANCE = 8;
     const MAX_CAMERA_DISTANCE = 18;
 
@@ -168,6 +170,7 @@
     let globeDidDrag = false;
     let globeLastX = 0;
     let globeLastY = 0;
+    let activeMapTextureSrc = MAP_TEXTURE_FALLBACK_FILE;
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -175,6 +178,14 @@
 
     function zoomToRatio() {
       return (zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM);
+    }
+
+    function getMinZoomPercent() {
+      return Math.round(MIN_ZOOM * 100);
+    }
+
+    function getMaxZoomPercent() {
+      return Math.round(MAX_ZOOM * 100);
     }
 
     function normalizeType(type) {
@@ -353,6 +364,8 @@
       zoomThumb.style.top = `${top}px`;
       zoomValue.textContent = `${Math.round(zoom * 100)}%`;
       zoomTrack.setAttribute('aria-valuenow', String(Math.round(zoom * 100)));
+      zoomTrack.setAttribute('aria-valuemin', String(getMinZoomPercent()));
+      zoomTrack.setAttribute('aria-valuemax', String(getMaxZoomPercent()));
     }
 
     function applyZoom() {
@@ -436,7 +449,9 @@
     function setZoomFromPointer(clientY) {
       const rect = zoomTrack.getBoundingClientRect();
       const ratio = clamp((rect.bottom - clientY) / rect.height, 0, 1);
-      const percent = 20 + ratio * 280;
+      const minZoomPercent = getMinZoomPercent();
+      const maxZoomPercent = getMaxZoomPercent();
+      const percent = minZoomPercent + ratio * (maxZoomPercent - minZoomPercent);
       setZoomFromPercent(percent);
     }
 
@@ -456,6 +471,78 @@
 
       applyZoom();
       render();
+    }
+
+    function applyMapTextureSource(textureSource) {
+      activeMapTextureSrc = textureSource || MAP_TEXTURE_FALLBACK_FILE;
+      mapCanvas.style.backgroundImage = `url('${activeMapTextureSrc}')`;
+      mapImage.src = activeMapTextureSrc;
+      if (globeSphere) {
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load(activeMapTextureSrc, (texture) => {
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.repeat.x = -1;
+          globeSphere.material.map = texture;
+          globeSphere.material.needsUpdate = true;
+          if (is3DMode && globeRenderer && globeScene && globeCamera) {
+            globeRenderer.render(globeScene, globeCamera);
+          }
+        });
+      }
+    }
+
+    function textureToDataUrl(image) {
+      if (!image || !image.width || !image.height) return '';
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext('2d');
+      if (!context) return '';
+      context.drawImage(image, 0, 0, image.width, image.height);
+      return canvas.toDataURL('image/png');
+    }
+
+    function resolveTextureSource(texture) {
+      const image = texture?.image;
+      if (!image) return '';
+      if (typeof image.currentSrc === 'string' && image.currentSrc) return image.currentSrc;
+      if (typeof image.src === 'string' && image.src) return image.src;
+      return textureToDataUrl(image);
+    }
+
+    async function tryLoadMapTextureFromGlb() {
+      if (!window.THREE?.GLTFLoader) return '';
+      return new Promise((resolve) => {
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          GLB_MODEL_FILE,
+          (gltf) => {
+            let foundTexture = null;
+            gltf.scene.traverse((node) => {
+              if (foundTexture) return;
+              const materialList = Array.isArray(node.material) ? node.material : [node.material];
+              materialList.forEach((material) => {
+                if (!foundTexture && material?.map) {
+                  foundTexture = material.map;
+                }
+              });
+            });
+            resolve(resolveTextureSource(foundTexture));
+          },
+          undefined,
+          () => resolve('')
+        );
+      });
+    }
+
+    async function setupMapTexture() {
+      const fromGlb = await tryLoadMapTextureFromGlb();
+      if (fromGlb) {
+        applyMapTextureSource(fromGlb);
+      } else {
+        applyMapTextureSource(MAP_TEXTURE_FALLBACK_FILE);
+      }
     }
 
     function createLocationElement(location) {
@@ -753,7 +840,7 @@
       updateGlobeCamera();
 
       const textureLoader = new THREE.TextureLoader();
-      textureLoader.load(MAP_TEXTURE_FILE, (texture) => {
+      textureLoader.load(activeMapTextureSrc, (texture) => {
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.wrapS = THREE.RepeatWrapping;
         texture.repeat.x = -1;
@@ -1245,7 +1332,7 @@
       applyZoom();
       renderGlobePOIs();
     };
-    mapImage.src = MAP_TEXTURE_FILE;
+    setupMapTexture();
 
     window.addEventListener('resize', () => {
       if (!globeReady || !globeRenderer || !globeCamera) return;
