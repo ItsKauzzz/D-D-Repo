@@ -482,8 +482,7 @@
 
     function getMapTileSizePx() {
       const width = naturalWidth > 0 ? naturalWidth * zoom : (mapCanvas.clientWidth || window.innerWidth);
-      const height = naturalHeight > 0 ? naturalHeight * zoom : (mapCanvas.clientHeight || window.innerHeight);
-      return { width, height };
+      return { width };
     }
 
     function wrapToViewport(rawPosition, tileSize, viewportCenter) {
@@ -525,7 +524,7 @@
         const rawX = offsetX + location.x * zoom;
         const rawY = offsetY + location.y * zoom;
         const wrappedX = wrapToViewport(rawX, tileSize.width, window.innerWidth / 2);
-        const wrappedY = wrapToViewport(rawY, tileSize.height, window.innerHeight / 2);
+        const wrappedY = rawY;
 
         marker.style.display = '';
         marker.style.left = `${wrappedX}px`;

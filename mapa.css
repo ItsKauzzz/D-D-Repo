@@ -15,7 +15,7 @@ body {
   cursor: grab;
   background-color: #000;
   background-image: url('world_map_telarium.png');
-  background-repeat: repeat;
+  background-repeat: repeat-x;
   background-size: auto;
   background-position: 0 0;
   touch-action: none;
