@@ -724,13 +724,13 @@
     function getSpherePositionFromLocation(location, radius = MARKER_RADIUS) {
       const uv = getUvForLocation(location);
       if (!uv) return null;
-      const longitude = (uv.u * Math.PI * 2) - Math.PI;
-      const latitude = (0.5 - uv.v) * Math.PI;
-      const cosLat = Math.cos(latitude);
+      const phi = uv.u * Math.PI * 2;
+      const theta = uv.v * Math.PI;
+      const sinTheta = Math.sin(theta);
       return new THREE.Vector3(
-        radius * cosLat * Math.sin(longitude),
-        radius * Math.sin(latitude),
-        radius * cosLat * Math.cos(longitude)
+        -radius * Math.cos(phi) * sinTheta,
+        radius * Math.cos(theta),
+        radius * Math.sin(phi) * sinTheta
       );
     }
 
