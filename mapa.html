@@ -17,27 +17,35 @@
 
     <input id="poiSearch" class="poi-search" type="search" placeholder="Buscar localização..." aria-label="Buscar localização" />
 
-    <div class="poi-switches">
-      <label>
+    <div class="poi-switches" aria-label="Controles do mapa">
+      <label class="icon-toggle" title="Mostrar pins">
         <input id="togglePins" type="checkbox" checked />
-        Mostrar pins
+        <span aria-hidden="true">📍</span>
       </label>
-      <label>
+      <label class="icon-toggle" title="Mostrar ícones">
         <input id="toggleIcons" type="checkbox" checked />
-        Mostrar ícones
+        <span aria-hidden="true">🖼️</span>
       </label>
-      <label>
+      <label class="icon-toggle" title="Mostrar nomes no 2D">
         <input id="toggleNames" type="checkbox" checked />
-        Mostrar nomes
+        <span aria-hidden="true">🏷️</span>
       </label>
-      <label>
+      <label class="icon-toggle" title="Visualização 3D">
         <input id="toggle3D" type="checkbox" />
-        Visualização 3D
+        <span aria-hidden="true">🌐</span>
       </label>
-      <label>
-        <input id="toggle3DIcons" type="checkbox" />
-        Mostrar ícones no 3D
+      <label class="icon-toggle" title="Ver nomes no 3D">
+        <input id="toggle3DNames" type="checkbox" checked />
+        <span aria-hidden="true">🔠</span>
       </label>
+      <label class="icon-toggle" title="Fundo escuro nos nomes (2D)">
+        <input id="toggleNameBackdrop" type="checkbox" checked />
+        <span aria-hidden="true">🕶️</span>
+      </label>
+    </div>
+
+    <div class="type-filters" aria-label="Filtro por tipo">
+      <div id="typeFilters" class="type-filter-list"></div>
     </div>
 
     <ul id="poiList" class="poi-list"></ul>
@@ -108,7 +116,9 @@
     const toggleIcons = document.getElementById('toggleIcons');
     const toggleNames = document.getElementById('toggleNames');
     const toggle3D = document.getElementById('toggle3D');
-    const toggle3DIcons = document.getElementById('toggle3DIcons');
+    const toggle3DNames = document.getElementById('toggle3DNames');
+    const toggleNameBackdrop = document.getElementById('toggleNameBackdrop');
+    const typeFilters = document.getElementById('typeFilters');
     const poiSearch = document.getElementById('poiSearch');
     const globeContainer = document.getElementById('globeContainer');
     const poiModalBackdrop = document.getElementById('poiModalBackdrop');
@@ -142,6 +152,7 @@
     let naturalHeight = 0;
     let locations = [];
     let typeConfig = {};
+    const selectedTypes = new Set();
     let iconSeed = 20260411;
     let iconSizePx = 110;
     const markerCache = new Map();
@@ -169,8 +180,6 @@
     let globeLabelLayer;
     let globeLabelEntries = [];
     let globeTextureLoader;
-    const globeIconTextureCache = new Map();
-    const globeIconTexturePending = new Set();
     let globeAnimationFrame = null;
     let globeAzimuth = 0;
     let globePolar = Math.PI / 2;
@@ -305,6 +314,7 @@
       labelElement.style.fontWeight = style.bold === false ? '500' : '700';
       labelElement.style.fontStyle = style.italic ? 'italic' : 'normal';
       labelElement.style.color = getSoftLabelColor(type);
+      labelElement.classList.toggle('has-backdrop', toggleNameBackdrop.checked);
     }
 
     async function loadTypeConfig() {
@@ -329,11 +339,56 @@
 
     function getFilteredLocations() {
       const filter = poiSearch.value.trim().toLowerCase();
-      if (!filter) return locations;
-
       return locations.filter((location) => {
+        const typeKey = normalizeType(location.type);
+        if (!selectedTypes.has(typeKey)) {
+          return false;
+        }
+        if (!filter) return true;
         const fullText = `${location.name} ${location.type} ${location.description || ''}`.toLowerCase();
         return fullText.includes(filter);
+      });
+    }
+
+    function toggleTypeFilter(typeKey) {
+      if (!typeKey) return;
+      if (selectedTypes.has(typeKey)) {
+        selectedTypes.delete(typeKey);
+      } else {
+        selectedTypes.add(typeKey);
+      }
+      renderPOIList();
+      renderPOI();
+      renderGlobePOIs();
+    }
+
+    function renderTypeFilters() {
+      if (!typeFilters) return;
+      typeFilters.innerHTML = '';
+      const discoveredTypes = [...new Set(locations.map((location) => String(location.type || 'Desconhecido')))]
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+      const discoveredTypeKeys = discoveredTypes.map((typeLabel) => normalizeType(typeLabel));
+      [...selectedTypes].forEach((typeKey) => {
+        if (!discoveredTypeKeys.includes(typeKey)) selectedTypes.delete(typeKey);
+      });
+      if (selectedTypes.size === 0) {
+        discoveredTypeKeys.forEach((typeKey) => selectedTypes.add(typeKey));
+      }
+
+      discoveredTypes.forEach((typeLabel) => {
+        const typeKey = normalizeType(typeLabel);
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'type-filter-chip';
+        chip.textContent = typeLabel;
+        chip.style.setProperty('--chip-color', getTypeColor(typeLabel));
+        chip.classList.toggle('is-active', selectedTypes.has(typeKey));
+        chip.addEventListener('click', () => {
+          toggleTypeFilter(typeKey);
+          renderTypeFilters();
+        });
+        typeFilters.appendChild(chip);
       });
     }
 
@@ -526,6 +581,7 @@
         togglePins.checked,
         toggleIcons.checked,
         toggleNames.checked,
+        toggleNameBackdrop.checked,
         location.show_pin,
         location.show_icon,
         location.show_name,
@@ -682,6 +738,7 @@
       const files = await discoverLocationFiles();
       if (!files.length) {
         locations = [];
+        renderTypeFilters();
         renderPOIList();
         renderPOI();
         poiList.innerHTML = '<li>Nenhum arquivo JSON encontrado em data/locations.</li>';
@@ -719,6 +776,7 @@
       locations = entries;
       markerCache.clear();
       poiLayer.innerHTML = '';
+      renderTypeFilters();
       renderPOIList();
       renderPOI();
       renderGlobePOIs();
@@ -935,41 +993,6 @@
       });
     }
 
-    function createGlobeIconSprite(location, position) {
-      if (!toggle3DIcons.checked || !location.show_icon || !globeTextureLoader) return null;
-      const iconSrc = getLocationIcon(location);
-      if (!iconSrc) return null;
-
-      const cachedTexture = globeIconTextureCache.get(iconSrc);
-      if (!cachedTexture) {
-        if (!globeIconTexturePending.has(iconSrc)) {
-          globeIconTexturePending.add(iconSrc);
-          globeTextureLoader.load(iconSrc, (loadedTexture) => {
-            loadedTexture.colorSpace = THREE.SRGBColorSpace;
-            globeIconTextureCache.set(iconSrc, loadedTexture);
-            globeIconTexturePending.delete(iconSrc);
-            if (is3DMode) renderGlobePOIs();
-          }, undefined, () => {
-            globeIconTexturePending.delete(iconSrc);
-          });
-        }
-        return null;
-      }
-
-      const spriteMaterial = new THREE.SpriteMaterial({
-        map: cachedTexture,
-        transparent: true,
-        depthTest: true,
-        depthWrite: false
-      });
-      const sprite = new THREE.Sprite(spriteMaterial);
-      const iconScale = 0.55;
-      sprite.scale.set(iconScale, iconScale, 1);
-      sprite.position.copy(position.clone().normalize().multiplyScalar(MARKER_RADIUS + 0.12));
-      sprite.userData.locationId = location.id;
-      return sprite;
-    }
-
     function renderGlobePOIs() {
       if (!globePoiGroup || !naturalWidth || !naturalHeight) return;
       clearGlobePOIs();
@@ -989,10 +1012,7 @@
           globePoiGroup.add(marker);
         }
 
-        const iconSprite = createGlobeIconSprite(location, position);
-        if (iconSprite) globePoiGroup.add(iconSprite);
-
-        if (location.show_name && toggleNames.checked && globeLabelLayer) {
+        if (location.show_name && toggle3DNames.checked && globeLabelLayer) {
           const label = document.createElement('button');
           label.type = 'button';
           label.className = 'globe-poi-label';
@@ -1355,11 +1375,16 @@
     toggleIcons.addEventListener('change', () => {
       renderPOI();
       renderPOIList();
+      renderGlobePOIs();
     });
-    toggle3DIcons.addEventListener('change', renderGlobePOIs);
     toggleNames.addEventListener('change', () => {
       renderPOI();
+    });
+    toggle3DNames.addEventListener('change', () => {
       renderGlobePOIs();
+    });
+    toggleNameBackdrop.addEventListener('change', () => {
+      renderPOI();
     });
     toggle3D.addEventListener('change', () => setViewMode3D(toggle3D.checked));
     poiModalClose.addEventListener('click', closePoiModal);
