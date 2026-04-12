@@ -1030,6 +1030,15 @@
       if (globeRenderer && globeScene) globeRenderer.render(globeScene, globeCamera);
     }
 
+    function focusViewportCenterIn3D() {
+      if (!naturalWidth || !naturalHeight) return;
+      const centerScreenX = window.innerWidth / 2;
+      const centerScreenY = window.innerHeight / 2;
+      const worldX = positiveModulo((centerScreenX - offsetX) / zoom, naturalWidth);
+      const worldY = clamp((centerScreenY - offsetY) / zoom, 0, naturalHeight);
+      focusLocationIn3D({ x: worldX, y: worldY });
+    }
+
     function setViewMode3D(enabled) {
       is3DMode = Boolean(enabled);
       document.body.classList.toggle('is-3d-mode', is3DMode);
@@ -1037,6 +1046,7 @@
       dragging = false;
       if (is3DMode) {
         ensureGlobeReady();
+        focusViewportCenterIn3D();
         renderGlobePOIs();
         renderGlobeFrame();
       } else {
