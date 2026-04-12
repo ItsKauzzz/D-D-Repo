@@ -1,11 +1,11 @@
 {
-  "x": 5854,
-  "y": 1381,
+  "x": 5816,
+  "y": 1760,
   "name": "Elmanther",
   "type": "Cidade",
   "description": "",
   "image_prefix": "",
-  "icon_override": "",
+  "icon_override": "data/locations/icons/cidade_icon_3.png",
   "show_pin": true,
   "show_icon": true,
   "show_name": true

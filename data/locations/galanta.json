@@ -1,0 +1,12 @@
+{
+  "x": 5023,
+  "y": 4138,
+  "name": "Galanta",
+  "type": "Cidade",
+  "description": "Galanta se ergue como uma potência consolidada ao longo das Costas Silenciosas, marcada por portos organizados, rotas bem definidas e uma presença militar constante. O que antes era cooperação se transformou em controle. Seus navios patrulham vastas extensões do litoral, e sua autoridade se estende para além de suas próprias fronteiras.\n\nNos portos sob sua influência, tudo é registrado, taxado e supervisionado. Mercadorias são inspecionadas, embarcações são revistadas e permissões são exigidas. A justificativa oficial permanece a mesma: garantir segurança e estabilidade em um mar que se tornou imprevisível.\n\nPara seus líderes, Galanta não domina — ela protege. Acreditam que o oceano mudou e que apenas uma estrutura firme pode impedir que ameaças cresçam sem controle. Tempestades incomuns, desaparecimento de embarcações e relatos estranhos reforçam essa visão.\n\nNo entanto, essa ordem tem um custo. Em regiões como Velistra, a presença galantina é vista como opressiva. O controle abre espaço para corrupção, onde tributos podem ser negociados e regras flexibilizadas para quem pode pagar. O que deveria ser estabilidade se torna, muitas vezes, um sistema pesado, manipulável e desconectado das realidades locais.\n\nGalanta é eficiente, disciplinada e estratégica — mas cada vez mais distante da confiança que um dia sustentou sua expansão.",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/cidade_icon_2.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}
