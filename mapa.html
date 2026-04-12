@@ -9,6 +9,7 @@
 <body>
   <div class="topbar">
     <a href="index.html">← Voltar</a>
+    <button id="toggleProjection" type="button" aria-pressed="false">Visual esférico: off</button>
   </div>
 
   <aside class="poi-sidebar" aria-label="Pontos de interesse">
@@ -109,6 +110,7 @@
     const imageModalBackdrop = document.getElementById('imageModalBackdrop');
     const imageModalImage = document.getElementById('imageModalImage');
     const imageModalClose = document.getElementById('imageModalClose');
+    const toggleProjection = document.getElementById('toggleProjection');
 
     const POI_MODAL_TABS = [
       { id: 'fotos', label: 'Fotos', icon: 'photos' },
@@ -133,6 +135,7 @@
     let iconSizePx = 110;
     const markerCache = new Map();
     const VIEW_STATE_KEY = 'mapa_view_state_v1';
+    const SPHERICAL_VIEW_KEY = 'mapa_spherical_view_v1';
 
     const MIN_ZOOM = 0.2;
     const MAX_ZOOM = 3;
@@ -143,6 +146,29 @@
 
     function zoomToRatio() {
       return (zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM);
+    }
+
+    function applyProjectionButtonState() {
+      const enabled = document.body.classList.contains('is-spherical');
+      toggleProjection.setAttribute('aria-pressed', String(enabled));
+      toggleProjection.textContent = `Visual esférico: ${enabled ? 'on' : 'off'}`;
+    }
+
+    function setSphericalProjection(enabled) {
+      document.body.classList.toggle('is-spherical', Boolean(enabled));
+      applyProjectionButtonState();
+      try {
+        localStorage.setItem(SPHERICAL_VIEW_KEY, enabled ? '1' : '0');
+      } catch {}
+    }
+
+    function restoreSphericalProjection() {
+      try {
+        const saved = localStorage.getItem(SPHERICAL_VIEW_KEY);
+        setSphericalProjection(saved === '1');
+        return;
+      } catch {}
+      setSphericalProjection(false);
     }
 
     function normalizeType(type) {
@@ -951,6 +977,10 @@
       renderPOIList();
     });
     toggleNames.addEventListener('change', renderPOI);
+    toggleProjection.addEventListener('click', () => {
+      const enabled = document.body.classList.contains('is-spherical');
+      setSphericalProjection(!enabled);
+    });
     poiModalClose.addEventListener('click', closePoiModal);
     imageModalClose.addEventListener('click', closeImageModal);
     poiModalBackdrop.addEventListener('click', (event) => {
@@ -974,6 +1004,7 @@
     mapImage.src = 'world_map_telarium.png';
 
     renderPoiTabMenu();
+    restoreSphericalProjection();
     resetPosition();
     applyZoom();
     loadTypeConfig()
