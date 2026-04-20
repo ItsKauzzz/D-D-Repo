@@ -84,6 +84,23 @@ body {
   align-content: start;
 }
 
+.back-link {
+  justify-self: start;
+  text-decoration: none;
+  color: var(--accent-2);
+  font-weight: 700;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  transition: 0.2s;
+}
+
+.back-link:hover {
+  color: #fff;
+  border-color: var(--accent);
+}
+
 .section {
   margin-bottom: 0.75rem;
 }
