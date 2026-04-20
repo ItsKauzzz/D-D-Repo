@@ -189,7 +189,8 @@ const rollTypes = [
           { value: '4', label: 'Banquete / alta culinária — +4' }
         ]
       },
-      { id: 'extraMod', label: 'Outros modificadores', type: 'number', min: -10, max: 10, step: 1, defaultValue: 0 }
+      { id: 'extraMod', label: 'Outros modificadores', type: 'number', min: -10, max: 10, step: 1, defaultValue: 0 },
+      { id: 'advantage', label: 'Rolar com vantagem', type: 'checkbox', defaultValue: true }
     ],
     results: restResults
   }
@@ -266,17 +267,28 @@ function renderControlInspector(rollType) {
         optionElement.textContent = option.label;
         input.appendChild(optionElement);
       });
-    } else {
+    } else if (control.type === 'number') {
       input.type = 'number';
       input.min = String(control.min);
       input.max = String(control.max);
       input.step = String(control.step);
+    } else if (control.type === 'checkbox') {
+      input.type = 'checkbox';
+      input.checked = Boolean(control.defaultValue);
     }
 
     input.id = `control-${control.id}`;
-    input.value = String(control.defaultValue);
+    if (control.type !== 'checkbox') input.value = String(control.defaultValue);
     input.addEventListener('input', () => {
-      controlState[control.id] = control.type === 'number' ? Number(input.value || 0) : input.value;
+      if (control.type === 'number') {
+        controlState[control.id] = Number(input.value || 0);
+        return;
+      }
+      if (control.type === 'checkbox') {
+        controlState[control.id] = input.checked;
+        return;
+      }
+      controlState[control.id] = input.value;
     });
 
     row.appendChild(label);
@@ -331,7 +343,10 @@ function rollClimate() {
 }
 
 function rollRest() {
-  const d20 = rollDie(20);
+  const withAdvantage = Boolean(controlState.advantage ?? true);
+  const rollA = rollDie(20);
+  const rollB = rollDie(20);
+  const d20 = withAdvantage ? Math.max(rollA, rollB) : rollA;
   const conMod = Number(controlState.conMod || 0);
   const shelter = Number(controlState.shelter || 0);
   const food = Number(controlState.food || 0);
@@ -356,11 +371,12 @@ function rollRest() {
 
   clearHighlight();
   const restMods = [signed(conMod), signed(shelter), signed(food), signed(extraMod)].join(' ');
+  const diceText = withAdvantage ? `${rollA}/${rollB}→${d20}` : String(d20);
   renderRollResult({
     finalValue: total,
-    modsText: `${d20} ${restMods}`,
+    modsText: `${diceText} ${restMods}`,
     description: `${bandLabel} • ${summary}`,
-    tone: getRestTone(total)
+    tone: getRestTone(total, d20)
   });
 }
 
@@ -418,17 +434,20 @@ function clamp(value, min, max) {
 }
 
 function renderRollResult({ finalValue, modsText, description, tone }) {
+  const toneCssClass = toneClass(tone);
   rollResult.classList.remove('roll-result-empty');
   rollResult.innerHTML = `
     <div class="roll-value-line">
-      <span class="roll-value ${toneClass(tone)}">${finalValue}</span>
+      <span class="roll-value ${toneCssClass}">${finalValue}</span>
       <span class="roll-mods">(${modsText})</span>
     </div>
-    <div class="roll-description">${description}</div>
+    <div class="roll-description ${toneCssClass}">${description}</div>
   `;
 }
 
 function toneClass(tone) {
+  if (tone === 'critical-good') return 'is-critical-good';
+  if (tone === 'critical-bad') return 'is-critical-bad';
   if (tone === 'good') return 'is-good';
   if (tone === 'bad') return 'is-bad';
   return 'is-medium';
@@ -440,7 +459,9 @@ function getClimateTone(value) {
   return 'good';
 }
 
-function getRestTone(value) {
+function getRestTone(value, dieResult) {
+  if (dieResult === 20) return 'critical-good';
+  if (dieResult === 1) return 'critical-bad';
   if (value <= 10) return 'bad';
   if (value <= 15) return 'medium';
   return 'good';

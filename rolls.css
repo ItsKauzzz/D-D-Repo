@@ -130,18 +130,12 @@ select {
 }
 
 .roller-box {
-  border: 1px solid var(--line);
-  border-radius: 12px;
   padding: 1rem;
-  background: var(--panel);
   display: grid;
   gap: 0.8rem;
 }
 
 .roller-box--hero {
-  border-color: var(--accent);
-  background: linear-gradient(135deg, rgba(124, 168, 255, 0.22), rgba(124, 168, 255, 0.08));
-  box-shadow: 0 0 0 1px rgba(124, 168, 255, 0.35), 0 10px 24px rgba(0, 0, 0, 0.25);
   min-height: 320px;
   align-content: center;
 }
@@ -204,6 +198,30 @@ select {
   margin-top: 0.55rem;
   font-size: 0.9rem;
   color: var(--muted);
+}
+
+.roll-description.is-good {
+  color: #53d17b;
+}
+
+.roll-description.is-medium {
+  color: #f2c84b;
+}
+
+.roll-description.is-bad {
+  color: #e46a6a;
+}
+
+.roll-value.is-critical-good,
+.roll-description.is-critical-good {
+  color: #65f5ff;
+  text-shadow: 0 0 10px rgba(101, 245, 255, 0.45);
+}
+
+.roll-value.is-critical-bad,
+.roll-description.is-critical-bad {
+  color: #ff7de9;
+  text-shadow: 0 0 10px rgba(255, 125, 233, 0.38);
 }
 
 .roll-value.is-good {
