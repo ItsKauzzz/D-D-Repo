@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rolls • RPG Tool Test</title>
+  <link rel="stylesheet" href="rolls.css">
+</head>
+<body>
+  <div class="rolls-app">
+    <aside class="sidebar" aria-label="Menu de rolls">
+      <h1>Rolls</h1>
+      <p class="sidebar-subtitle">Tipos disponíveis</p>
+      <ul id="roll-type-list" class="roll-type-list"></ul>
+    </aside>
+
+    <main class="inspector" aria-live="polite">
+      <header class="inspector-header">
+        <h2 id="roll-title">—</h2>
+        <p id="roll-description" class="muted"></p>
+      </header>
+
+      <section class="inspector-controls" id="inspector-controls"></section>
+
+      <section class="roller-box">
+        <button id="roll-btn" type="button">Rolar agora</button>
+        <div id="roll-result" class="roll-result">Faça uma rolagem para ver o resultado.</div>
+      </section>
+
+      <section>
+        <h3>Tabela completa de resultados</h3>
+        <ol id="results-list" class="results-list"></ol>
+      </section>
+    </main>
+  </div>
+
+  <script src="rolls.js"></script>
+</body>
+</html>
