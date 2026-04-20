@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'notekeeper-data-v6';
+const LEGACY_STORAGE_KEYS = ['notekeeper-data-v5'];
 const MAX_RECENT_COLORS = 5;
 const PROJECT_FILE_VERSION = 4;
 const DEFAULT_IMAGE_SIZE = 350;
@@ -1047,7 +1048,7 @@ function createSection(title) {
 function importProjectFromJson(text) {
   try {
     const parsed = JSON.parse(text);
-    const importedState = parsed?.data;
+    const importedState = extractStateFromImportedFile(parsed);
     if (!isValidState(importedState)) {
       alert('Arquivo inválido. Selecione um export do NoteKeeper.');
       return;
@@ -1088,8 +1089,17 @@ function downloadProjectFallback() {
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState();
-    return normalizeState(JSON.parse(raw));
+    if (raw) return normalizeState(JSON.parse(raw));
+
+    for (const legacyKey of LEGACY_STORAGE_KEYS) {
+      const legacyRaw = localStorage.getItem(legacyKey);
+      if (!legacyRaw) continue;
+      const migratedState = normalizeState(JSON.parse(legacyRaw));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedState));
+      return migratedState;
+    }
+
+    return defaultState();
   } catch {
     return defaultState();
   }
@@ -1136,6 +1146,14 @@ function normalizeState(rawState) {
 
 function isValidState(importedState) {
   return Boolean(importedState && typeof importedState === 'object' && Array.isArray(importedState.pages));
+}
+
+function extractStateFromImportedFile(parsed) {
+  if (!parsed || typeof parsed !== 'object') return null;
+
+  if (Array.isArray(parsed.pages)) return parsed;
+  if (parsed.data && typeof parsed.data === 'object' && Array.isArray(parsed.data.pages)) return parsed.data;
+  return null;
 }
 
 function saveState() {
