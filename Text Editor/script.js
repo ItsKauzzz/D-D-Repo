@@ -6,7 +6,8 @@ const DEFAULT_IMAGE_SIZE = 350;
 const THEME_NAMES = [
   'dark', 'light', 'forest', 'ocean', 'sunset',
   'lavender', 'midnight', 'rose', 'mint', 'coffee',
-  'arcane', 'neon', 'parchment', 'crimson', 'frost'
+  'arcane', 'neon', 'parchment', 'crimson', 'frost',
+  'cozyhearth', 'meadowcozy', 'nordicminimal', 'carbonminimal', 'synthwave', 'crystalui'
 ];
 const PROJECT_JSON_NAME = 'project.json';
 const ASSETS_FOLDER = 'assets/';
