@@ -79,7 +79,21 @@
 
         <button id="save-project-btn" class="icon-btn" title="Salvar projeto" aria-label="Salvar projeto">💾</button>
         <button id="load-project-btn" class="icon-btn" title="Abrir projeto" aria-label="Abrir projeto">📂</button>
-        <button id="theme-toggle-btn" class="icon-btn" title="Alternar tema">🌓</button>
+        <div class="theme-menu-wrap">
+          <button id="theme-menu-btn" class="icon-btn" type="button" title="Escolher tema" aria-haspopup="true" aria-expanded="false">🎨 Tema</button>
+          <div id="theme-menu-popover" class="theme-menu-popover" hidden>
+            <button data-theme="dark" type="button">🌙 Dark Ember</button>
+            <button data-theme="light" type="button">☀️ Light Parchment</button>
+            <button data-theme="forest" type="button">🌿 Forest Moss</button>
+            <button data-theme="ocean" type="button">🌊 Ocean Breeze</button>
+            <button data-theme="sunset" type="button">🌇 Sunset Clay</button>
+            <button data-theme="lavender" type="button">💜 Lavender Mist</button>
+            <button data-theme="midnight" type="button">🕶️ Midnight Blue</button>
+            <button data-theme="rose" type="button">🌹 Rose Dust</button>
+            <button data-theme="mint" type="button">🍃 Mint Leaf</button>
+            <button data-theme="coffee" type="button">☕ Coffee Roast</button>
+          </div>
+        </div>
         <input id="load-project-input" type="file" accept="application/json" hidden />
       </header>
 
