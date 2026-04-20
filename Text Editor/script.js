@@ -3,7 +3,11 @@ const LEGACY_STORAGE_KEYS = ['notekeeper-data-v5'];
 const MAX_RECENT_COLORS = 5;
 const PROJECT_FILE_VERSION = 5;
 const DEFAULT_IMAGE_SIZE = 350;
-const THEME_NAMES = ['dark', 'light', 'forest', 'ocean', 'sunset', 'lavender', 'midnight', 'rose', 'mint', 'coffee'];
+const THEME_NAMES = [
+  'dark', 'light', 'forest', 'ocean', 'sunset',
+  'lavender', 'midnight', 'rose', 'mint', 'coffee',
+  'arcane', 'neon', 'parchment', 'crimson', 'frost'
+];
 const PROJECT_JSON_NAME = 'project.json';
 const ASSETS_FOLDER = 'assets/';
 const ASSET_URL_PREFIX = 'notekeeper-asset://';
