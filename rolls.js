@@ -235,6 +235,7 @@ function selectRollType(rollId) {
   activeRollId = selectedType.id;
   rollTitle.textContent = selectedType.name;
   rollDescription.textContent = selectedType.description;
+  rollResult.classList.add('roll-result-empty');
   rollResult.textContent = 'Faça uma rolagem para ver o resultado.';
 
   controlState = {};
@@ -321,13 +322,12 @@ function rollClimate() {
   if (!result) return;
 
   highlightResult(finalRoll);
-  rollResult.innerHTML = [
-    `<strong>Base:</strong> ${baseRoll}`,
-    `<strong>Tendência:</strong> ${describeBias(regionBias, baseRoll, biasedRoll)}`,
-    `<strong>Modificador:</strong> ${signed(modifier)}`,
-    `<strong>Final:</strong> ${finalRoll}`,
-    `<strong>Resultado:</strong> ${result.text}`
-  ].join(' • ');
+  renderRollResult({
+    finalValue: finalRoll,
+    modsText: `${baseRoll} + ${signed(regionBiasModifier(regionBias, baseRoll, biasedRoll))} + ${signed(modifier)}`,
+    description: result.text,
+    tone: getClimateTone(finalRoll)
+  });
 }
 
 function rollRest() {
@@ -355,16 +355,13 @@ function rollRest() {
   }
 
   clearHighlight();
-  rollResult.innerHTML = [
-    `<strong>1d20:</strong> ${d20}`,
-    `<strong>CON:</strong> ${signed(conMod)}`,
-    `<strong>Abrigo:</strong> ${signed(shelter)}`,
-    `<strong>Alimentação:</strong> ${signed(food)}`,
-    `<strong>Outros:</strong> ${signed(extraMod)}`,
-    `<strong>Total:</strong> ${total}`,
-    `<strong>Faixa:</strong> ${bandLabel}`,
-    `<strong>Resultado:</strong> ${summary}`
-  ].join(' • ');
+  const restMods = [signed(conMod), signed(shelter), signed(food), signed(extraMod)].join(' ');
+  renderRollResult({
+    finalValue: total,
+    modsText: `${d20} ${restMods}`,
+    description: `${bandLabel} • ${summary}`,
+    tone: getRestTone(total)
+  });
 }
 
 function applyRegionBias(baseRoll, biasType) {
@@ -381,6 +378,11 @@ function describeBias(biasType, baseRoll, biasedRoll) {
   if (biasType === 'cold') return `Fria (${baseRoll} → ${biasedRoll})`;
   if (biasType === 'unstable') return `Instável (${baseRoll} → ${biasedRoll})`;
   return 'Neutra';
+}
+
+function regionBiasModifier(biasType, baseRoll, biasedRoll) {
+  if (biasType === 'none') return 0;
+  return biasedRoll - baseRoll;
 }
 
 function highlightResult(value) {
@@ -413,4 +415,33 @@ function signed(value) {
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function renderRollResult({ finalValue, modsText, description, tone }) {
+  rollResult.classList.remove('roll-result-empty');
+  rollResult.innerHTML = `
+    <div class="roll-value-line">
+      <span class="roll-value ${toneClass(tone)}">${finalValue}</span>
+      <span class="roll-mods">(${modsText})</span>
+    </div>
+    <div class="roll-description">${description}</div>
+  `;
+}
+
+function toneClass(tone) {
+  if (tone === 'good') return 'is-good';
+  if (tone === 'bad') return 'is-bad';
+  return 'is-medium';
+}
+
+function getClimateTone(value) {
+  if (value <= 30) return 'bad';
+  if (value <= 69) return 'medium';
+  return 'good';
+}
+
+function getRestTone(value) {
+  if (value <= 10) return 'bad';
+  if (value <= 15) return 'medium';
+  return 'good';
 }

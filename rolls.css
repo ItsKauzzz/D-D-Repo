@@ -142,10 +142,12 @@ select {
   border-color: var(--accent);
   background: linear-gradient(135deg, rgba(124, 168, 255, 0.22), rgba(124, 168, 255, 0.08));
   box-shadow: 0 0 0 1px rgba(124, 168, 255, 0.35), 0 10px 24px rgba(0, 0, 0, 0.25);
+  min-height: 320px;
+  align-content: center;
 }
 
 #roll-btn {
-  justify-self: start;
+  justify-self: center;
   border: 1px solid var(--accent);
   background: var(--accent);
   color: #fff;
@@ -164,9 +166,56 @@ select {
 .roll-result {
   border: 1px dashed rgba(245, 245, 245, 0.4);
   border-radius: 8px;
-  padding: 0.85rem;
+  padding: 1rem;
   background: rgba(24, 24, 24, 0.7);
   font-size: 0.96rem;
+  min-height: 140px;
+  display: grid;
+  align-content: center;
+  text-align: center;
+}
+
+.roll-result-empty {
+  color: var(--muted);
+}
+
+.roll-value-line {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.roll-value {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.roll-mods {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: #cfcfcf;
+  opacity: 0.85;
+}
+
+.roll-description {
+  margin-top: 0.55rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.roll-value.is-good {
+  color: #53d17b;
+}
+
+.roll-value.is-medium {
+  color: #f2c84b;
+}
+
+.roll-value.is-bad {
+  color: #e46a6a;
 }
 
 
