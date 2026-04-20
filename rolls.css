@@ -153,36 +153,6 @@ select {
   font-size: 0.98rem;
 }
 
-.roll-result-formula {
-  font-size: 1rem;
-  margin-bottom: 0.35rem;
-}
-
-.roll-result-formula strong {
-  font-size: 1.45rem;
-}
-
-.roll-result-title {
-  font-size: 1.52rem;
-  font-weight: 800;
-  margin: 0.2rem 0;
-}
-
-.roll-result-title--bad { color: #ff6e6e; }
-.roll-result-title--mid { color: #f7d05b; }
-.roll-result-title--good { color: #7bd96f; }
-.roll-result-title--excellent { color: #45e36f; }
-
-.roll-result-description {
-  font-size: 1rem;
-  margin-bottom: 0.35rem;
-}
-
-.roll-result-breakdown {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
 
 .results-section {
   margin-top: auto;
