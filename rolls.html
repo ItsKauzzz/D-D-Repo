@@ -7,27 +7,27 @@
   <link rel="stylesheet" href="rolls.css">
 </head>
 <body>
-  <div class="rolls-app">
+  <div class="rolls-app container">
     <aside class="sidebar" aria-label="Menu de rolls">
-      <h1>Rolls</h1>
+      <h2>Rolls</h2>
       <p class="sidebar-subtitle">Tipos disponíveis</p>
       <ul id="roll-type-list" class="roll-type-list"></ul>
     </aside>
 
-    <main class="inspector" aria-live="polite">
-      <section class="roller-box roller-box--hero">
+    <main class="inspector content" aria-live="polite">
+      <section class="roller-box roller-box--hero section">
         <button id="roll-btn" type="button">🎲 Rolar agora</button>
-        <div id="roll-result" class="roll-result">Faça uma rolagem para ver o resultado.</div>
+        <div id="roll-result" class="roll-result roll-result-empty">Faça uma rolagem para ver o resultado.</div>
       </section>
 
-      <header class="inspector-header">
+      <header class="inspector-header section">
         <h2 id="roll-title">—</h2>
         <p id="roll-description" class="muted"></p>
       </header>
 
-      <section class="inspector-controls" id="inspector-controls"></section>
+      <section class="inspector-controls section" id="inspector-controls"></section>
 
-      <section class="results-section">
+      <section class="results-section section">
         <h3>Tabela completa de resultados</h3>
         <ol id="results-list" class="results-list"></ol>
       </section>

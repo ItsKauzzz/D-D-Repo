@@ -189,7 +189,8 @@ const rollTypes = [
           { value: '4', label: 'Banquete / alta culinária — +4' }
         ]
       },
-      { id: 'extraMod', label: 'Outros modificadores', type: 'number', min: -10, max: 10, step: 1, defaultValue: 0 }
+      { id: 'extraMod', label: 'Outros modificadores', type: 'number', min: -10, max: 10, step: 1, defaultValue: 0 },
+      { id: 'advantage', label: 'Rolar com vantagem', type: 'checkbox', defaultValue: false }
     ],
     results: restResults
   }
@@ -235,6 +236,7 @@ function selectRollType(rollId) {
   activeRollId = selectedType.id;
   rollTitle.textContent = selectedType.name;
   rollDescription.textContent = selectedType.description;
+  rollResult.classList.add('roll-result-empty');
   rollResult.textContent = 'Faça uma rolagem para ver o resultado.';
 
   controlState = {};
@@ -265,17 +267,28 @@ function renderControlInspector(rollType) {
         optionElement.textContent = option.label;
         input.appendChild(optionElement);
       });
-    } else {
+    } else if (control.type === 'number') {
       input.type = 'number';
       input.min = String(control.min);
       input.max = String(control.max);
       input.step = String(control.step);
+    } else if (control.type === 'checkbox') {
+      input.type = 'checkbox';
+      input.checked = Boolean(control.defaultValue);
     }
 
     input.id = `control-${control.id}`;
-    input.value = String(control.defaultValue);
+    if (control.type !== 'checkbox') input.value = String(control.defaultValue);
     input.addEventListener('input', () => {
-      controlState[control.id] = control.type === 'number' ? Number(input.value || 0) : input.value;
+      if (control.type === 'number') {
+        controlState[control.id] = Number(input.value || 0);
+        return;
+      }
+      if (control.type === 'checkbox') {
+        controlState[control.id] = input.checked;
+        return;
+      }
+      controlState[control.id] = input.value;
     });
 
     row.appendChild(label);
@@ -286,7 +299,11 @@ function renderControlInspector(rollType) {
 
 function renderResults(rollType) {
   resultsList.innerHTML = '';
-  rollType.results.forEach((entry) => {
+  const displayResults = rollType.id === 'descanso'
+    ? rollType.results.filter((entry) => entry.group === 'Resultado')
+    : rollType.results;
+
+  displayResults.forEach((entry) => {
     const item = document.createElement('li');
 
     if (typeof entry.value === 'number') {
@@ -321,17 +338,19 @@ function rollClimate() {
   if (!result) return;
 
   highlightResult(finalRoll);
-  rollResult.innerHTML = [
-    `<strong>Base:</strong> ${baseRoll}`,
-    `<strong>Tendência:</strong> ${describeBias(regionBias, baseRoll, biasedRoll)}`,
-    `<strong>Modificador:</strong> ${signed(modifier)}`,
-    `<strong>Final:</strong> ${finalRoll}`,
-    `<strong>Resultado:</strong> ${result.text}`
-  ].join(' • ');
+  renderRollResult({
+    finalValue: finalRoll,
+    modsText: `${baseRoll} + ${signed(regionBiasModifier(regionBias, baseRoll, biasedRoll))} + ${signed(modifier)}`,
+    description: result.text,
+    tone: getClimateTone(finalRoll)
+  });
 }
 
 function rollRest() {
-  const d20 = rollDie(20);
+  const withAdvantage = Boolean(controlState.advantage ?? false);
+  const rollA = rollDie(20);
+  const rollB = rollDie(20);
+  const d20 = withAdvantage ? Math.max(rollA, rollB) : rollA;
   const conMod = Number(controlState.conMod || 0);
   const shelter = Number(controlState.shelter || 0);
   const food = Number(controlState.food || 0);
@@ -355,16 +374,14 @@ function rollRest() {
   }
 
   clearHighlight();
-  rollResult.innerHTML = [
-    `<strong>1d20:</strong> ${d20}`,
-    `<strong>CON:</strong> ${signed(conMod)}`,
-    `<strong>Abrigo:</strong> ${signed(shelter)}`,
-    `<strong>Alimentação:</strong> ${signed(food)}`,
-    `<strong>Outros:</strong> ${signed(extraMod)}`,
-    `<strong>Total:</strong> ${total}`,
-    `<strong>Faixa:</strong> ${bandLabel}`,
-    `<strong>Resultado:</strong> ${summary}`
-  ].join(' • ');
+  const restMods = [signed(conMod), signed(shelter), signed(food), signed(extraMod)].join(' ');
+  const diceText = withAdvantage ? `${rollA}/${rollB}→${d20}` : String(d20);
+  renderRollResult({
+    finalValue: total,
+    modsText: `${diceText} ${restMods}`,
+    description: `${bandLabel} • ${summary}${getCriticalRestEffect(total)}`,
+    tone: getRestTone(total)
+  });
 }
 
 function applyRegionBias(baseRoll, biasType) {
@@ -381,6 +398,11 @@ function describeBias(biasType, baseRoll, biasedRoll) {
   if (biasType === 'cold') return `Fria (${baseRoll} → ${biasedRoll})`;
   if (biasType === 'unstable') return `Instável (${baseRoll} → ${biasedRoll})`;
   return 'Neutra';
+}
+
+function regionBiasModifier(biasType, baseRoll, biasedRoll) {
+  if (biasType === 'none') return 0;
+  return biasedRoll - baseRoll;
 }
 
 function highlightResult(value) {
@@ -413,4 +435,48 @@ function signed(value) {
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function renderRollResult({ finalValue, modsText, description, tone }) {
+  const toneCssClass = toneClass(tone);
+  rollResult.classList.remove('roll-result-empty');
+  rollResult.innerHTML = `
+    <div class="roll-value-line">
+      <span class="roll-value ${toneCssClass}">${finalValue}</span>
+      <span class="roll-mods">(${modsText})</span>
+    </div>
+    <div class="roll-description">${description}</div>
+  `;
+}
+
+function toneClass(tone) {
+  if (tone === 'critical-good') return 'is-critical-good';
+  if (tone === 'critical-bad') return 'is-critical-bad';
+  if (tone === 'good') return 'is-good';
+  if (tone === 'bad') return 'is-bad';
+  return 'is-medium';
+}
+
+function getClimateTone(value) {
+  if (value <= 30) return 'bad';
+  if (value <= 69) return 'medium';
+  return 'good';
+}
+
+function getRestTone(value) {
+  if (value > 20) return 'critical-good';
+  if (value < 1) return 'critical-bad';
+  if (value <= 10) return 'bad';
+  if (value <= 15) return 'medium';
+  return 'good';
+}
+
+function getCriticalRestEffect(total) {
+  if (total > 20) {
+    return ' • Buff crítico: recupera tudo + inspiração + 1d6 HP temporário até o próximo descanso.';
+  }
+  if (total < 1) {
+    return ' • Debuff crítico: recupera só metade do HP e sofre desvantagem no primeiro teste do dia.';
+  }
+  return '';
 }
