@@ -1,4 +1,5 @@
-const STORAGE_KEY = 'notekeeper-data-v5';
+const STORAGE_KEY = 'notekeeper-data-v6';
+const LEGACY_STORAGE_KEYS = ['notekeeper-data-v5'];
 const MAX_RECENT_COLORS = 5;
 const PROJECT_FILE_VERSION = 4;
 const DEFAULT_IMAGE_SIZE = 350;
@@ -7,6 +8,7 @@ const THEME_NAMES = ['dark', 'light', 'forest', 'ocean', 'sunset', 'lavender', '
 const editor = document.getElementById('editor');
 const pagesList = document.getElementById('pages-list');
 const addPageBtn = document.getElementById('add-page-btn');
+const addSectionBtn = document.getElementById('add-section-btn');
 const searchInput = document.getElementById('search-input');
 const textColor = document.getElementById('text-color');
 const fontFamily = document.getElementById('font-family');
@@ -14,6 +16,7 @@ const fontSize = document.getElementById('font-size');
 const pageTitle = document.getElementById('page-title');
 const pageItemTemplate = document.getElementById('page-item-template');
 const saveProjectBtn = document.getElementById('save-project-btn');
+const saveAsProjectBtn = document.getElementById('save-as-project-btn');
 const loadProjectBtn = document.getElementById('load-project-btn');
 const loadProjectInput = document.getElementById('load-project-input');
 const recentColorsContainer = document.getElementById('recent-colors');
@@ -39,6 +42,8 @@ let currentProjectHandle = null;
 let autoLinkDebounce = null;
 let isApplyingAutoLink = false;
 let selectedImage = null;
+let draggingItem = null;
+let hasShownStorageQuotaWarning = false;
 
 bootstrap();
 
@@ -69,6 +74,14 @@ function bindEvents() {
     loadActivePageToEditor();
   });
 
+  addSectionBtn.addEventListener('click', () => {
+    const sectionName = prompt('Nome da nova seção:');
+    if (!sectionName || !sectionName.trim()) return;
+    state.sections.push(createSection(sectionName.trim()));
+    saveState();
+    renderPages();
+  });
+
   themeMenuBtn.addEventListener('click', (event) => {
     event.preventDefault();
     themeMenuPopover.hidden = !themeMenuPopover.hidden;
@@ -97,10 +110,15 @@ function bindEvents() {
   applyImageSizeBtn.addEventListener('click', applySelectedImageSize);
 
   saveProjectBtn.addEventListener('click', saveProject);
+  saveAsProjectBtn.addEventListener('click', saveProjectAs);
   loadProjectBtn.addEventListener('click', openProject);
   loadProjectInput.addEventListener('change', openProjectFromInput);
 
   pagesList.addEventListener('click', handlePagesClick);
+  pagesList.addEventListener('dragstart', handlePagesDragStart);
+  pagesList.addEventListener('dragend', handlePagesDragEnd);
+  pagesList.addEventListener('dragover', handlePagesDragOver);
+  pagesList.addEventListener('drop', handlePagesDrop);
   anchorsList.addEventListener('click', handleAnchorsClick);
   tagSuggestions.addEventListener('click', handleSuggestionClick);
 
@@ -475,6 +493,24 @@ async function saveProject() {
   downloadProjectFallback();
 }
 
+async function saveProjectAs() {
+  syncEditorIntoActivePage();
+  currentProjectHandle = null;
+  if (window.showSaveFilePicker) {
+    try {
+      currentProjectHandle = await window.showSaveFilePicker({
+        suggestedName: 'notekeeper-project.json',
+        types: [{ description: 'Arquivo de projeto NoteKeeper', accept: { 'application/json': ['.json'] } }]
+      });
+      await writeStateToHandle(currentProjectHandle);
+      return;
+    } catch (error) {
+      if (error?.name !== 'AbortError') alert('Não foi possível salvar no arquivo selecionado.');
+    }
+  }
+  downloadProjectFallback();
+}
+
 async function openProject() {
   if (window.showOpenFilePicker) {
     try {
@@ -507,6 +543,37 @@ function handlePagesClick(event) {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
 
+  if (target.classList.contains('section-delete')) {
+    const sectionItem = target.closest('.section-item');
+    const sectionId = sectionItem?.dataset.sectionId;
+    if (!sectionId) return;
+    const section = state.sections.find((item) => item.id === sectionId);
+    if (!section) return;
+
+    if (!confirm(`Tem certeza que deseja remover a seção "${section.title}"? As páginas voltarão para "Páginas soltas".`)) return;
+
+    state.sections = state.sections.filter((item) => item.id !== sectionId);
+    state.pages.forEach((page) => {
+      if (page.sectionId === sectionId) page.sectionId = null;
+    });
+    saveState();
+    renderPages();
+    return;
+  }
+
+  const sectionHeader = target.closest('.section-header');
+  if (sectionHeader && !target.closest('.section-delete')) {
+    const sectionItem = sectionHeader.closest('.section-item');
+    const sectionId = sectionItem?.dataset.sectionId;
+    if (!sectionId) return;
+    const section = state.sections.find((item) => item.id === sectionId);
+    if (!section) return;
+    section.collapsed = !section.collapsed;
+    saveState();
+    renderPages();
+    return;
+  }
+
   const item = target.closest('.page-item');
   if (!item) return;
   const pageId = item.dataset.pageId;
@@ -532,6 +599,168 @@ function handlePagesClick(event) {
     renderPages();
     loadActivePageToEditor();
   }
+}
+
+function handlePagesDragStart(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  const pageItem = target.closest('.page-item');
+  if (pageItem instanceof HTMLElement) {
+    const pageId = pageItem.dataset.pageId;
+    if (!pageId) return;
+    draggingItem = { type: 'page', id: pageId };
+    pageItem.classList.add('dragging');
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', `page:${pageId}`);
+    }
+    return;
+  }
+
+  const sectionItem = target.closest('.section-item');
+  if (sectionItem instanceof HTMLElement) {
+    const sectionId = sectionItem.dataset.sectionId;
+    if (!sectionId) return;
+    draggingItem = { type: 'section', id: sectionId };
+    sectionItem.classList.add('dragging');
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', `section:${sectionId}`);
+    }
+  }
+}
+
+function clearDragVisualState() {
+  pagesList.querySelectorAll('.dragging').forEach((node) => node.classList.remove('dragging'));
+  pagesList.querySelectorAll('.drop-target').forEach((node) => node.classList.remove('drop-target'));
+}
+
+function parseDragPayload(payload) {
+  if (!payload || typeof payload !== 'string') return null;
+  const [type, id] = payload.split(':');
+  if (!id || (type !== 'page' && type !== 'section')) return null;
+  return { type, id };
+}
+
+function resolveDraggingItem(event) {
+  if (draggingItem) return draggingItem;
+  const payload = event.dataTransfer?.getData('text/plain') || '';
+  return parseDragPayload(payload);
+}
+
+function getPageDropTarget(target) {
+  if (!(target instanceof HTMLElement)) return null;
+  return target.closest('.page-item, .section-pages, .pages-root-dropzone, .section-header');
+}
+
+function getSectionDropTarget(target) {
+  if (!(target instanceof HTMLElement)) return null;
+  return target.closest('.section-item, .section-header');
+}
+
+function reorderPages(dragPageId, targetPageId, targetSectionId) {
+  if (dragPageId === targetPageId) return;
+  const dragIndex = state.pages.findIndex((page) => page.id === dragPageId);
+  const targetIndex = state.pages.findIndex((page) => page.id === targetPageId);
+  if (dragIndex === -1 || targetIndex === -1) return;
+
+  state.pages[dragIndex].sectionId = targetSectionId;
+  const [draggedPage] = state.pages.splice(dragIndex, 1);
+  const adjustedTargetIndex = dragIndex < targetIndex ? targetIndex - 1 : targetIndex;
+  state.pages.splice(adjustedTargetIndex, 0, draggedPage);
+}
+
+function movePageToContainerEnd(pageId, targetSectionId) {
+  const dragIndex = state.pages.findIndex((page) => page.id === pageId);
+  if (dragIndex === -1) return;
+  state.pages[dragIndex].sectionId = targetSectionId;
+  const [draggedPage] = state.pages.splice(dragIndex, 1);
+
+  let insertIndex = state.pages.length;
+  for (let index = state.pages.length - 1; index >= 0; index -= 1) {
+    if ((state.pages[index].sectionId || null) === targetSectionId) {
+      insertIndex = index + 1;
+      break;
+    }
+  }
+
+  state.pages.splice(insertIndex, 0, draggedPage);
+}
+
+function reorderSections(dragSectionId, targetSectionId) {
+  if (dragSectionId === targetSectionId) return;
+  const dragIndex = state.sections.findIndex((section) => section.id === dragSectionId);
+  const targetIndex = state.sections.findIndex((section) => section.id === targetSectionId);
+  if (dragIndex === -1 || targetIndex === -1) return;
+
+  const [draggedSection] = state.sections.splice(dragIndex, 1);
+  const adjustedTargetIndex = dragIndex < targetIndex ? targetIndex - 1 : targetIndex;
+  state.sections.splice(adjustedTargetIndex, 0, draggedSection);
+}
+
+function applyPageDrop(dragged, dropTarget) {
+  const pageTarget = dropTarget.closest('.page-item');
+  if (pageTarget) {
+    const targetPageId = pageTarget.dataset.pageId;
+    if (!targetPageId) return;
+    const targetPage = state.pages.find((page) => page.id === targetPageId);
+    if (!targetPage) return;
+    reorderPages(dragged.id, targetPageId, targetPage.sectionId || null);
+    return;
+  }
+
+  const sectionHeader = dropTarget.closest('.section-header');
+  if (sectionHeader) {
+    const sectionId = sectionHeader.closest('.section-item')?.dataset.sectionId || null;
+    movePageToContainerEnd(dragged.id, sectionId);
+    return;
+  }
+
+  const container = dropTarget.closest('.section-pages, .pages-root-dropzone');
+  if (!container) return;
+  movePageToContainerEnd(dragged.id, container.dataset.sectionId || null);
+}
+
+function applySectionDrop(dragged, dropTarget) {
+  const targetSectionId = dropTarget.closest('.section-item')?.dataset.sectionId;
+  if (!targetSectionId) return;
+  reorderSections(dragged.id, targetSectionId);
+}
+
+function getClosestValidDropTarget(dragged, target) {
+  if (dragged.type === 'page') return getPageDropTarget(target);
+  return getSectionDropTarget(target);
+}
+
+function handlePagesDragEnd() {
+  clearDragVisualState();
+  draggingItem = null;
+}
+
+function handlePagesDragOver(event) {
+  const dragged = resolveDraggingItem(event);
+  if (!dragged) return;
+  const dropTarget = getClosestValidDropTarget(dragged, event.target);
+  if (!dropTarget) return;
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+  pagesList.querySelectorAll('.drop-target').forEach((node) => node.classList.remove('drop-target'));
+  dropTarget.classList.add('drop-target');
+}
+
+function handlePagesDrop(event) {
+  const dragged = resolveDraggingItem(event);
+  if (!dragged) return;
+  const dropTarget = getClosestValidDropTarget(dragged, event.target);
+  if (!dropTarget) return;
+  event.preventDefault();
+
+  if (dragged.type === 'page') applyPageDrop(dragged, dropTarget);
+  if (dragged.type === 'section') applySectionDrop(dragged, dropTarget);
+  saveState();
+  renderPages();
+  clearDragVisualState();
+  draggingItem = null;
 }
 
 function handleAnchorsClick(event) {
@@ -834,13 +1063,41 @@ function renderAnchorsList() {
 
 function renderPages() {
   pagesList.innerHTML = '';
-  state.pages.forEach((page) => {
-    const item = pageItemTemplate.content.firstElementChild.cloneNode(true);
-    item.dataset.pageId = page.id;
-    item.querySelector('.page-open').textContent = page.title || 'Sem título';
-    if (page.id === state.activePageId) item.classList.add('active');
-    pagesList.appendChild(item);
+  const validSectionIds = new Set(state.sections.map((section) => section.id));
+  const rootPages = state.pages.filter((page) => !page.sectionId || !validSectionIds.has(page.sectionId));
+  const rootDropzone = document.createElement('li');
+  rootDropzone.className = 'pages-root-dropzone';
+  rootDropzone.dataset.sectionId = '';
+  rootDropzone.innerHTML = '<div class="dropzone-title">Páginas soltas</div>';
+  rootPages.forEach((page) => rootDropzone.appendChild(createPageItem(page)));
+  pagesList.appendChild(rootDropzone);
+
+  state.sections.forEach((section) => {
+    const sectionItem = document.createElement('li');
+    sectionItem.className = 'section-item';
+    sectionItem.dataset.sectionId = section.id;
+    sectionItem.draggable = true;
+
+    const sectionPages = state.pages.filter((page) => page.sectionId === section.id);
+    const sectionList = document.createElement('ul');
+    sectionList.className = 'section-pages';
+    sectionList.dataset.sectionId = section.id;
+    if (section.collapsed) sectionList.classList.add('is-collapsed');
+    sectionPages.forEach((page) => sectionList.appendChild(createPageItem(page)));
+
+    sectionItem.innerHTML = `<div class="section-header"><span class="section-caret">${section.collapsed ? '▸' : '▾'}</span><span class="section-title">${escapeHtml(section.title)}</span><span class="section-count">${sectionPages.length}</span><button type="button" class="section-delete" title="Remover seção" aria-label="Remover seção">✕</button></div>`;
+    sectionItem.appendChild(sectionList);
+    pagesList.appendChild(sectionItem);
   });
+}
+
+function createPageItem(page) {
+  const item = pageItemTemplate.content.firstElementChild.cloneNode(true);
+  item.dataset.pageId = page.id;
+  item.draggable = true;
+  item.querySelector('.page-open').textContent = page.title || 'Sem título';
+  if (page.id === state.activePageId) item.classList.add('active');
+  return item;
 }
 
 function loadActivePageToEditor() {
@@ -929,13 +1186,17 @@ function ensureAnchorTag(page, anchorId, tag) {
 }
 
 function createPage(title) {
-  return { id: crypto.randomUUID(), title, content: '', plainText: '', anchors: [] };
+  return { id: crypto.randomUUID(), title, content: '', plainText: '', anchors: [], sectionId: null };
+}
+
+function createSection(title) {
+  return { id: crypto.randomUUID(), title, collapsed: false };
 }
 
 function importProjectFromJson(text) {
   try {
     const parsed = JSON.parse(text);
-    const importedState = parsed?.data;
+    const importedState = extractStateFromImportedFile(parsed);
     if (!isValidState(importedState)) {
       alert('Arquivo inválido. Selecione um export do NoteKeeper.');
       return;
@@ -976,18 +1237,38 @@ function downloadProjectFallback() {
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState();
-    return normalizeState(JSON.parse(raw));
+    if (raw) return normalizeState(JSON.parse(raw));
+
+    for (const legacyKey of LEGACY_STORAGE_KEYS) {
+      const legacyRaw = localStorage.getItem(legacyKey);
+      if (!legacyRaw) continue;
+      const migratedState = normalizeState(JSON.parse(legacyRaw));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedState));
+      return migratedState;
+    }
+
+    return defaultState();
   } catch {
     return defaultState();
   }
 }
 
 function defaultState() {
-  return { pages: [], activePageId: null, recentColors: [], theme: 'dark', autolinkEnabled: true };
+  return { pages: [], sections: [], activePageId: null, recentColors: [], theme: 'dark', autolinkEnabled: true };
 }
 
 function normalizeState(rawState) {
+  const sections = Array.isArray(rawState.sections)
+    ? rawState.sections
+        .filter((section) => section && typeof section.id === 'string')
+        .map((section) => ({
+          id: section.id,
+          title: typeof section.title === 'string' && section.title.trim() ? section.title.trim() : 'Seção',
+          collapsed: Boolean(section.collapsed)
+        }))
+    : [];
+  const sectionIdSet = new Set(sections.map((section) => section.id));
+
   const validPages = Array.isArray(rawState.pages) ? rawState.pages.filter((page) => page && typeof page.id === 'string') : [];
 
   const pages = validPages.map((page) => ({
@@ -995,6 +1276,7 @@ function normalizeState(rawState) {
     title: typeof page.title === 'string' ? page.title : 'Sem título',
     content: typeof page.content === 'string' ? page.content : '',
     plainText: typeof page.plainText === 'string' ? page.plainText : '',
+    sectionId: typeof page.sectionId === 'string' && sectionIdSet.has(page.sectionId) ? page.sectionId : null,
     anchors: Array.isArray(page.anchors)
       ? page.anchors.filter((anchor) => anchor && typeof anchor.anchorId === 'string' && typeof anchor.tag === 'string').map((anchor) => ({ anchorId: anchor.anchorId, tag: anchor.tag }))
       : []
@@ -1002,6 +1284,7 @@ function normalizeState(rawState) {
 
   return {
     pages,
+    sections,
     activePageId: typeof rawState.activePageId === 'string' ? rawState.activePageId : pages[0]?.id || null,
     recentColors: Array.isArray(rawState.recentColors) ? rawState.recentColors.slice(0, MAX_RECENT_COLORS) : [],
     theme: THEME_NAMES.includes(rawState.theme) ? rawState.theme : 'dark',
@@ -1013,8 +1296,27 @@ function isValidState(importedState) {
   return Boolean(importedState && typeof importedState === 'object' && Array.isArray(importedState.pages));
 }
 
+function extractStateFromImportedFile(parsed) {
+  if (!parsed || typeof parsed !== 'object') return null;
+
+  if (Array.isArray(parsed.pages)) return parsed;
+  if (parsed.data && typeof parsed.data === 'object' && Array.isArray(parsed.data.pages)) return parsed.data;
+  return null;
+}
+
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    if (isQuotaExceededError(error)) {
+      if (!hasShownStorageQuotaWarning) {
+        hasShownStorageQuotaWarning = true;
+        alert('Seu navegador ficou sem espaço no armazenamento local. Continue editando e use "Salvar projeto (💾)" para baixar um arquivo e não perder progresso.');
+      }
+      return;
+    }
+    throw error;
+  }
 }
 
 function fileToDataURL(file) {
@@ -1045,4 +1347,15 @@ function escapeHtml(text) {
 
 function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isQuotaExceededError(error) {
+  if (!error || typeof error !== 'object') return false;
+  if (!(error instanceof DOMException)) return false;
+  return (
+    error.name === 'QuotaExceededError' ||
+    error.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+    error.code === 22 ||
+    error.code === 1014
+  );
 }

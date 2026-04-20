@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NoteKeeper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body data-theme="dark">
@@ -11,7 +14,10 @@
     <aside class="sidebar left-sidebar">
       <div class="sidebar-header">
         <h1>NoteKeeper</h1>
-        <button id="add-page-btn" class="icon-btn" title="Nova página" aria-label="Nova página">📄➕</button>
+        <div class="sidebar-actions">
+          <button id="add-section-btn" class="icon-btn" title="Nova seção" aria-label="Nova seção">🗂️➕</button>
+          <button id="add-page-btn" class="icon-btn" title="Nova página" aria-label="Nova página">📄➕</button>
+        </div>
       </div>
 
       <div class="search-wrap">
@@ -78,6 +84,7 @@
         </label>
 
         <button id="save-project-btn" class="icon-btn" title="Salvar projeto" aria-label="Salvar projeto">💾</button>
+        <button id="save-as-project-btn" class="icon-btn" title="Salvar projeto como" aria-label="Salvar projeto como">💾🆕</button>
         <button id="load-project-btn" class="icon-btn" title="Abrir projeto" aria-label="Abrir projeto">📂</button>
         <div class="theme-menu-wrap">
           <button id="theme-menu-btn" class="icon-btn" type="button" title="Escolher tema" aria-haspopup="true" aria-expanded="false">🎨 Tema</button>
