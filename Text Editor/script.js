@@ -42,6 +42,7 @@ let autoLinkDebounce = null;
 let isApplyingAutoLink = false;
 let selectedImage = null;
 let draggingPageId = null;
+let hasShownStorageQuotaWarning = false;
 
 bootstrap();
 
@@ -1157,7 +1158,18 @@ function extractStateFromImportedFile(parsed) {
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    if (isQuotaExceededError(error)) {
+      if (!hasShownStorageQuotaWarning) {
+        hasShownStorageQuotaWarning = true;
+        alert('Seu navegador ficou sem espaço no armazenamento local. Continue editando e use "Salvar projeto (💾)" para baixar um arquivo e não perder progresso.');
+      }
+      return;
+    }
+    throw error;
+  }
 }
 
 function fileToDataURL(file) {
@@ -1188,4 +1200,15 @@ function escapeHtml(text) {
 
 function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isQuotaExceededError(error) {
+  if (!error || typeof error !== 'object') return false;
+  if (!(error instanceof DOMException)) return false;
+  return (
+    error.name === 'QuotaExceededError' ||
+    error.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+    error.code === 22 ||
+    error.code === 1014
+  );
 }
