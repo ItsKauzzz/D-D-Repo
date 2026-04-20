@@ -20,9 +20,6 @@
         </div>
       </div>
 
-      <div class="search-wrap">
-        <input id="search-input" type="search" placeholder="Buscar texto..." />
-      </div>
 
       <ul id="pages-list" class="pages-list"></ul>
     </aside>
@@ -83,6 +80,7 @@
           </select>
         </label>
 
+        <button id="new-project-btn" class="icon-btn" title="Novo projeto" aria-label="Novo projeto">🆕</button>
         <button id="save-project-btn" class="icon-btn" title="Salvar projeto" aria-label="Salvar projeto">💾</button>
         <button id="save-as-project-btn" class="icon-btn" title="Salvar projeto como" aria-label="Salvar projeto como">💾🆕</button>
         <button id="load-project-btn" class="icon-btn" title="Abrir projeto" aria-label="Abrir projeto">📂</button>
@@ -111,6 +109,12 @@
             <button data-theme="synthwave" type="button">🌆 Synthwave Grid</button>
             <button data-theme="crystalui" type="button">💎 Crystal UI</button>
           </div>
+        </div>
+
+        <div class="toolbar-spacer" aria-hidden="true"></div>
+        <div class="deep-search-wrap">
+          <input id="deep-search-input" type="search" placeholder="Pesquisa profunda..." />
+          <button id="deep-search-btn" type="button" class="icon-btn" title="Pesquisar em todo o projeto" aria-label="Pesquisar em todo o projeto">🔎 Pesquisar</button>
         </div>
         <input id="load-project-input" type="file" accept=".zip,application/zip,.json,application/json" hidden />
       </header>

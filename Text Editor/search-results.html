@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NoteKeeper • Resultados da pesquisa</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1726;
+      --panel: #182235;
+      --line: #304969;
+      --text: #e6efff;
+      --muted: #9db2cf;
+      --accent: #7cc0ff;
+    }
+    body { margin: 0; font-family: Roboto, Arial, sans-serif; background: linear-gradient(170deg, #101d30 0%, #0a1320 100%); color: var(--text); }
+    main { max-width: 960px; margin: 0 auto; padding: 1.2rem; }
+    .search-head { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 1rem; position: sticky; top: 10px; }
+    #query-input { width: min(100%, 420px); background: #111f33; border: 1px solid var(--line); border-radius: 8px; color: var(--text); padding: 0.55rem 0.65rem; }
+    #search-btn { margin-left: 0.35rem; border: 1px solid var(--accent); border-radius: 8px; background: #20446a; color: var(--text); padding: 0.55rem 0.75rem; cursor: pointer; }
+    #results { margin-top: 1rem; display: grid; gap: 0.7rem; }
+    .result-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 0.85rem; }
+    .result-title { font-size: 1rem; font-weight: 700; color: var(--accent); text-decoration: none; }
+    .result-title:hover { text-decoration: underline; }
+    .result-snippet { margin-top: 0.35rem; color: var(--muted); line-height: 1.4; }
+    mark { background: #ffc46b; color: #2e1a00; border-radius: 4px; padding: 0 2px; }
+    .empty { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="search-head">
+      <h1>🔎 Pesquisa profunda</h1>
+      <input id="query-input" type="search" placeholder="Digite a palavra-chave" />
+      <button id="search-btn" type="button">Pesquisar</button>
+      <p id="count" class="empty"></p>
+    </section>
+    <section id="results"></section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'notekeeper-data-v6';
+    const LEGACY_STORAGE_KEYS = ['notekeeper-data-v5'];
+    const queryInput = document.getElementById('query-input');
+    const searchBtn = document.getElementById('search-btn');
+    const resultsWrap = document.getElementById('results');
+    const countLabel = document.getElementById('count');
+
+    const state = loadState();
+    const params = new URLSearchParams(window.location.search);
+    queryInput.value = params.get('q') || '';
+    renderResults(queryInput.value.trim());
+
+    searchBtn.addEventListener('click', () => runSearchFromInput());
+    queryInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      runSearchFromInput();
+    });
+
+    function runSearchFromInput() {
+      const term = queryInput.value.trim();
+      const next = new URLSearchParams(window.location.search);
+      if (term) next.set('q', term);
+      else next.delete('q');
+      window.history.replaceState({}, '', `${window.location.pathname}?${next.toString()}`);
+      renderResults(term);
+    }
+
+    function renderResults(term) {
+      resultsWrap.innerHTML = '';
+      if (!term) {
+        countLabel.textContent = 'Digite um termo para buscar no projeto.';
+        return;
+      }
+
+      const matches = collectMatches(term, state.pages || []);
+      countLabel.textContent = `${matches.length} resultado(s) para "${term}"`;
+
+      if (!matches.length) {
+        const empty = document.createElement('p');
+        empty.className = 'empty';
+        empty.textContent = 'Nenhum trecho encontrado.';
+        resultsWrap.appendChild(empty);
+        return;
+      }
+
+      matches.forEach((item) => {
+        const card = document.createElement('article');
+        card.className = 'result-card';
+        const title = document.createElement('a');
+        title.className = 'result-title';
+        title.textContent = item.title;
+        title.href = `index.html?page=${encodeURIComponent(item.pageId)}&term=${encodeURIComponent(term)}&hit=${item.hitIndex}`;
+
+        const snippet = document.createElement('p');
+        snippet.className = 'result-snippet';
+        snippet.innerHTML = emphasize(item.snippet, term);
+
+        card.append(title, snippet);
+        resultsWrap.appendChild(card);
+      });
+    }
+
+    function collectMatches(term, pages) {
+      const lower = term.toLowerCase();
+      const matches = [];
+
+      pages.forEach((page) => {
+        const plain = String(page.plainText || '').replace(/\s+/g, ' ').trim();
+        if (!plain) return;
+
+        let cursor = 0;
+        let localHit = 0;
+        while (matches.length < 200) {
+          const index = plain.toLowerCase().indexOf(lower, cursor);
+          if (index === -1) break;
+
+          const start = Math.max(0, index - 75);
+          const end = Math.min(plain.length, index + lower.length + 90);
+          const prefix = start > 0 ? '…' : '';
+          const suffix = end < plain.length ? '…' : '';
+          const snippet = `${prefix}${plain.slice(start, end)}${suffix}`;
+
+          matches.push({
+            pageId: page.id,
+            title: page.title || 'Sem título',
+            hitIndex: localHit,
+            snippet
+          });
+
+          localHit += 1;
+          cursor = index + lower.length;
+        }
+
+        if ((page.title || '').toLowerCase().includes(lower) && !matches.some((m) => m.pageId === page.id)) {
+          matches.unshift({
+            pageId: page.id,
+            title: page.title || 'Sem título',
+            hitIndex: 0,
+            snippet: `Título contém "${term}".`
+          });
+        }
+      });
+
+      return matches;
+    }
+
+    function emphasize(text, term) {
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>');
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+        for (const key of LEGACY_STORAGE_KEYS) {
+          const legacy = localStorage.getItem(key);
+          if (legacy) return JSON.parse(legacy);
+        }
+      } catch (_error) {
+      }
+      return { pages: [] };
+    }
+  </script>
+</body>
+</html>

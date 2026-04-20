@@ -2,6 +2,7 @@ const STORAGE_KEY = 'notekeeper-data-v6';
 const LEGACY_STORAGE_KEYS = ['notekeeper-data-v5'];
 const MAX_RECENT_COLORS = 5;
 const PROJECT_FILE_VERSION = 5;
+const SEARCH_RESULTS_PAGE = 'search-results.html';
 const DEFAULT_IMAGE_SIZE = 350;
 const THEME_NAMES = [
   'dark', 'light', 'forest', 'ocean', 'sunset',
@@ -17,12 +18,14 @@ const editor = document.getElementById('editor');
 const pagesList = document.getElementById('pages-list');
 const addPageBtn = document.getElementById('add-page-btn');
 const addSectionBtn = document.getElementById('add-section-btn');
-const searchInput = document.getElementById('search-input');
+const deepSearchInput = document.getElementById('deep-search-input');
+const deepSearchBtn = document.getElementById('deep-search-btn');
 const textColor = document.getElementById('text-color');
 const fontFamily = document.getElementById('font-family');
 const fontSize = document.getElementById('font-size');
 const pageTitle = document.getElementById('page-title');
 const pageItemTemplate = document.getElementById('page-item-template');
+const newProjectBtn = document.getElementById('new-project-btn');
 const saveProjectBtn = document.getElementById('save-project-btn');
 const saveAsProjectBtn = document.getElementById('save-as-project-btn');
 const loadProjectBtn = document.getElementById('load-project-btn');
@@ -68,6 +71,7 @@ function bootstrap() {
   renderAnchorsList();
   loadActivePageToEditor();
   bindEvents();
+  openPageFromQueryString();
   saveState();
 }
 
@@ -117,6 +121,7 @@ function bindEvents() {
   exportPageBtn.addEventListener('click', exportCurrentPage);
   applyImageSizeBtn.addEventListener('click', applySelectedImageSize);
 
+  newProjectBtn.addEventListener('click', createNewProject);
   saveProjectBtn.addEventListener('click', saveProject);
   saveAsProjectBtn.addEventListener('click', saveProjectAs);
   loadProjectBtn.addEventListener('click', openProject);
@@ -221,7 +226,68 @@ function bindEvents() {
     });
   });
 
-  searchInput.addEventListener('input', () => updateSearchResults(searchInput.value.trim().toLowerCase()));
+  deepSearchBtn.addEventListener('click', openDeepSearchResults);
+  deepSearchInput.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    openDeepSearchResults();
+  });
+}
+
+function createNewProject() {
+  const shouldReset = confirm('Deseja iniciar um novo projeto? Alterações não salvas serão perdidas.');
+  if (!shouldReset) return;
+
+  state = createInitialState();
+  currentProjectHandle = null;
+  hasShownStorageQuotaWarning = false;
+  applyTheme(state.theme);
+  autolinkToggle.checked = state.autolinkEnabled;
+  renderPages();
+  renderRecentColors();
+  renderAnchorsList();
+  loadActivePageToEditor();
+  saveState();
+}
+
+function openDeepSearchResults() {
+  const term = deepSearchInput.value.trim();
+  if (!term) {
+    alert('Digite uma palavra-chave para pesquisar.');
+    return;
+  }
+
+  syncEditorIntoActivePage();
+  const params = new URLSearchParams({ q: term });
+  window.open(`${SEARCH_RESULTS_PAGE}?${params.toString()}`, '_blank', 'noopener');
+}
+
+function openPageFromQueryString() {
+  const params = new URLSearchParams(window.location.search);
+  const pageId = params.get('page');
+  const rawTerm = params.get('term');
+  const hitIndex = Number.parseInt(params.get('hit') || '0', 10);
+  if (!pageId || !rawTerm) return;
+
+  const matchedPage = state.pages.find((page) => page.id === pageId);
+  if (!matchedPage) return;
+
+  state.activePageId = matchedPage.id;
+  saveState();
+  renderPages();
+  loadActivePageToEditor();
+
+  const term = rawTerm.trim().toLowerCase();
+  if (!term) return;
+
+  highlightSearchTermInEditor(term);
+  const hits = Array.from(editor.querySelectorAll('mark.search-hit'));
+  const safeIndex = Number.isInteger(hitIndex) ? Math.max(0, Math.min(hitIndex, hits.length - 1)) : 0;
+  const targetHit = hits[safeIndex];
+  if (targetHit) {
+    targetHit.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    targetHit.classList.add('search-hit-focus');
+  }
 }
 
 function handleEditorClick(event) {
@@ -999,20 +1065,6 @@ function openInternalLink(href) {
   }
 }
 
-function updateSearchResults(term) {
-  for (const li of pagesList.querySelectorAll('.page-item')) {
-    const id = li.dataset.pageId;
-    const page = state.pages.find((p) => p.id === id);
-    if (!page) continue;
-    const matches = !term || page.plainText.toLowerCase().includes(term) || page.title.toLowerCase().includes(term);
-    li.style.display = matches ? '' : 'none';
-  }
-
-  removeSearchMarks();
-  if (!term) return;
-  highlightSearchTermInEditor(term);
-}
-
 function highlightSearchTermInEditor(term) {
   const regex = new RegExp(escapeRegExp(term), 'gi');
   const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
@@ -1115,7 +1167,7 @@ function loadActivePageToEditor() {
   editor.innerHTML = active.content;
   normalizeImageSizing();
   pageTitle.value = active.title;
-  updateSearchResults(searchInput.value.trim().toLowerCase());
+  removeSearchMarks();
 }
 
 function exportCurrentPage() {
@@ -1192,6 +1244,19 @@ function ensureAnchorTag(page, anchorId, tag) {
   if (!Array.isArray(page.anchors)) page.anchors = [];
   const exists = page.anchors.some((item) => item.anchorId === anchorId && item.tag.toLowerCase() === tag.toLowerCase());
   if (!exists) page.anchors.push({ anchorId, tag: tag.trim() });
+}
+
+function createInitialState() {
+  const firstPage = createPage('Nova página');
+  return {
+    version: PROJECT_FILE_VERSION,
+    theme: 'dark',
+    autolinkEnabled: true,
+    recentColors: ['#d6c4b4'],
+    pages: [firstPage],
+    sections: [],
+    activePageId: firstPage.id
+  };
 }
 
 function createPage(title) {
