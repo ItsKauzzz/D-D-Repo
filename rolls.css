@@ -1,52 +1,56 @@
 :root {
-  --bg: #111319;
-  --panel: #1a1e28;
-  --panel-2: #222838;
-  --line: #343d52;
-  --text: #e8edf8;
-  --muted: #9eabc8;
-  --accent: #5f92ff;
-  --accent-2: #88b0ff;
+  --bg: #1e1e1e;
+  --panel: #2a2a2a;
+  --panel-2: #252525;
+  --line: #444;
+  --text: #f5f5f5;
+  --muted: #bbb;
+  --accent: #7ca8ff;
+  --accent-2: #9dbdff;
 }
 
-* { box-sizing: border-box; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
 
 body {
-  margin: 0;
-  font-family: Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
 }
 
 .rolls-app {
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  display: flex;
   min-height: 100vh;
 }
 
 .sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 250px;
   border-right: 1px solid var(--line);
   background: var(--panel);
-  padding: 1rem;
+  padding: 20px;
 }
 
-.sidebar h1 {
-  margin: 0;
-  font-size: 1.3rem;
+.sidebar h2 {
+  margin-bottom: 10px;
+  font-size: 1.25rem;
 }
 
 .sidebar-subtitle {
-  margin: 0.4rem 0 1rem;
+  margin: 0 0 20px;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 .roll-type-list {
-  margin: 0;
-  padding: 0;
   list-style: none;
   display: grid;
-  gap: 0.5rem;
+  gap: 0.65rem;
 }
 
 .roll-type-btn {
@@ -54,48 +58,60 @@ body {
   text-align: left;
   border: 1px solid var(--line);
   background: var(--panel-2);
-  color: var(--text);
-  border-radius: 10px;
-  padding: 0.7rem;
+  color: #ccc;
+  border-radius: 8px;
+  padding: 0.68rem;
   cursor: pointer;
+  transition: 0.2s;
+}
+
+.roll-type-btn:hover {
+  color: #fff;
+  border-color: #666;
 }
 
 .roll-type-btn.active {
   border-color: var(--accent);
-  background: rgba(95, 146, 255, 0.18);
+  color: #fff;
+  background: rgba(124, 168, 255, 0.2);
 }
 
 .inspector {
-  padding: 1rem 1.25rem 1.5rem;
+  flex: 1;
+  padding: 40px;
   display: grid;
-  gap: 1.6rem;
-  min-height: 100vh;
+  gap: 1rem;
+  align-content: start;
+}
+
+.section {
+  margin-bottom: 0.75rem;
 }
 
 .inspector-header h2 {
-  margin: 0;
+  margin-bottom: 10px;
+  font-size: 1.6rem;
 }
 
 .muted {
-  margin: 0.35rem 0 0;
   color: var(--muted);
+  line-height: 1.6;
 }
 
 .inspector-controls {
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 0.95rem;
+  padding: 1rem;
   background: var(--panel);
   display: grid;
-  gap: 0.8rem;
-  margin-top: 0.4rem;
+  gap: 0.85rem;
 }
 
 .control-row {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
+  grid-template-columns: 170px minmax(0, 1fr);
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.8rem;
 }
 
 .control-row label {
@@ -108,7 +124,7 @@ select {
   width: 100%;
   border: 1px solid var(--line);
   background: var(--panel-2);
-  color: var(--text);
+  color: #f0f0f0;
   border-radius: 8px;
   padding: 0.5rem;
 }
@@ -116,17 +132,16 @@ select {
 .roller-box {
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 0.9rem;
+  padding: 1rem;
   background: var(--panel);
   display: grid;
-  gap: 0.75rem;
+  gap: 0.8rem;
 }
 
 .roller-box--hero {
   border-color: var(--accent);
-  background: linear-gradient(135deg, rgba(95, 146, 255, 0.22), rgba(95, 146, 255, 0.08));
-  box-shadow: 0 0 0 1px rgba(95, 146, 255, 0.35), 0 10px 28px rgba(0, 0, 0, 0.35);
-  padding: 1rem 1rem 1.1rem;
+  background: linear-gradient(135deg, rgba(124, 168, 255, 0.22), rgba(124, 168, 255, 0.08));
+  box-shadow: 0 0 0 1px rgba(124, 168, 255, 0.35), 0 10px 24px rgba(0, 0, 0, 0.25);
 }
 
 #roll-btn {
@@ -134,11 +149,12 @@ select {
   border: 1px solid var(--accent);
   background: var(--accent);
   color: #fff;
-  border-radius: 10px;
-  padding: 0.72rem 1.2rem;
-  font-size: 1.02rem;
+  border-radius: 8px;
+  padding: 0.7rem 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
+  transition: 0.2s;
 }
 
 #roll-btn:hover {
@@ -146,43 +162,43 @@ select {
 }
 
 .roll-result {
-  border: 1px dashed rgba(232, 237, 248, 0.35);
+  border: 1px dashed rgba(245, 245, 245, 0.4);
   border-radius: 8px;
-  padding: 0.82rem;
-  background: rgba(19, 23, 34, 0.86);
-  font-size: 0.98rem;
+  padding: 0.85rem;
+  background: rgba(24, 24, 24, 0.7);
+  font-size: 0.96rem;
 }
 
 
 .results-section {
-  margin-top: auto;
-  align-self: end;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+  background: var(--panel-2);
 }
 
 .results-section h3 {
-  margin: 0 0 0.25rem;
-  font-size: 0.78rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.82rem;
   color: var(--muted);
   font-weight: 600;
-  opacity: 0.82;
   letter-spacing: 0.02em;
 }
 
 .results-list {
-  margin: 0;
-  padding-left: 0.85rem;
-  border: 1px solid #273044;
-  border-radius: 10px;
-  background: rgba(26, 30, 40, 0.38);
-  max-height: 19vh;
+  padding-left: 1rem;
+  border: 1px solid #3f3f3f;
+  border-radius: 8px;
+  background: rgba(30, 30, 30, 0.7);
+  max-height: 220px;
   overflow: auto;
-  font-size: 0.74rem;
+  font-size: 0.82rem;
 }
 
 .results-list li {
-  padding: 0.18rem 0.34rem 0.18rem 0.12rem;
-  border-bottom: 1px solid #252d3f;
-  line-height: 1.2;
+  padding: 0.35rem 0.45rem 0.35rem 0.2rem;
+  border-bottom: 1px solid #363636;
+  line-height: 1.35;
 }
 
 .results-list li:last-child {
@@ -190,26 +206,33 @@ select {
 }
 
 .results-list li.is-highlighted {
-  background: rgba(95, 146, 255, 0.18);
+  background: rgba(124, 168, 255, 0.2);
   outline: 1px solid var(--accent);
 }
 
 .group-label {
   display: inline-block;
-  margin-left: 0.26rem;
-  font-size: 0.64rem;
+  margin-left: 0.32rem;
+  font-size: 0.68rem;
   color: var(--muted);
-  opacity: 0.75;
+  opacity: 0.8;
 }
 
 @media (max-width: 900px) {
   .rolls-app {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .sidebar {
-    border-right: 0;
+    position: static;
+    width: 100%;
+    height: auto;
     border-bottom: 1px solid var(--line);
+    border-right: 0;
+  }
+
+  .inspector {
+    padding: 20px;
   }
 
   .control-row {
