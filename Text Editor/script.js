@@ -2,6 +2,7 @@ const STORAGE_KEY = 'notekeeper-data-v5';
 const MAX_RECENT_COLORS = 5;
 const PROJECT_FILE_VERSION = 4;
 const DEFAULT_IMAGE_SIZE = 350;
+const THEME_NAMES = ['dark', 'light', 'forest', 'ocean', 'sunset', 'lavender', 'midnight', 'rose', 'mint', 'coffee'];
 
 const editor = document.getElementById('editor');
 const pagesList = document.getElementById('pages-list');
@@ -16,7 +17,8 @@ const saveProjectBtn = document.getElementById('save-project-btn');
 const loadProjectBtn = document.getElementById('load-project-btn');
 const loadProjectInput = document.getElementById('load-project-input');
 const recentColorsContainer = document.getElementById('recent-colors');
-const themeToggleBtn = document.getElementById('theme-toggle-btn');
+const themeMenuBtn = document.getElementById('theme-menu-btn');
+const themeMenuPopover = document.getElementById('theme-menu-popover');
 const insertLinkBtn = document.getElementById('insert-link-btn');
 const insertAnchorBtn = document.getElementById('insert-anchor-btn');
 const uploadImageBtn = document.getElementById('upload-image-btn');
@@ -67,10 +69,22 @@ function bindEvents() {
     loadActivePageToEditor();
   });
 
-  themeToggleBtn.addEventListener('click', () => {
-    state.theme = state.theme === 'dark' ? 'light' : 'dark';
-    applyTheme(state.theme);
-    saveState();
+  themeMenuBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+    themeMenuPopover.hidden = !themeMenuPopover.hidden;
+    themeMenuBtn.setAttribute('aria-expanded', String(!themeMenuPopover.hidden));
+  });
+
+  themeMenuPopover.querySelectorAll('[data-theme]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const theme = button.getAttribute('data-theme');
+      if (!theme || !THEME_NAMES.includes(theme)) return;
+      state.theme = theme;
+      applyTheme(theme);
+      saveState();
+      themeMenuPopover.hidden = true;
+      themeMenuBtn.setAttribute('aria-expanded', 'false');
+    });
   });
 
   autolinkToggle.addEventListener('change', () => {
@@ -163,8 +177,15 @@ function bindEvents() {
   document.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
-    if (target.closest('#list-menu-btn') || target.closest('#list-menu-popover')) return;
-    listMenuPopover.hidden = true;
+
+    if (!target.closest('#list-menu-btn') && !target.closest('#list-menu-popover')) {
+      listMenuPopover.hidden = true;
+    }
+
+    if (!target.closest('#theme-menu-btn') && !target.closest('#theme-menu-popover')) {
+      themeMenuPopover.hidden = true;
+      themeMenuBtn.setAttribute('aria-expanded', 'false');
+    }
   });
 
   document.querySelectorAll('[data-align]').forEach((button) => {
@@ -865,8 +886,13 @@ function getActivePage() {
 }
 
 function applyTheme(theme) {
-  document.body.dataset.theme = theme;
-  themeToggleBtn.textContent = theme === 'dark' ? '🌞' : '🌚';
+  const normalizedTheme = THEME_NAMES.includes(theme) ? theme : 'dark';
+  document.body.dataset.theme = normalizedTheme;
+
+  const selectedThemeButton = themeMenuPopover.querySelector(`[data-theme="${normalizedTheme}"]`);
+  if (selectedThemeButton) {
+    themeMenuBtn.textContent = `🎨 ${selectedThemeButton.textContent?.trim() || 'Tema'}`;
+  }
 }
 
 function applyTextColor(color) {
@@ -978,7 +1004,7 @@ function normalizeState(rawState) {
     pages,
     activePageId: typeof rawState.activePageId === 'string' ? rawState.activePageId : pages[0]?.id || null,
     recentColors: Array.isArray(rawState.recentColors) ? rawState.recentColors.slice(0, MAX_RECENT_COLORS) : [],
-    theme: rawState.theme === 'light' ? 'light' : 'dark',
+    theme: THEME_NAMES.includes(rawState.theme) ? rawState.theme : 'dark',
     autolinkEnabled: rawState.autolinkEnabled !== false
   };
 }
