@@ -15,6 +15,11 @@
     </aside>
 
     <main class="inspector" aria-live="polite">
+      <section class="roller-box roller-box--hero">
+        <button id="roll-btn" type="button">🎲 Rolar agora</button>
+        <div id="roll-result" class="roll-result">Faça uma rolagem para ver o resultado.</div>
+      </section>
+
       <header class="inspector-header">
         <h2 id="roll-title">—</h2>
         <p id="roll-description" class="muted"></p>
@@ -22,12 +27,7 @@
 
       <section class="inspector-controls" id="inspector-controls"></section>
 
-      <section class="roller-box">
-        <button id="roll-btn" type="button">Rolar agora</button>
-        <div id="roll-result" class="roll-result">Faça uma rolagem para ver o resultado.</div>
-      </section>
-
-      <section>
+      <section class="results-section">
         <h3>Tabela completa de resultados</h3>
         <ol id="results-list" class="results-list"></ol>
       </section>
