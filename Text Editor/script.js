@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'notekeeper-data-v5';
+const STORAGE_KEY = 'notekeeper-data-v6';
 const MAX_RECENT_COLORS = 5;
 const PROJECT_FILE_VERSION = 4;
 const DEFAULT_IMAGE_SIZE = 350;
@@ -7,6 +7,7 @@ const THEME_NAMES = ['dark', 'light', 'forest', 'ocean', 'sunset', 'lavender', '
 const editor = document.getElementById('editor');
 const pagesList = document.getElementById('pages-list');
 const addPageBtn = document.getElementById('add-page-btn');
+const addSectionBtn = document.getElementById('add-section-btn');
 const searchInput = document.getElementById('search-input');
 const textColor = document.getElementById('text-color');
 const fontFamily = document.getElementById('font-family');
@@ -39,6 +40,7 @@ let currentProjectHandle = null;
 let autoLinkDebounce = null;
 let isApplyingAutoLink = false;
 let selectedImage = null;
+let draggingPageId = null;
 
 bootstrap();
 
@@ -67,6 +69,14 @@ function bindEvents() {
     renderPages();
     renderAnchorsList();
     loadActivePageToEditor();
+  });
+
+  addSectionBtn.addEventListener('click', () => {
+    const sectionName = prompt('Nome da nova seção:');
+    if (!sectionName || !sectionName.trim()) return;
+    state.sections.push(createSection(sectionName.trim()));
+    saveState();
+    renderPages();
   });
 
   themeMenuBtn.addEventListener('click', (event) => {
@@ -101,6 +111,10 @@ function bindEvents() {
   loadProjectInput.addEventListener('change', openProjectFromInput);
 
   pagesList.addEventListener('click', handlePagesClick);
+  pagesList.addEventListener('dragstart', handlePagesDragStart);
+  pagesList.addEventListener('dragend', handlePagesDragEnd);
+  pagesList.addEventListener('dragover', handlePagesDragOver);
+  pagesList.addEventListener('drop', handlePagesDrop);
   anchorsList.addEventListener('click', handleAnchorsClick);
   tagSuggestions.addEventListener('click', handleSuggestionClick);
 
@@ -507,6 +521,19 @@ function handlePagesClick(event) {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
 
+  const sectionHeader = target.closest('.section-header');
+  if (sectionHeader) {
+    const sectionItem = sectionHeader.closest('.section-item');
+    const sectionId = sectionItem?.dataset.sectionId;
+    if (!sectionId) return;
+    const section = state.sections.find((item) => item.id === sectionId);
+    if (!section) return;
+    section.collapsed = !section.collapsed;
+    saveState();
+    renderPages();
+    return;
+  }
+
   const item = target.closest('.page-item');
   if (!item) return;
   const pageId = item.dataset.pageId;
@@ -532,6 +559,60 @@ function handlePagesClick(event) {
     renderPages();
     loadActivePageToEditor();
   }
+}
+
+function handlePagesDragStart(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  const item = target.closest('.page-item');
+  if (!(item instanceof HTMLElement)) return;
+  const pageId = item.dataset.pageId;
+  if (!pageId) return;
+
+  draggingPageId = pageId;
+  item.classList.add('dragging');
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', pageId);
+  }
+}
+
+function handlePagesDragEnd(event) {
+  const target = event.target;
+  if (target instanceof HTMLElement) target.classList.remove('dragging');
+  draggingPageId = null;
+  pagesList.querySelectorAll('.drop-target').forEach((node) => node.classList.remove('drop-target'));
+}
+
+function handlePagesDragOver(event) {
+  if (!draggingPageId) return;
+  const dropTarget = getDropTarget(event.target);
+  if (!dropTarget) return;
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+  pagesList.querySelectorAll('.drop-target').forEach((node) => node.classList.remove('drop-target'));
+  dropTarget.classList.add('drop-target');
+}
+
+function handlePagesDrop(event) {
+  if (!draggingPageId) return;
+  const dropTarget = getDropTarget(event.target);
+  if (!dropTarget) return;
+  event.preventDefault();
+
+  const droppedPageId = event.dataTransfer?.getData('text/plain') || draggingPageId;
+  const page = state.pages.find((item) => item.id === droppedPageId);
+  if (!page) return;
+
+  const targetSectionId = dropTarget.dataset.sectionId || null;
+  page.sectionId = targetSectionId;
+  saveState();
+  renderPages();
+}
+
+function getDropTarget(target) {
+  if (!(target instanceof HTMLElement)) return null;
+  return target.closest('.section-pages, .pages-root-dropzone');
 }
 
 function handleAnchorsClick(event) {
@@ -834,13 +915,40 @@ function renderAnchorsList() {
 
 function renderPages() {
   pagesList.innerHTML = '';
-  state.pages.forEach((page) => {
-    const item = pageItemTemplate.content.firstElementChild.cloneNode(true);
-    item.dataset.pageId = page.id;
-    item.querySelector('.page-open').textContent = page.title || 'Sem título';
-    if (page.id === state.activePageId) item.classList.add('active');
-    pagesList.appendChild(item);
+  const validSectionIds = new Set(state.sections.map((section) => section.id));
+  const rootPages = state.pages.filter((page) => !page.sectionId || !validSectionIds.has(page.sectionId));
+  const rootDropzone = document.createElement('li');
+  rootDropzone.className = 'pages-root-dropzone';
+  rootDropzone.dataset.sectionId = '';
+  rootDropzone.innerHTML = '<div class="dropzone-title">Páginas soltas</div>';
+  rootPages.forEach((page) => rootDropzone.appendChild(createPageItem(page)));
+  pagesList.appendChild(rootDropzone);
+
+  state.sections.forEach((section) => {
+    const sectionItem = document.createElement('li');
+    sectionItem.className = 'section-item';
+    sectionItem.dataset.sectionId = section.id;
+
+    const sectionPages = state.pages.filter((page) => page.sectionId === section.id);
+    const sectionList = document.createElement('ul');
+    sectionList.className = 'section-pages';
+    sectionList.dataset.sectionId = section.id;
+    if (section.collapsed) sectionList.classList.add('is-collapsed');
+    sectionPages.forEach((page) => sectionList.appendChild(createPageItem(page)));
+
+    sectionItem.innerHTML = `<button type="button" class="section-header"><span class="section-caret">${section.collapsed ? '▸' : '▾'}</span><span class="section-title">${escapeHtml(section.title)}</span><span class="section-count">${sectionPages.length}</span></button>`;
+    sectionItem.appendChild(sectionList);
+    pagesList.appendChild(sectionItem);
   });
+}
+
+function createPageItem(page) {
+  const item = pageItemTemplate.content.firstElementChild.cloneNode(true);
+  item.dataset.pageId = page.id;
+  item.draggable = true;
+  item.querySelector('.page-open').textContent = page.title || 'Sem título';
+  if (page.id === state.activePageId) item.classList.add('active');
+  return item;
 }
 
 function loadActivePageToEditor() {
@@ -929,7 +1037,11 @@ function ensureAnchorTag(page, anchorId, tag) {
 }
 
 function createPage(title) {
-  return { id: crypto.randomUUID(), title, content: '', plainText: '', anchors: [] };
+  return { id: crypto.randomUUID(), title, content: '', plainText: '', anchors: [], sectionId: null };
+}
+
+function createSection(title) {
+  return { id: crypto.randomUUID(), title, collapsed: false };
 }
 
 function importProjectFromJson(text) {
@@ -984,10 +1096,21 @@ function loadState() {
 }
 
 function defaultState() {
-  return { pages: [], activePageId: null, recentColors: [], theme: 'dark', autolinkEnabled: true };
+  return { pages: [], sections: [], activePageId: null, recentColors: [], theme: 'dark', autolinkEnabled: true };
 }
 
 function normalizeState(rawState) {
+  const sections = Array.isArray(rawState.sections)
+    ? rawState.sections
+        .filter((section) => section && typeof section.id === 'string')
+        .map((section) => ({
+          id: section.id,
+          title: typeof section.title === 'string' && section.title.trim() ? section.title.trim() : 'Seção',
+          collapsed: Boolean(section.collapsed)
+        }))
+    : [];
+  const sectionIdSet = new Set(sections.map((section) => section.id));
+
   const validPages = Array.isArray(rawState.pages) ? rawState.pages.filter((page) => page && typeof page.id === 'string') : [];
 
   const pages = validPages.map((page) => ({
@@ -995,6 +1118,7 @@ function normalizeState(rawState) {
     title: typeof page.title === 'string' ? page.title : 'Sem título',
     content: typeof page.content === 'string' ? page.content : '',
     plainText: typeof page.plainText === 'string' ? page.plainText : '',
+    sectionId: typeof page.sectionId === 'string' && sectionIdSet.has(page.sectionId) ? page.sectionId : null,
     anchors: Array.isArray(page.anchors)
       ? page.anchors.filter((anchor) => anchor && typeof anchor.anchorId === 'string' && typeof anchor.tag === 'string').map((anchor) => ({ anchorId: anchor.anchorId, tag: anchor.tag }))
       : []
@@ -1002,6 +1126,7 @@ function normalizeState(rawState) {
 
   return {
     pages,
+    sections,
     activePageId: typeof rawState.activePageId === 'string' ? rawState.activePageId : pages[0]?.id || null,
     recentColors: Array.isArray(rawState.recentColors) ? rawState.recentColors.slice(0, MAX_RECENT_COLORS) : [],
     theme: THEME_NAMES.includes(rawState.theme) ? rawState.theme : 'dark',
