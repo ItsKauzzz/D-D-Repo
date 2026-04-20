@@ -536,8 +536,7 @@ async function openProjectFromInput() {
   const file = loadProjectInput.files?.[0];
   if (!file) return;
   currentProjectHandle = null;
-  const text = await file.text();
-  importProjectFromJson(text);
+  importProjectFromJson(await file.text());
 }
 
 function handlePagesClick(event) {
@@ -1312,9 +1311,10 @@ function saveState() {
     if (isQuotaExceededError(error)) {
       if (!hasShownStorageQuotaWarning) {
         hasShownStorageQuotaWarning = true;
-      const base64 = await file.async('base64');
-      const mime = assetInfo.mimeType || extensionToMime(assetInfo.fileName.split('.').pop() || '');
-      const dataUrl = `data:${mime};base64,${base64}`;
+        alert('Seu navegador ficou sem espaço no armazenamento local. Continue editando e use "Salvar projeto (💾)" para baixar um arquivo e não perder progresso.');
+      }
+      return;
+    }
     throw error;
   }
 }
