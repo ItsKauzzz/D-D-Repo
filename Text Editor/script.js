@@ -16,6 +16,7 @@ const fontSize = document.getElementById('font-size');
 const pageTitle = document.getElementById('page-title');
 const pageItemTemplate = document.getElementById('page-item-template');
 const saveProjectBtn = document.getElementById('save-project-btn');
+const saveAsProjectBtn = document.getElementById('save-as-project-btn');
 const loadProjectBtn = document.getElementById('load-project-btn');
 const loadProjectInput = document.getElementById('load-project-input');
 const recentColorsContainer = document.getElementById('recent-colors');
@@ -41,7 +42,7 @@ let currentProjectHandle = null;
 let autoLinkDebounce = null;
 let isApplyingAutoLink = false;
 let selectedImage = null;
-let draggingPageId = null;
+let draggingItem = null;
 let hasShownStorageQuotaWarning = false;
 
 bootstrap();
@@ -109,6 +110,7 @@ function bindEvents() {
   applyImageSizeBtn.addEventListener('click', applySelectedImageSize);
 
   saveProjectBtn.addEventListener('click', saveProject);
+  saveAsProjectBtn.addEventListener('click', saveProjectAs);
   loadProjectBtn.addEventListener('click', openProject);
   loadProjectInput.addEventListener('change', openProjectFromInput);
 
@@ -491,6 +493,24 @@ async function saveProject() {
   downloadProjectFallback();
 }
 
+async function saveProjectAs() {
+  syncEditorIntoActivePage();
+  currentProjectHandle = null;
+  if (window.showSaveFilePicker) {
+    try {
+      currentProjectHandle = await window.showSaveFilePicker({
+        suggestedName: 'notekeeper-project.json',
+        types: [{ description: 'Arquivo de projeto NoteKeeper', accept: { 'application/json': ['.json'] } }]
+      });
+      await writeStateToHandle(currentProjectHandle);
+      return;
+    } catch (error) {
+      if (error?.name !== 'AbortError') alert('Não foi possível salvar no arquivo selecionado.');
+    }
+  }
+  downloadProjectFallback();
+}
+
 async function openProject() {
   if (window.showOpenFilePicker) {
     try {
@@ -523,8 +543,26 @@ function handlePagesClick(event) {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
 
+  if (target.classList.contains('section-delete')) {
+    const sectionItem = target.closest('.section-item');
+    const sectionId = sectionItem?.dataset.sectionId;
+    if (!sectionId) return;
+    const section = state.sections.find((item) => item.id === sectionId);
+    if (!section) return;
+
+    if (!confirm(`Tem certeza que deseja remover a seção "${section.title}"? As páginas voltarão para "Páginas soltas".`)) return;
+
+    state.sections = state.sections.filter((item) => item.id !== sectionId);
+    state.pages.forEach((page) => {
+      if (page.sectionId === sectionId) page.sectionId = null;
+    });
+    saveState();
+    renderPages();
+    return;
+  }
+
   const sectionHeader = target.closest('.section-header');
-  if (sectionHeader) {
+  if (sectionHeader && !target.closest('.section-delete')) {
     const sectionItem = sectionHeader.closest('.section-item');
     const sectionId = sectionItem?.dataset.sectionId;
     if (!sectionId) return;
@@ -566,29 +604,143 @@ function handlePagesClick(event) {
 function handlePagesDragStart(event) {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
-  const item = target.closest('.page-item');
-  if (!(item instanceof HTMLElement)) return;
-  const pageId = item.dataset.pageId;
-  if (!pageId) return;
+  const pageItem = target.closest('.page-item');
+  if (pageItem instanceof HTMLElement) {
+    const pageId = pageItem.dataset.pageId;
+    if (!pageId) return;
+    draggingItem = { type: 'page', id: pageId };
+    pageItem.classList.add('dragging');
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', `page:${pageId}`);
+    }
+    return;
+  }
 
-  draggingPageId = pageId;
-  item.classList.add('dragging');
-  if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', pageId);
+  const sectionItem = target.closest('.section-item');
+  if (sectionItem instanceof HTMLElement) {
+    const sectionId = sectionItem.dataset.sectionId;
+    if (!sectionId) return;
+    draggingItem = { type: 'section', id: sectionId };
+    sectionItem.classList.add('dragging');
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', `section:${sectionId}`);
+    }
   }
 }
 
-function handlePagesDragEnd(event) {
-  const target = event.target;
-  if (target instanceof HTMLElement) target.classList.remove('dragging');
-  draggingPageId = null;
+function clearDragVisualState() {
+  pagesList.querySelectorAll('.dragging').forEach((node) => node.classList.remove('dragging'));
   pagesList.querySelectorAll('.drop-target').forEach((node) => node.classList.remove('drop-target'));
 }
 
+function parseDragPayload(payload) {
+  if (!payload || typeof payload !== 'string') return null;
+  const [type, id] = payload.split(':');
+  if (!id || (type !== 'page' && type !== 'section')) return null;
+  return { type, id };
+}
+
+function resolveDraggingItem(event) {
+  if (draggingItem) return draggingItem;
+  const payload = event.dataTransfer?.getData('text/plain') || '';
+  return parseDragPayload(payload);
+}
+
+function getPageDropTarget(target) {
+  if (!(target instanceof HTMLElement)) return null;
+  return target.closest('.page-item, .section-pages, .pages-root-dropzone, .section-header');
+}
+
+function getSectionDropTarget(target) {
+  if (!(target instanceof HTMLElement)) return null;
+  return target.closest('.section-item, .section-header');
+}
+
+function reorderPages(dragPageId, targetPageId, targetSectionId) {
+  if (dragPageId === targetPageId) return;
+  const dragIndex = state.pages.findIndex((page) => page.id === dragPageId);
+  const targetIndex = state.pages.findIndex((page) => page.id === targetPageId);
+  if (dragIndex === -1 || targetIndex === -1) return;
+
+  state.pages[dragIndex].sectionId = targetSectionId;
+  const [draggedPage] = state.pages.splice(dragIndex, 1);
+  const adjustedTargetIndex = dragIndex < targetIndex ? targetIndex - 1 : targetIndex;
+  state.pages.splice(adjustedTargetIndex, 0, draggedPage);
+}
+
+function movePageToContainerEnd(pageId, targetSectionId) {
+  const dragIndex = state.pages.findIndex((page) => page.id === pageId);
+  if (dragIndex === -1) return;
+  state.pages[dragIndex].sectionId = targetSectionId;
+  const [draggedPage] = state.pages.splice(dragIndex, 1);
+
+  let insertIndex = state.pages.length;
+  for (let index = state.pages.length - 1; index >= 0; index -= 1) {
+    if ((state.pages[index].sectionId || null) === targetSectionId) {
+      insertIndex = index + 1;
+      break;
+    }
+  }
+
+  state.pages.splice(insertIndex, 0, draggedPage);
+}
+
+function reorderSections(dragSectionId, targetSectionId) {
+  if (dragSectionId === targetSectionId) return;
+  const dragIndex = state.sections.findIndex((section) => section.id === dragSectionId);
+  const targetIndex = state.sections.findIndex((section) => section.id === targetSectionId);
+  if (dragIndex === -1 || targetIndex === -1) return;
+
+  const [draggedSection] = state.sections.splice(dragIndex, 1);
+  const adjustedTargetIndex = dragIndex < targetIndex ? targetIndex - 1 : targetIndex;
+  state.sections.splice(adjustedTargetIndex, 0, draggedSection);
+}
+
+function applyPageDrop(dragged, dropTarget) {
+  const pageTarget = dropTarget.closest('.page-item');
+  if (pageTarget) {
+    const targetPageId = pageTarget.dataset.pageId;
+    if (!targetPageId) return;
+    const targetPage = state.pages.find((page) => page.id === targetPageId);
+    if (!targetPage) return;
+    reorderPages(dragged.id, targetPageId, targetPage.sectionId || null);
+    return;
+  }
+
+  const sectionHeader = dropTarget.closest('.section-header');
+  if (sectionHeader) {
+    const sectionId = sectionHeader.closest('.section-item')?.dataset.sectionId || null;
+    movePageToContainerEnd(dragged.id, sectionId);
+    return;
+  }
+
+  const container = dropTarget.closest('.section-pages, .pages-root-dropzone');
+  if (!container) return;
+  movePageToContainerEnd(dragged.id, container.dataset.sectionId || null);
+}
+
+function applySectionDrop(dragged, dropTarget) {
+  const targetSectionId = dropTarget.closest('.section-item')?.dataset.sectionId;
+  if (!targetSectionId) return;
+  reorderSections(dragged.id, targetSectionId);
+}
+
+function getClosestValidDropTarget(dragged, target) {
+  if (dragged.type === 'page') return getPageDropTarget(target);
+  return getSectionDropTarget(target);
+}
+
+function handlePagesDragEnd() {
+  clearDragVisualState();
+  draggingItem = null;
+}
+
 function handlePagesDragOver(event) {
-  if (!draggingPageId) return;
-  const dropTarget = getDropTarget(event.target);
+  const dragged = resolveDraggingItem(event);
+  if (!dragged) return;
+  const dropTarget = getClosestValidDropTarget(dragged, event.target);
   if (!dropTarget) return;
   event.preventDefault();
   if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
@@ -597,24 +749,18 @@ function handlePagesDragOver(event) {
 }
 
 function handlePagesDrop(event) {
-  if (!draggingPageId) return;
-  const dropTarget = getDropTarget(event.target);
+  const dragged = resolveDraggingItem(event);
+  if (!dragged) return;
+  const dropTarget = getClosestValidDropTarget(dragged, event.target);
   if (!dropTarget) return;
   event.preventDefault();
 
-  const droppedPageId = event.dataTransfer?.getData('text/plain') || draggingPageId;
-  const page = state.pages.find((item) => item.id === droppedPageId);
-  if (!page) return;
-
-  const targetSectionId = dropTarget.dataset.sectionId || null;
-  page.sectionId = targetSectionId;
+  if (dragged.type === 'page') applyPageDrop(dragged, dropTarget);
+  if (dragged.type === 'section') applySectionDrop(dragged, dropTarget);
   saveState();
   renderPages();
-}
-
-function getDropTarget(target) {
-  if (!(target instanceof HTMLElement)) return null;
-  return target.closest('.section-pages, .pages-root-dropzone');
+  clearDragVisualState();
+  draggingItem = null;
 }
 
 function handleAnchorsClick(event) {
@@ -930,6 +1076,7 @@ function renderPages() {
     const sectionItem = document.createElement('li');
     sectionItem.className = 'section-item';
     sectionItem.dataset.sectionId = section.id;
+    sectionItem.draggable = true;
 
     const sectionPages = state.pages.filter((page) => page.sectionId === section.id);
     const sectionList = document.createElement('ul');
@@ -938,7 +1085,7 @@ function renderPages() {
     if (section.collapsed) sectionList.classList.add('is-collapsed');
     sectionPages.forEach((page) => sectionList.appendChild(createPageItem(page)));
 
-    sectionItem.innerHTML = `<button type="button" class="section-header"><span class="section-caret">${section.collapsed ? '▸' : '▾'}</span><span class="section-title">${escapeHtml(section.title)}</span><span class="section-count">${sectionPages.length}</span></button>`;
+    sectionItem.innerHTML = `<div class="section-header"><span class="section-caret">${section.collapsed ? '▸' : '▾'}</span><span class="section-title">${escapeHtml(section.title)}</span><span class="section-count">${sectionPages.length}</span><button type="button" class="section-delete" title="Remover seção" aria-label="Remover seção">✕</button></div>`;
     sectionItem.appendChild(sectionList);
     pagesList.appendChild(sectionItem);
   });
