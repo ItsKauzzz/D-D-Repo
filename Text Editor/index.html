@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NoteKeeper</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-theme="dark">
+  <div class="app-shell">
+    <aside class="sidebar left-sidebar">
+      <div class="sidebar-header">
+        <h1>NoteKeeper</h1>
+        <button id="add-page-btn" class="icon-btn" title="Nova página" aria-label="Nova página">📄➕</button>
+      </div>
+
+      <div class="search-wrap">
+        <input id="search-input" type="search" placeholder="Buscar texto..." />
+      </div>
+
+      <ul id="pages-list" class="pages-list"></ul>
+    </aside>
+
+    <main class="editor-area">
+      <header class="toolbar" role="toolbar" aria-label="Ferramentas de edição">
+        <button data-cmd="bold" title="Negrito"><b>B</b></button>
+        <button data-cmd="italic" title="Itálico"><i>I</i></button>
+        <button id="list-menu-btn" type="button" title="Listas">📝</button>
+        <div id="list-menu-popover" class="list-menu-popover" hidden>
+          <button data-list-cmd="insertUnorderedList" title="Lista com marcadores">• Lista</button>
+          <button data-list-cmd="insertOrderedList" title="Lista numerada">1. Lista</button>
+        </div>
+        <button data-cmd="insertHorizontalRule" title="Linha horizontal">—</button>
+        <button data-cmd="unlink" title="Remover link">🔗✖</button>
+
+        <button id="align-left-btn" data-align="left" title="Alinhar à esquerda">⬅️</button>
+        <button id="align-center-btn" data-align="center" title="Centralizar">↔️</button>
+        <button id="align-right-btn" data-align="right" title="Alinhar à direita">➡️</button>
+
+        <button id="insert-link-btn" class="icon-btn" title="Inserir link">🔗</button>
+        <button id="insert-anchor-btn" class="icon-btn" title="Criar âncora">⚓</button>
+        <button id="upload-image-btn" class="icon-btn" title="Anexar imagem do computador">🖼️+</button>
+        <input id="upload-image-input" type="file" accept="image/*" hidden />
+
+        <label class="color-picker-label" title="Cor do texto">
+          🎨
+          <input id="text-color" type="color" value="#d6c4b4" />
+        </label>
+
+        <div class="recent-colors-wrap">
+          <span>🎯</span>
+          <div id="recent-colors" class="recent-colors"></div>
+        </div>
+
+        <label class="font-select-label" title="Fonte">
+          🅵
+          <select id="font-family">
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Tahoma">Tahoma</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Courier New">Courier New</option>
+          </select>
+        </label>
+
+        <label class="font-size-label" title="Tamanho da fonte">
+          🔠
+          <select id="font-size">
+            <option value="1">10px</option>
+            <option value="2">13px</option>
+            <option value="3" selected>16px</option>
+            <option value="4">18px</option>
+            <option value="5">24px</option>
+            <option value="6">32px</option>
+            <option value="7">48px</option>
+          </select>
+        </label>
+
+        <button id="save-project-btn" class="icon-btn" title="Salvar projeto" aria-label="Salvar projeto">💾</button>
+        <button id="load-project-btn" class="icon-btn" title="Abrir projeto" aria-label="Abrir projeto">📂</button>
+        <button id="theme-toggle-btn" class="icon-btn" title="Alternar tema">🌓</button>
+        <input id="load-project-input" type="file" accept="application/json" hidden />
+      </header>
+
+      <section class="page-meta">
+        <input id="page-title" type="text" placeholder="Título da página" />
+      </section>
+
+      <section id="tag-suggestions" class="tag-suggestions" hidden></section>
+
+      <article id="editor" class="editor" contenteditable="true" spellcheck="true" aria-label="Editor de texto"></article>
+    </main>
+
+    <aside class="sidebar right-sidebar">
+      <h2>⚙️ Projeto</h2>
+
+      <section class="side-section">
+        <h3>Autolink</h3>
+        <label class="toggle-row">
+          <input id="autolink-toggle" type="checkbox" />
+          <span>Auto</span>
+        </label>
+        <button id="apply-autolink-btn" class="icon-btn" title="Aplicar autolinks">🧲</button>
+      </section>
+
+      <section class="side-section">
+        <h3>Imagem</h3>
+        <label class="size-field">W <input id="image-width" type="number" min="50" max="1200" step="10" /></label>
+        <label class="size-field">H <input id="image-height" type="number" min="50" max="1200" step="10" /></label>
+        <button id="apply-image-size-btn" class="icon-btn" title="Aplicar tamanho">📐</button>
+      </section>
+
+      <section class="side-section">
+        <h3>Exportar</h3>
+        <button id="export-page-btn" class="icon-btn" title="Exportar página atual">📤</button>
+      </section>
+
+      <section class="side-section">
+        <h3>Âncoras</h3>
+        <ul id="anchors-list" class="anchors-list"></ul>
+      </section>
+    </aside>
+  </div>
+
+  <template id="page-item-template">
+    <li class="page-item">
+      <button class="page-open"></button>
+      <button class="page-delete" title="Remover página">✕</button>
+    </li>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>

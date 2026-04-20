@@ -1,12 +1,12 @@
 {
-  "x": 5556,
-  "y": 1157,
-  "name": "Serenia",
-  "type": "Cidade",
-  "description": "",
+  "x": 6307,
+  "y": 4029,
+  "name": "Explosão de Caravana",
+  "type": "Acontecimento",
+  "description": "A ultima da nossas carroças foi explodida por um fogo misterioso de tom avermelhado.",
   "image_prefix": "",
   "icon_override": "data/locations/icons/cidade_icon_3.png",
-  "show_pin": true,
+  "show_pin": false,
   "show_icon": true,
   "show_name": true
 }
