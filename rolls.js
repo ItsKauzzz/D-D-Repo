@@ -190,7 +190,7 @@ const rollTypes = [
         ]
       },
       { id: 'extraMod', label: 'Outros modificadores', type: 'number', min: -10, max: 10, step: 1, defaultValue: 0 },
-      { id: 'advantage', label: 'Rolar com vantagem', type: 'checkbox', defaultValue: true }
+      { id: 'advantage', label: 'Rolar com vantagem', type: 'checkbox', defaultValue: false }
     ],
     results: restResults
   }
@@ -299,7 +299,11 @@ function renderControlInspector(rollType) {
 
 function renderResults(rollType) {
   resultsList.innerHTML = '';
-  rollType.results.forEach((entry) => {
+  const displayResults = rollType.id === 'descanso'
+    ? rollType.results.filter((entry) => entry.group === 'Resultado')
+    : rollType.results;
+
+  displayResults.forEach((entry) => {
     const item = document.createElement('li');
 
     if (typeof entry.value === 'number') {
@@ -343,7 +347,7 @@ function rollClimate() {
 }
 
 function rollRest() {
-  const withAdvantage = Boolean(controlState.advantage ?? true);
+  const withAdvantage = Boolean(controlState.advantage ?? false);
   const rollA = rollDie(20);
   const rollB = rollDie(20);
   const d20 = withAdvantage ? Math.max(rollA, rollB) : rollA;
@@ -375,8 +379,8 @@ function rollRest() {
   renderRollResult({
     finalValue: total,
     modsText: `${diceText} ${restMods}`,
-    description: `${bandLabel} • ${summary}`,
-    tone: getRestTone(total, d20)
+    description: `${bandLabel} • ${summary}${getCriticalRestEffect(total)}`,
+    tone: getRestTone(total)
   });
 }
 
@@ -441,7 +445,7 @@ function renderRollResult({ finalValue, modsText, description, tone }) {
       <span class="roll-value ${toneCssClass}">${finalValue}</span>
       <span class="roll-mods">(${modsText})</span>
     </div>
-    <div class="roll-description ${toneCssClass}">${description}</div>
+    <div class="roll-description">${description}</div>
   `;
 }
 
@@ -459,10 +463,20 @@ function getClimateTone(value) {
   return 'good';
 }
 
-function getRestTone(value, dieResult) {
-  if (dieResult === 20) return 'critical-good';
-  if (dieResult === 1) return 'critical-bad';
+function getRestTone(value) {
+  if (value > 20) return 'critical-good';
+  if (value < 1) return 'critical-bad';
   if (value <= 10) return 'bad';
   if (value <= 15) return 'medium';
   return 'good';
+}
+
+function getCriticalRestEffect(total) {
+  if (total > 20) {
+    return ' • Buff crítico: recupera tudo + inspiração + 1d6 HP temporário até o próximo descanso.';
+  }
+  if (total < 1) {
+    return ' • Debuff crítico: recupera só metade do HP e sofre desvantagem no primeiro teste do dia.';
+  }
+  return '';
 }

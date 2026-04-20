@@ -197,29 +197,15 @@ select {
 .roll-description {
   margin-top: 0.55rem;
   font-size: 0.9rem;
-  color: var(--muted);
+  color: #fff;
 }
 
-.roll-description.is-good {
-  color: #53d17b;
-}
-
-.roll-description.is-medium {
-  color: #f2c84b;
-}
-
-.roll-description.is-bad {
-  color: #e46a6a;
-}
-
-.roll-value.is-critical-good,
-.roll-description.is-critical-good {
+.roll-value.is-critical-good {
   color: #65f5ff;
   text-shadow: 0 0 10px rgba(101, 245, 255, 0.45);
 }
 
-.roll-value.is-critical-bad,
-.roll-description.is-critical-bad {
+.roll-value.is-critical-bad {
   color: #ff7de9;
   text-shadow: 0 0 10px rgba(255, 125, 233, 0.38);
 }
