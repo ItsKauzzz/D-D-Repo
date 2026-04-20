@@ -1,9 +1,12 @@
 const STORAGE_KEY = 'notekeeper-data-v6';
 const LEGACY_STORAGE_KEYS = ['notekeeper-data-v5'];
 const MAX_RECENT_COLORS = 5;
-const PROJECT_FILE_VERSION = 4;
+const PROJECT_FILE_VERSION = 5;
 const DEFAULT_IMAGE_SIZE = 350;
 const THEME_NAMES = ['dark', 'light', 'forest', 'ocean', 'sunset', 'lavender', 'midnight', 'rose', 'mint', 'coffee'];
+const PROJECT_JSON_NAME = 'project.json';
+const ASSETS_FOLDER = 'assets/';
+const ASSET_URL_PREFIX = 'notekeeper-asset://';
 
 const editor = document.getElementById('editor');
 const pagesList = document.getElementById('pages-list');
@@ -473,24 +476,24 @@ async function handlePasteImage(event) {
 async function saveProject() {
   syncEditorIntoActivePage();
   if (currentProjectHandle && window.showSaveFilePicker) {
-    await writeStateToHandle(currentProjectHandle);
+    await writeProjectToHandle(currentProjectHandle);
     return;
   }
 
   if (window.showSaveFilePicker) {
     try {
       currentProjectHandle = await window.showSaveFilePicker({
-        suggestedName: 'notekeeper-project.json',
-        types: [{ description: 'Arquivo de projeto NoteKeeper', accept: { 'application/json': ['.json'] } }]
+        suggestedName: 'notekeeper-project.zip',
+        types: [{ description: 'Projeto NoteKeeper', accept: { 'application/zip': ['.zip'] } }]
       });
-      await writeStateToHandle(currentProjectHandle);
+      await writeProjectToHandle(currentProjectHandle);
       return;
     } catch (error) {
       if (error?.name !== 'AbortError') alert('Não foi possível salvar no arquivo selecionado.');
     }
   }
 
-  downloadProjectFallback();
+  await downloadProjectFallback();
 }
 
 async function saveProjectAs() {
@@ -499,28 +502,29 @@ async function saveProjectAs() {
   if (window.showSaveFilePicker) {
     try {
       currentProjectHandle = await window.showSaveFilePicker({
-        suggestedName: 'notekeeper-project.json',
-        types: [{ description: 'Arquivo de projeto NoteKeeper', accept: { 'application/json': ['.json'] } }]
+        suggestedName: 'notekeeper-project.zip',
+        types: [{ description: 'Projeto NoteKeeper', accept: { 'application/zip': ['.zip'] } }]
       });
-      await writeStateToHandle(currentProjectHandle);
+      await writeProjectToHandle(currentProjectHandle);
       return;
     } catch (error) {
       if (error?.name !== 'AbortError') alert('Não foi possível salvar no arquivo selecionado.');
     }
   }
-  downloadProjectFallback();
+  await downloadProjectFallback();
 }
 
 async function openProject() {
   if (window.showOpenFilePicker) {
     try {
       const [fileHandle] = await window.showOpenFilePicker({
-        types: [{ description: 'Arquivo de projeto NoteKeeper', accept: { 'application/json': ['.json'] } }],
+        types: [{ description: 'Projeto NoteKeeper', accept: { 'application/zip': ['.zip'], 'application/json': ['.json'] } }],
         multiple: false
       });
-      currentProjectHandle = fileHandle;
       const file = await fileHandle.getFile();
-      importProjectFromJson(await file.text());
+      const extension = (file.name.split('.').pop() || '').toLowerCase();
+      currentProjectHandle = extension === 'zip' ? fileHandle : null;
+      await importProjectFromFile(file);
       return;
     } catch (error) {
       if (error?.name !== 'AbortError') alert('Não foi possível abrir o projeto selecionado.');
@@ -536,7 +540,7 @@ async function openProjectFromInput() {
   const file = loadProjectInput.files?.[0];
   if (!file) return;
   currentProjectHandle = null;
-  importProjectFromJson(await file.text());
+  await importProjectFromFile(file);
 }
 
 function handlePagesClick(event) {
@@ -1193,6 +1197,45 @@ function createSection(title) {
   return { id: crypto.randomUUID(), title, collapsed: false };
 }
 
+async function importProjectFromFile(file) {
+  const extension = (file.name.split('.').pop() || '').toLowerCase();
+  if (extension === 'zip' || file.type === 'application/zip') {
+    await importProjectFromZip(file);
+    return;
+  }
+
+  const text = await file.text();
+  importProjectFromJson(text);
+}
+
+async function importProjectFromZip(file) {
+  if (typeof window.JSZip === 'undefined') {
+    alert('Não foi possível abrir ZIP. Biblioteca JSZip não foi carregada.');
+    return;
+  }
+
+  try {
+    const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
+    const projectEntry = zip.file(PROJECT_JSON_NAME);
+    if (!projectEntry) {
+      alert('ZIP inválido: arquivo project.json não encontrado.');
+      return;
+    }
+
+    const parsed = JSON.parse(await projectEntry.async('string'));
+    const importedState = extractStateFromImportedFile(parsed);
+    if (!isValidState(importedState)) {
+      alert('Arquivo inválido. Selecione um export do NoteKeeper.');
+      return;
+    }
+
+    const hydratedState = await restoreAssetReferencesFromZip(normalizeState(importedState), zip, parsed.assets);
+    hydrateImportedState(hydratedState);
+  } catch {
+    alert('Não foi possível abrir o projeto ZIP.');
+  }
+}
+
 function importProjectFromJson(text) {
   try {
     const parsed = JSON.parse(text);
@@ -1202,36 +1245,113 @@ function importProjectFromJson(text) {
       return;
     }
 
-    state = normalizeState(importedState);
-    applyTheme(state.theme);
-    autolinkToggle.checked = state.autolinkEnabled;
-    saveState();
-    renderPages();
-    renderRecentColors();
-    renderAnchorsList();
-    loadActivePageToEditor();
+    hydrateImportedState(normalizeState(importedState));
   } catch {
     alert('Não foi possível abrir o projeto. Verifique o arquivo JSON.');
   }
 }
 
-async function writeStateToHandle(handle) {
+function hydrateImportedState(importedState) {
+  state = importedState;
+  applyTheme(state.theme);
+  autolinkToggle.checked = state.autolinkEnabled;
+  saveState();
+  renderPages();
+  renderRecentColors();
+  renderAnchorsList();
+  loadActivePageToEditor();
+}
+
+async function writeProjectToHandle(handle) {
   try {
+    const zipBlob = await generateProjectZip(state);
     const writable = await handle.createWritable();
-    await writable.write(JSON.stringify({ app: 'NoteKeeper', version: PROJECT_FILE_VERSION, exportedAt: new Date().toISOString(), data: state }, null, 2));
+    await writable.write(zipBlob);
     await writable.close();
   } catch {
     alert('Falha ao salvar no arquivo atual.');
   }
 }
 
-function downloadProjectFallback() {
-  const blob = new Blob([JSON.stringify({ app: 'NoteKeeper', version: PROJECT_FILE_VERSION, exportedAt: new Date().toISOString(), data: state }, null, 2)], { type: 'application/json' });
+async function downloadProjectFallback() {
+  const blob = await generateProjectZip(state);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `notekeeper-project-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+  a.download = `notekeeper-project-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.zip`;
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+async function generateProjectZip(currentState) {
+  if (typeof window.JSZip === 'undefined') {
+    throw new Error('JSZip indisponível');
+  }
+
+  const zip = new window.JSZip();
+  const assetsFolder = zip.folder('assets');
+  const serialized = await serializeStateWithAssets(currentState, assetsFolder);
+  const payload = {
+    app: 'NoteKeeper',
+    version: PROJECT_FILE_VERSION,
+    exportedAt: new Date().toISOString(),
+    assets: serialized.assets,
+    data: serialized.state
+  };
+  zip.file(PROJECT_JSON_NAME, JSON.stringify(payload, null, 2));
+  return zip.generateAsync({ type: 'blob' });
+}
+
+async function serializeStateWithAssets(rawState, assetsFolder) {
+  const nextState = structuredClone(rawState);
+  const assets = [];
+
+  for (const page of nextState.pages) {
+    const doc = htmlToDocument(page.content || '');
+    const images = Array.from(doc.querySelectorAll('img'));
+    for (const image of images) {
+      const src = image.getAttribute('src') || '';
+      if (!src.startsWith('data:')) continue;
+      const { blob, extension, mimeType } = dataUrlToBlob(src);
+      const assetId = crypto.randomUUID();
+      const assetName = `${assetId}.${extension}`;
+      assetsFolder.file(assetName, blob);
+      assets.push({ id: assetId, path: `${ASSETS_FOLDER}${assetName}`, mimeType });
+      image.setAttribute('src', `${ASSET_URL_PREFIX}${assetId}`);
+    }
+    page.content = doc.body.innerHTML;
+  }
+
+  return { state: nextState, assets };
+}
+
+async function restoreAssetReferencesFromZip(rawState, zip, rawAssets) {
+  const assets = Array.isArray(rawAssets) ? rawAssets : [];
+  if (!assets.length) return rawState;
+
+  const assetMap = new Map();
+  for (const asset of assets) {
+    if (!asset || typeof asset.id !== 'string' || typeof asset.path !== 'string') continue;
+    const zipEntry = zip.file(asset.path);
+    if (!zipEntry) continue;
+    const mimeType = typeof asset.mimeType === 'string' && asset.mimeType ? asset.mimeType : guessMimeFromPath(asset.path);
+    const base64 = await zipEntry.async('base64');
+    assetMap.set(asset.id, `data:${mimeType};base64,${base64}`);
+  }
+
+  const nextState = structuredClone(rawState);
+  nextState.pages = nextState.pages.map((page) => {
+    const doc = htmlToDocument(page.content || '');
+    doc.querySelectorAll('img').forEach((image) => {
+      const src = image.getAttribute('src') || '';
+      if (!src.startsWith(ASSET_URL_PREFIX)) return;
+      const assetId = src.slice(ASSET_URL_PREFIX.length);
+      const dataUrl = assetMap.get(assetId);
+      if (dataUrl) image.setAttribute('src', dataUrl);
+    });
+    return { ...page, content: doc.body.innerHTML };
+  });
+
+  return nextState;
 }
 
 function loadState() {
@@ -1326,6 +1446,56 @@ function fileToDataURL(file) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+function htmlToDocument(html) {
+  const parser = new DOMParser();
+  return parser.parseFromString(`<body>${html || ''}</body>`, 'text/html');
+}
+
+function dataUrlToBlob(dataUrl) {
+  const [header, body] = dataUrl.split(',');
+  const mimeMatch = header.match(/^data:([^;]+);base64$/i);
+  const mimeType = mimeMatch?.[1] || 'application/octet-stream';
+  const binary = atob(body || '');
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return {
+    blob: new Blob([bytes], { type: mimeType }),
+    mimeType,
+    extension: mimeTypeToExtension(mimeType)
+  };
+}
+
+function mimeTypeToExtension(mimeType) {
+  const map = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+    'image/svg+xml': 'svg',
+    'image/bmp': 'bmp',
+    'image/x-icon': 'ico'
+  };
+  return map[mimeType.toLowerCase()] || 'bin';
+}
+
+function guessMimeFromPath(path) {
+  const extension = (path.split('.').pop() || '').toLowerCase();
+  const map = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif',
+    svg: 'image/svg+xml',
+    bmp: 'image/bmp',
+    ico: 'image/x-icon'
+  };
+  return map[extension] || 'application/octet-stream';
 }
 
 function sanitizeAnchorId(value) {
