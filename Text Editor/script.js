@@ -548,8 +548,7 @@ function handlePagesClick(event) {
     const sectionItem = target.closest('.section-item');
     const sectionId = sectionItem?.dataset.sectionId;
     if (!sectionId) return;
-    const normalizedState = normalizeState(importedState);
-    const hydratedState = await hydrateImagesFromZip(normalizedState, zip, importedState.assets);
+    const section = state.sections.find((item) => item.id === sectionId);
     if (!section) return;
 
     if (!confirm(`Tem certeza que deseja remover a seção "${section.title}"? As páginas voltarão para "Páginas soltas".`)) return;
@@ -1271,29 +1270,12 @@ function normalizeState(rawState) {
     : [];
   const sectionIdSet = new Set(sections.map((section) => section.id));
 
-  const assetsManifest = [];
-      const assetId = buildAssetId(page.id, imageCount);
-      const assetName = `${assetId}.${ext}`;
+  const validPages = Array.isArray(rawState.pages) ? rawState.pages.filter((page) => page && typeof page.id === 'string') : [];
 
-      assetsManifest.push({ id: assetId, fileName: assetName, mimeType: parsed.mimeType });
-      img.setAttribute('src', `asset://${assetId}`);
-  serialized.assets = assetsManifest;
-
-async function hydrateImagesFromZip(projectState, zip, assetsManifest = []) {
-  const assetMap = new Map(
-    Array.isArray(assetsManifest)
-      ? assetsManifest
-          .filter((asset) => asset && typeof asset.id === 'string' && typeof asset.fileName === 'string')
-          .map((asset) => [asset.id, asset])
-      : []
-  );
-      const assetId = src.startsWith('asset://') ? src.slice('asset://'.length) : '';
-      if (!assetId) continue;
-      const assetInfo = assetMap.get(assetId);
-      if (!assetInfo) continue;
-
-      const file = zip.file(`assets/${assetInfo.fileName}`);
-        const mime = assetInfo.mimeType || extensionToMime(assetInfo.fileName.split('.').pop() || '');
+  const pages = validPages.map((page) => ({
+    id: page.id,
+    title: typeof page.title === 'string' ? page.title : 'Sem título',
+    content: typeof page.content === 'string' ? page.content : '',
     plainText: typeof page.plainText === 'string' ? page.plainText : '',
     sectionId: typeof page.sectionId === 'string' && sectionIdSet.has(page.sectionId) ? page.sectionId : null,
     anchors: Array.isArray(page.anchors)
@@ -1377,10 +1359,3 @@ function isQuotaExceededError(error) {
     error.code === 1014
   );
 }
-function buildAssetId(pageId, imageIndex) {
-  const randomPart = typeof window.crypto?.randomUUID === 'function'
-    ? window.crypto.randomUUID().split('-')[0]
-    : Math.random().toString(36).slice(2, 10);
-  return `img-${sanitizeFilename(pageId || 'page')}-${imageIndex}-${randomPart}`;
-}
-
