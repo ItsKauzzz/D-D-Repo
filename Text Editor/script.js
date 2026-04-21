@@ -2,6 +2,7 @@ const STORAGE_KEY = 'notekeeper-data-v6';
 const LEGACY_STORAGE_KEYS = ['notekeeper-data-v5'];
 const MAX_RECENT_COLORS = 5;
 const PROJECT_FILE_VERSION = 5;
+const SEARCH_RESULTS_PAGE = 'search-results.html';
 const DEFAULT_IMAGE_SIZE = 350;
 const THEME_NAMES = [
   'dark', 'light', 'forest', 'ocean', 'sunset',
@@ -18,11 +19,14 @@ const pagesList = document.getElementById('pages-list');
 const addPageBtn = document.getElementById('add-page-btn');
 const addSectionBtn = document.getElementById('add-section-btn');
 const searchInput = document.getElementById('search-input');
+const deepSearchInput = document.getElementById('deep-search-input');
+const deepSearchBtn = document.getElementById('deep-search-btn');
 const textColor = document.getElementById('text-color');
 const fontFamily = document.getElementById('font-family');
 const fontSize = document.getElementById('font-size');
 const pageTitle = document.getElementById('page-title');
 const pageItemTemplate = document.getElementById('page-item-template');
+const newProjectBtn = document.getElementById('new-project-btn');
 const saveProjectBtn = document.getElementById('save-project-btn');
 const saveAsProjectBtn = document.getElementById('save-as-project-btn');
 const loadProjectBtn = document.getElementById('load-project-btn');
@@ -37,6 +41,7 @@ const uploadImageInput = document.getElementById('upload-image-input');
 const autolinkToggle = document.getElementById('autolink-toggle');
 const applyAutolinkBtn = document.getElementById('apply-autolink-btn');
 const exportPageBtn = document.getElementById('export-page-btn');
+const exportProjectPdfBtn = document.getElementById('export-project-pdf-btn');
 const anchorsList = document.getElementById('anchors-list');
 const imageWidthInput = document.getElementById('image-width');
 const imageHeightInput = document.getElementById('image-height');
@@ -68,6 +73,7 @@ function bootstrap() {
   renderAnchorsList();
   loadActivePageToEditor();
   bindEvents();
+  openPageFromQueryString();
   saveState();
 }
 
@@ -115,8 +121,10 @@ function bindEvents() {
 
   applyAutolinkBtn.addEventListener('click', applyAutoLinksOnActivePage);
   exportPageBtn.addEventListener('click', exportCurrentPage);
+  exportProjectPdfBtn.addEventListener('click', exportProjectAsPdf);
   applyImageSizeBtn.addEventListener('click', applySelectedImageSize);
 
+  newProjectBtn.addEventListener('click', createNewProject);
   saveProjectBtn.addEventListener('click', saveProject);
   saveAsProjectBtn.addEventListener('click', saveProjectAs);
   loadProjectBtn.addEventListener('click', openProject);
@@ -222,6 +230,69 @@ function bindEvents() {
   });
 
   searchInput.addEventListener('input', () => updateSearchResults(searchInput.value.trim().toLowerCase()));
+
+  deepSearchBtn.addEventListener('click', openDeepSearchResults);
+  deepSearchInput.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    openDeepSearchResults();
+  });
+}
+
+function createNewProject() {
+  const shouldReset = confirm('Deseja iniciar um novo projeto? Alterações não salvas serão perdidas.');
+  if (!shouldReset) return;
+
+  state = createInitialState();
+  currentProjectHandle = null;
+  hasShownStorageQuotaWarning = false;
+  applyTheme(state.theme);
+  autolinkToggle.checked = state.autolinkEnabled;
+  renderPages();
+  renderRecentColors();
+  renderAnchorsList();
+  loadActivePageToEditor();
+  saveState();
+}
+
+function openDeepSearchResults() {
+  const term = deepSearchInput.value.trim();
+  if (!term) {
+    alert('Digite uma palavra-chave para pesquisar.');
+    return;
+  }
+
+  syncEditorIntoActivePage();
+  const params = new URLSearchParams({ q: term });
+  window.open(`${SEARCH_RESULTS_PAGE}?${params.toString()}`, '_blank', 'noopener');
+}
+
+function openPageFromQueryString() {
+  const params = new URLSearchParams(window.location.search);
+  const pageId = params.get('page');
+  const rawTerm = params.get('term');
+  const hitIndex = Number.parseInt(params.get('hit') || '0', 10);
+  if (!pageId || !rawTerm) return;
+
+  const matchedPage = state.pages.find((page) => page.id === pageId);
+  if (!matchedPage) return;
+
+  state.activePageId = matchedPage.id;
+  saveState();
+  renderPages();
+  loadActivePageToEditor();
+
+  const term = rawTerm.trim().toLowerCase();
+  if (!term) return;
+
+  highlightSearchTermInEditor(term);
+  const hits = Array.from(editor.querySelectorAll('mark.search-hit'));
+  const safeIndex = Number.isInteger(hitIndex) ? Math.max(0, Math.min(hitIndex, hits.length - 1)) : 0;
+  const targetHit = hits[safeIndex];
+  if (targetHit) {
+    targetHit.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    targetHit.classList.add('search-hit-focus');
+  }
 }
 
 function handleEditorClick(event) {
@@ -886,6 +957,9 @@ function applyAutoLinksOnActivePage() {
   const tags = getAllAnchors().filter((anchor) => anchor.tag.trim().length > 0);
   if (!tags.length) return;
 
+  const shouldRestoreCaret = document.activeElement === editor;
+  const caretOffset = shouldRestoreCaret ? getCaretCharacterOffsetWithin(editor) : null;
+
   const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
   const textNodes = [];
   while (walker.nextNode()) {
@@ -906,6 +980,10 @@ function applyAutoLinksOnActivePage() {
     }
   });
 
+  if (changed && shouldRestoreCaret && Number.isFinite(caretOffset)) {
+    setCaretCharacterOffsetWithin(editor, caretOffset);
+  }
+
   isApplyingAutoLink = false;
   if (changed) {
     updateActivePage((page) => {
@@ -913,6 +991,51 @@ function applyAutoLinksOnActivePage() {
       page.plainText = editor.innerText;
     });
   }
+}
+
+function getCaretCharacterOffsetWithin(root) {
+  const selection = window.getSelection();
+  if (!selection || !selection.rangeCount) return null;
+  const range = selection.getRangeAt(0);
+  if (!root.contains(range.startContainer)) return null;
+
+  const preCaretRange = range.cloneRange();
+  preCaretRange.selectNodeContents(root);
+  preCaretRange.setEnd(range.startContainer, range.startOffset);
+  return preCaretRange.toString().length;
+}
+
+function setCaretCharacterOffsetWithin(root, offset) {
+  if (!Number.isFinite(offset)) return;
+  const selection = window.getSelection();
+  if (!selection) return;
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let current = 0;
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    const length = node.nodeValue?.length || 0;
+    const next = current + length;
+
+    if (offset <= next) {
+      const position = Math.max(0, offset - current);
+      const range = document.createRange();
+      range.setStart(node, Math.min(position, length));
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return;
+    }
+
+    current = next;
+  }
+
+  const fallbackRange = document.createRange();
+  fallbackRange.selectNodeContents(root);
+  fallbackRange.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(fallbackRange);
 }
 
 function convertTextNodeToAutolinks(text, tags) {
@@ -1132,6 +1255,116 @@ function exportCurrentPage() {
   URL.revokeObjectURL(a.href);
 }
 
+async function exportProjectAsPdf() {
+  syncEditorIntoActivePage();
+  if (!window.jspdf?.jsPDF || typeof window.html2canvas !== 'function') {
+    alert('Não foi possível exportar PDF: bibliotecas de PDF não carregaram.');
+    return;
+  }
+
+  const appThemeStylesheet = document.querySelector('link[href$="styles.css"]');
+  const previousMedia = appThemeStylesheet?.getAttribute('media');
+  if (appThemeStylesheet) appThemeStylesheet.setAttribute('media', 'not all');
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 36;
+    const contentWidth = pageWidth - margin * 2;
+    const contentHeight = pageHeight - margin * 2;
+
+    let isFirstPdfPage = true;
+
+    for (const page of state.pages) {
+      const printable = buildPrintablePageNode(page, contentWidth);
+      document.body.appendChild(printable);
+
+      try {
+        const canvas = await window.html2canvas(printable, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const ratio = contentWidth / canvas.width;
+        const scaledHeight = canvas.height * ratio;
+
+        let sourceY = 0;
+        let remainingHeight = scaledHeight;
+
+        while (remainingHeight > 0) {
+          if (!isFirstPdfPage) pdf.addPage();
+          isFirstPdfPage = false;
+
+          const sliceHeightInPdf = Math.min(contentHeight, remainingHeight);
+          const sliceHeightInCanvas = sliceHeightInPdf / ratio;
+
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = Math.ceil(sliceHeightInCanvas);
+          const ctx = pageCanvas.getContext('2d');
+          if (!ctx) break;
+
+          ctx.drawImage(canvas, 0, sourceY, canvas.width, pageCanvas.height, 0, 0, canvas.width, pageCanvas.height);
+          const imageData = pageCanvas.toDataURL('image/png');
+          pdf.addImage(imageData, 'PNG', margin, margin, contentWidth, sliceHeightInPdf, undefined, 'FAST');
+
+          sourceY += pageCanvas.height;
+          remainingHeight -= sliceHeightInPdf;
+        }
+      } finally {
+        printable.remove();
+      }
+    }
+
+    pdf.save('notekeeper-projeto.pdf');
+  } finally {
+    if (appThemeStylesheet) {
+      if (previousMedia === null) appThemeStylesheet.removeAttribute('media');
+      else appThemeStylesheet.setAttribute('media', previousMedia);
+    }
+  }
+}
+
+function buildPrintablePageNode(page, width) {
+  const wrapper = document.createElement('section');
+  wrapper.className = 'pdf-print-stage';
+  wrapper.style.width = `${Math.max(320, width)}px`;
+  wrapper.style.position = 'fixed';
+  wrapper.style.left = '-100000px';
+  wrapper.style.top = '0';
+  wrapper.style.background = '#ffffff';
+  wrapper.style.color = '#111111';
+  wrapper.style.padding = '24px';
+  wrapper.style.fontFamily = 'Roboto, Arial, sans-serif';
+  wrapper.style.lineHeight = '1.5';
+  wrapper.style.border = '1px solid #d7d7d7';
+
+  const title = document.createElement('h1');
+  title.textContent = page.title || 'Sem título';
+  title.style.margin = '0 0 12px';
+  title.style.fontSize = '24px';
+
+  const body = document.createElement('div');
+  body.innerHTML = page.content || '';
+  body.style.fontSize = '13px';
+  body.style.wordBreak = 'break-word';
+
+  body.querySelectorAll('img').forEach((img) => {
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    img.style.display = 'block';
+    img.style.margin = '10px 0';
+  });
+
+  body.querySelectorAll('a').forEach((link) => {
+    const href = link.getAttribute('href') || '';
+    if (href.startsWith('notekeeper://')) {
+      link.replaceWith(document.createTextNode(link.textContent || ''));
+    }
+  });
+
+  wrapper.append(title, body);
+  return wrapper;
+}
+
 function syncEditorIntoActivePage() {
   updateActivePage((page) => {
     page.content = editor.innerHTML;
@@ -1192,6 +1425,19 @@ function ensureAnchorTag(page, anchorId, tag) {
   if (!Array.isArray(page.anchors)) page.anchors = [];
   const exists = page.anchors.some((item) => item.anchorId === anchorId && item.tag.toLowerCase() === tag.toLowerCase());
   if (!exists) page.anchors.push({ anchorId, tag: tag.trim() });
+}
+
+function createInitialState() {
+  const firstPage = createPage('Nova página');
+  return {
+    version: PROJECT_FILE_VERSION,
+    theme: 'dark',
+    autolinkEnabled: true,
+    recentColors: ['#d6c4b4'],
+    pages: [firstPage],
+    sections: [],
+    activePageId: firstPage.id
+  };
 }
 
 function createPage(title) {
