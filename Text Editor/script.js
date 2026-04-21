@@ -1262,54 +1262,65 @@ async function exportProjectAsPdf() {
     return;
   }
 
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 36;
-  const contentWidth = pageWidth - margin * 2;
-  const contentHeight = pageHeight - margin * 2;
+  const appThemeStylesheet = document.querySelector('link[href$="styles.css"]');
+  const previousMedia = appThemeStylesheet?.getAttribute('media');
+  if (appThemeStylesheet) appThemeStylesheet.setAttribute('media', 'not all');
 
-  let isFirstPdfPage = true;
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 36;
+    const contentWidth = pageWidth - margin * 2;
+    const contentHeight = pageHeight - margin * 2;
 
-  for (const page of state.pages) {
-    const printable = buildPrintablePageNode(page, contentWidth);
-    document.body.appendChild(printable);
+    let isFirstPdfPage = true;
 
-    try {
-      const canvas = await window.html2canvas(printable, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-      const ratio = contentWidth / canvas.width;
-      const scaledHeight = canvas.height * ratio;
+    for (const page of state.pages) {
+      const printable = buildPrintablePageNode(page, contentWidth);
+      document.body.appendChild(printable);
 
-      let sourceY = 0;
-      let remainingHeight = scaledHeight;
+      try {
+        const canvas = await window.html2canvas(printable, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const ratio = contentWidth / canvas.width;
+        const scaledHeight = canvas.height * ratio;
 
-      while (remainingHeight > 0) {
-        if (!isFirstPdfPage) pdf.addPage();
-        isFirstPdfPage = false;
+        let sourceY = 0;
+        let remainingHeight = scaledHeight;
 
-        const sliceHeightInPdf = Math.min(contentHeight, remainingHeight);
-        const sliceHeightInCanvas = sliceHeightInPdf / ratio;
+        while (remainingHeight > 0) {
+          if (!isFirstPdfPage) pdf.addPage();
+          isFirstPdfPage = false;
 
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = Math.ceil(sliceHeightInCanvas);
-        const ctx = pageCanvas.getContext('2d');
-        if (!ctx) break;
+          const sliceHeightInPdf = Math.min(contentHeight, remainingHeight);
+          const sliceHeightInCanvas = sliceHeightInPdf / ratio;
 
-        ctx.drawImage(canvas, 0, sourceY, canvas.width, pageCanvas.height, 0, 0, canvas.width, pageCanvas.height);
-        const imageData = pageCanvas.toDataURL('image/png');
-        pdf.addImage(imageData, 'PNG', margin, margin, contentWidth, sliceHeightInPdf, undefined, 'FAST');
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = Math.ceil(sliceHeightInCanvas);
+          const ctx = pageCanvas.getContext('2d');
+          if (!ctx) break;
 
-        sourceY += pageCanvas.height;
-        remainingHeight -= sliceHeightInPdf;
+          ctx.drawImage(canvas, 0, sourceY, canvas.width, pageCanvas.height, 0, 0, canvas.width, pageCanvas.height);
+          const imageData = pageCanvas.toDataURL('image/png');
+          pdf.addImage(imageData, 'PNG', margin, margin, contentWidth, sliceHeightInPdf, undefined, 'FAST');
+
+          sourceY += pageCanvas.height;
+          remainingHeight -= sliceHeightInPdf;
+        }
+      } finally {
+        printable.remove();
       }
-    } finally {
-      printable.remove();
+    }
+
+    pdf.save('notekeeper-projeto.pdf');
+  } finally {
+    if (appThemeStylesheet) {
+      if (previousMedia === null) appThemeStylesheet.removeAttribute('media');
+      else appThemeStylesheet.setAttribute('media', previousMedia);
     }
   }
-
-  pdf.save('notekeeper-projeto.pdf');
 }
 
 function buildPrintablePageNode(page, width) {
