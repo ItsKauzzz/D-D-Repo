@@ -18,6 +18,7 @@ const editor = document.getElementById('editor');
 const pagesList = document.getElementById('pages-list');
 const addPageBtn = document.getElementById('add-page-btn');
 const addSectionBtn = document.getElementById('add-section-btn');
+const searchInput = document.getElementById('search-input');
 const deepSearchInput = document.getElementById('deep-search-input');
 const deepSearchBtn = document.getElementById('deep-search-btn');
 const textColor = document.getElementById('text-color');
@@ -225,6 +226,8 @@ function bindEvents() {
       applyAlignment(align);
     });
   });
+
+  searchInput.addEventListener('input', () => updateSearchResults(searchInput.value.trim().toLowerCase()));
 
   deepSearchBtn.addEventListener('click', openDeepSearchResults);
   deepSearchInput.addEventListener('keydown', (event) => {
@@ -1065,6 +1068,20 @@ function openInternalLink(href) {
   }
 }
 
+function updateSearchResults(term) {
+  for (const li of pagesList.querySelectorAll('.page-item')) {
+    const id = li.dataset.pageId;
+    const page = state.pages.find((p) => p.id === id);
+    if (!page) continue;
+    const matches = !term || page.plainText.toLowerCase().includes(term) || page.title.toLowerCase().includes(term);
+    li.style.display = matches ? '' : 'none';
+  }
+
+  removeSearchMarks();
+  if (!term) return;
+  highlightSearchTermInEditor(term);
+}
+
 function highlightSearchTermInEditor(term) {
   const regex = new RegExp(escapeRegExp(term), 'gi');
   const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
@@ -1167,7 +1184,7 @@ function loadActivePageToEditor() {
   editor.innerHTML = active.content;
   normalizeImageSizing();
   pageTitle.value = active.title;
-  removeSearchMarks();
+  updateSearchResults(searchInput.value.trim().toLowerCase());
 }
 
 function exportCurrentPage() {

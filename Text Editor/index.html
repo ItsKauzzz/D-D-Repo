@@ -11,18 +11,33 @@
 </head>
 <body data-theme="dark">
   <div class="app-shell">
-    <aside class="sidebar left-sidebar">
-      <div class="sidebar-header">
-        <h1>NoteKeeper</h1>
-        <div class="sidebar-actions">
-          <button id="add-section-btn" class="icon-btn" title="Nova seção" aria-label="Nova seção">🗂️➕</button>
-          <button id="add-page-btn" class="icon-btn" title="Nova página" aria-label="Nova página">📄➕</button>
+    <div class="side-stack left-stack">
+      <aside class="sidebar project-file-panel">
+        <h2>📁 Projeto</h2>
+        <div class="project-file-actions">
+          <button id="new-project-btn" class="icon-btn" title="Novo projeto" aria-label="Novo projeto">🆕 Novo</button>
+          <button id="load-project-btn" class="icon-btn" title="Abrir projeto" aria-label="Abrir projeto">📂 Carregar</button>
+          <button id="save-project-btn" class="icon-btn" title="Salvar projeto" aria-label="Salvar projeto">💾 Salvar</button>
+          <button id="save-as-project-btn" class="icon-btn" title="Salvar projeto como" aria-label="Salvar projeto como">💾🆕 Salvar como</button>
         </div>
-      </div>
+      </aside>
 
+      <aside class="sidebar left-sidebar">
+        <div class="sidebar-header">
+          <h1>NoteKeeper</h1>
+          <div class="sidebar-actions">
+            <button id="add-section-btn" class="icon-btn" title="Nova seção" aria-label="Nova seção">🗂️➕</button>
+            <button id="add-page-btn" class="icon-btn" title="Nova página" aria-label="Nova página">📄➕</button>
+          </div>
+        </div>
 
-      <ul id="pages-list" class="pages-list"></ul>
-    </aside>
+        <div class="search-wrap">
+          <input id="search-input" type="search" placeholder="Busca rápida (soft)..." />
+        </div>
+
+        <ul id="pages-list" class="pages-list"></ul>
+      </aside>
+    </div>
 
     <main class="editor-area">
       <header class="toolbar" role="toolbar" aria-label="Ferramentas de edição">
@@ -80,10 +95,6 @@
           </select>
         </label>
 
-        <button id="new-project-btn" class="icon-btn" title="Novo projeto" aria-label="Novo projeto">🆕</button>
-        <button id="save-project-btn" class="icon-btn" title="Salvar projeto" aria-label="Salvar projeto">💾</button>
-        <button id="save-as-project-btn" class="icon-btn" title="Salvar projeto como" aria-label="Salvar projeto como">💾🆕</button>
-        <button id="load-project-btn" class="icon-btn" title="Abrir projeto" aria-label="Abrir projeto">📂</button>
         <div class="theme-menu-wrap">
           <button id="theme-menu-btn" class="icon-btn" type="button" title="Escolher tema" aria-haspopup="true" aria-expanded="false">🎨 Tema</button>
           <div id="theme-menu-popover" class="theme-menu-popover" hidden>
@@ -111,11 +122,6 @@
           </div>
         </div>
 
-        <div class="toolbar-spacer" aria-hidden="true"></div>
-        <div class="deep-search-wrap">
-          <input id="deep-search-input" type="search" placeholder="Pesquisa profunda..." />
-          <button id="deep-search-btn" type="button" class="icon-btn" title="Pesquisar em todo o projeto" aria-label="Pesquisar em todo o projeto">🔎 Pesquisar</button>
-        </div>
         <input id="load-project-input" type="file" accept=".zip,application/zip,.json,application/json" hidden />
       </header>
 
@@ -128,35 +134,45 @@
       <article id="editor" class="editor" contenteditable="true" spellcheck="true" aria-label="Editor de texto"></article>
     </main>
 
-    <aside class="sidebar right-sidebar">
-      <h2>⚙️ Projeto</h2>
+    <div class="side-stack right-stack">
+      <aside class="sidebar deep-search-panel">
+        <h2>🔎 Pesquisa profunda</h2>
+        <div class="deep-search-wrap">
+          <input id="deep-search-input" type="search" placeholder="Pesquisar em todo o projeto..." />
+          <button id="deep-search-btn" type="button" class="icon-btn" title="Pesquisar em todo o projeto" aria-label="Pesquisar em todo o projeto">Pesquisar</button>
+        </div>
+      </aside>
 
-      <section class="side-section">
-        <h3>Autolink</h3>
-        <label class="toggle-row">
-          <input id="autolink-toggle" type="checkbox" />
-          <span>Auto</span>
-        </label>
-        <button id="apply-autolink-btn" class="icon-btn" title="Aplicar autolinks">🧲</button>
-      </section>
+      <aside class="sidebar right-sidebar">
+        <h2>⚙️ Projeto</h2>
 
-      <section class="side-section">
-        <h3>Imagem</h3>
-        <label class="size-field">W <input id="image-width" type="number" min="50" max="1200" step="10" /></label>
-        <label class="size-field">H <input id="image-height" type="number" min="50" max="1200" step="10" /></label>
-        <button id="apply-image-size-btn" class="icon-btn" title="Aplicar tamanho">📐</button>
-      </section>
+        <section class="side-section">
+          <h3>Autolink</h3>
+          <label class="toggle-row">
+            <input id="autolink-toggle" type="checkbox" />
+            <span>Auto</span>
+          </label>
+          <button id="apply-autolink-btn" class="icon-btn" title="Aplicar autolinks">🧲</button>
+        </section>
 
-      <section class="side-section">
-        <h3>Exportar</h3>
-        <button id="export-page-btn" class="icon-btn" title="Exportar página atual">📤</button>
-      </section>
+        <section class="side-section">
+          <h3>Imagem</h3>
+          <label class="size-field">W <input id="image-width" type="number" min="50" max="1200" step="10" /></label>
+          <label class="size-field">H <input id="image-height" type="number" min="50" max="1200" step="10" /></label>
+          <button id="apply-image-size-btn" class="icon-btn" title="Aplicar tamanho">📐</button>
+        </section>
 
-      <section class="side-section">
-        <h3>Âncoras</h3>
-        <ul id="anchors-list" class="anchors-list"></ul>
-      </section>
-    </aside>
+        <section class="side-section">
+          <h3>Exportar</h3>
+          <button id="export-page-btn" class="icon-btn" title="Exportar página atual">📤</button>
+        </section>
+
+        <section class="side-section">
+          <h3>Âncoras</h3>
+          <ul id="anchors-list" class="anchors-list"></ul>
+        </section>
+      </aside>
+    </div>
   </div>
 
   <template id="page-item-template">
