@@ -41,6 +41,7 @@ const uploadImageInput = document.getElementById('upload-image-input');
 const autolinkToggle = document.getElementById('autolink-toggle');
 const applyAutolinkBtn = document.getElementById('apply-autolink-btn');
 const exportPageBtn = document.getElementById('export-page-btn');
+const exportProjectPdfBtn = document.getElementById('export-project-pdf-btn');
 const anchorsList = document.getElementById('anchors-list');
 const imageWidthInput = document.getElementById('image-width');
 const imageHeightInput = document.getElementById('image-height');
@@ -120,6 +121,7 @@ function bindEvents() {
 
   applyAutolinkBtn.addEventListener('click', applyAutoLinksOnActivePage);
   exportPageBtn.addEventListener('click', exportCurrentPage);
+  exportProjectPdfBtn.addEventListener('click', exportProjectAsPdf);
   applyImageSizeBtn.addEventListener('click', applySelectedImageSize);
 
   newProjectBtn.addEventListener('click', createNewProject);
@@ -1251,6 +1253,105 @@ function exportCurrentPage() {
   a.download = `${sanitizeFilename(page.title || 'pagina')}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+async function exportProjectAsPdf() {
+  syncEditorIntoActivePage();
+  if (!window.jspdf?.jsPDF || typeof window.html2canvas !== 'function') {
+    alert('Não foi possível exportar PDF: bibliotecas de PDF não carregaram.');
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 36;
+  const contentWidth = pageWidth - margin * 2;
+  const contentHeight = pageHeight - margin * 2;
+
+  let isFirstPdfPage = true;
+
+  for (const page of state.pages) {
+    const printable = buildPrintablePageNode(page, contentWidth);
+    document.body.appendChild(printable);
+
+    try {
+      const canvas = await window.html2canvas(printable, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const ratio = contentWidth / canvas.width;
+      const scaledHeight = canvas.height * ratio;
+
+      let sourceY = 0;
+      let remainingHeight = scaledHeight;
+
+      while (remainingHeight > 0) {
+        if (!isFirstPdfPage) pdf.addPage();
+        isFirstPdfPage = false;
+
+        const sliceHeightInPdf = Math.min(contentHeight, remainingHeight);
+        const sliceHeightInCanvas = sliceHeightInPdf / ratio;
+
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = Math.ceil(sliceHeightInCanvas);
+        const ctx = pageCanvas.getContext('2d');
+        if (!ctx) break;
+
+        ctx.drawImage(canvas, 0, sourceY, canvas.width, pageCanvas.height, 0, 0, canvas.width, pageCanvas.height);
+        const imageData = pageCanvas.toDataURL('image/png');
+        pdf.addImage(imageData, 'PNG', margin, margin, contentWidth, sliceHeightInPdf, undefined, 'FAST');
+
+        sourceY += pageCanvas.height;
+        remainingHeight -= sliceHeightInPdf;
+      }
+    } finally {
+      printable.remove();
+    }
+  }
+
+  pdf.save('notekeeper-projeto.pdf');
+}
+
+function buildPrintablePageNode(page, width) {
+  const wrapper = document.createElement('section');
+  wrapper.className = 'pdf-print-stage';
+  wrapper.style.width = `${Math.max(320, width)}px`;
+  wrapper.style.position = 'fixed';
+  wrapper.style.left = '-100000px';
+  wrapper.style.top = '0';
+  wrapper.style.background = '#ffffff';
+  wrapper.style.color = '#111111';
+  wrapper.style.padding = '24px';
+  wrapper.style.fontFamily = 'Roboto, Arial, sans-serif';
+  wrapper.style.lineHeight = '1.5';
+  wrapper.style.border = '1px solid #d7d7d7';
+
+  const title = document.createElement('h1');
+  title.textContent = page.title || 'Sem título';
+  title.style.margin = '0 0 12px';
+  title.style.fontSize = '24px';
+
+  const body = document.createElement('div');
+  body.innerHTML = page.content || '';
+  body.style.fontSize = '13px';
+  body.style.wordBreak = 'break-word';
+
+  body.querySelectorAll('img').forEach((img) => {
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    img.style.display = 'block';
+    img.style.margin = '10px 0';
+  });
+
+  body.querySelectorAll('a').forEach((link) => {
+    const href = link.getAttribute('href') || '';
+    if (href.startsWith('notekeeper://')) {
+      link.replaceWith(document.createTextNode(link.textContent || ''));
+    }
+  });
+
+  wrapper.append(title, body);
+  return wrapper;
 }
 
 function syncEditorIntoActivePage() {
