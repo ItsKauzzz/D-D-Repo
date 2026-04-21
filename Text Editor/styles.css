@@ -489,12 +489,15 @@ input, select, button { color: var(--text); font-family: inherit; }
 }
 .left-sidebar { border-right: var(--border-width) var(--border-style) var(--line); }
 .right-sidebar { border-left: var(--border-width) var(--border-style) var(--line); width: 100%; }
-.project-file-panel h2,
-.deep-search-panel h2 { margin: 0 0 0.7rem; font-size: 0.95rem; }
-.project-file-actions { display: grid; gap: 0.45rem; }
+.project-file-panel h2 { margin: 0 0 0.5rem; font-size: 0.85rem; }
+.project-file-actions { display: grid; gap: 0.25rem; }
 .project-file-actions .icon-btn {
   width: 100%;
   text-align: left !important;
+  font-size: 0.66rem;
+  letter-spacing: 0.01em;
+  padding: 0.18rem 0.35rem;
+  line-height: 1.05;
   border: var(--button-border-width) var(--button-border-style) var(--line);
   background: var(--button-bg);
   box-shadow: var(--shadow-button);

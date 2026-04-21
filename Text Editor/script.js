@@ -955,6 +955,9 @@ function applyAutoLinksOnActivePage() {
   const tags = getAllAnchors().filter((anchor) => anchor.tag.trim().length > 0);
   if (!tags.length) return;
 
+  const shouldRestoreCaret = document.activeElement === editor;
+  const caretOffset = shouldRestoreCaret ? getCaretCharacterOffsetWithin(editor) : null;
+
   const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
   const textNodes = [];
   while (walker.nextNode()) {
@@ -975,6 +978,10 @@ function applyAutoLinksOnActivePage() {
     }
   });
 
+  if (changed && shouldRestoreCaret && Number.isFinite(caretOffset)) {
+    setCaretCharacterOffsetWithin(editor, caretOffset);
+  }
+
   isApplyingAutoLink = false;
   if (changed) {
     updateActivePage((page) => {
@@ -982,6 +989,51 @@ function applyAutoLinksOnActivePage() {
       page.plainText = editor.innerText;
     });
   }
+}
+
+function getCaretCharacterOffsetWithin(root) {
+  const selection = window.getSelection();
+  if (!selection || !selection.rangeCount) return null;
+  const range = selection.getRangeAt(0);
+  if (!root.contains(range.startContainer)) return null;
+
+  const preCaretRange = range.cloneRange();
+  preCaretRange.selectNodeContents(root);
+  preCaretRange.setEnd(range.startContainer, range.startOffset);
+  return preCaretRange.toString().length;
+}
+
+function setCaretCharacterOffsetWithin(root, offset) {
+  if (!Number.isFinite(offset)) return;
+  const selection = window.getSelection();
+  if (!selection) return;
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let current = 0;
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    const length = node.nodeValue?.length || 0;
+    const next = current + length;
+
+    if (offset <= next) {
+      const position = Math.max(0, offset - current);
+      const range = document.createRange();
+      range.setStart(node, Math.min(position, length));
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return;
+    }
+
+    current = next;
+  }
+
+  const fallbackRange = document.createRange();
+  fallbackRange.selectNodeContents(root);
+  fallbackRange.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(fallbackRange);
 }
 
 function convertTextNodeToAutolinks(text, tags) {
