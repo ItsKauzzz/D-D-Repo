@@ -25,6 +25,7 @@ const pageTitle = document.getElementById('page-title');
 const pageItemTemplate = document.getElementById('page-item-template');
 const saveProjectBtn = document.getElementById('save-project-btn');
 const saveAsProjectBtn = document.getElementById('save-as-project-btn');
+const newProjectBtn = document.getElementById('new-project-btn');
 const loadProjectBtn = document.getElementById('load-project-btn');
 const loadProjectInput = document.getElementById('load-project-input');
 const recentColorsContainer = document.getElementById('recent-colors');
@@ -119,6 +120,7 @@ function bindEvents() {
 
   saveProjectBtn.addEventListener('click', saveProject);
   saveAsProjectBtn.addEventListener('click', saveProjectAs);
+  newProjectBtn.addEventListener('click', createNewProject);
   loadProjectBtn.addEventListener('click', openProject);
   loadProjectInput.addEventListener('change', openProjectFromInput);
 
@@ -546,6 +548,25 @@ async function openProjectFromInput() {
   if (!file) return;
   currentProjectHandle = null;
   await importProjectFromFile(file);
+}
+
+function createNewProject() {
+  syncEditorIntoActivePage();
+  const shouldCreate = confirm('Criar novo projeto? O projeto atual continuará salvo apenas no navegador até você exportar.');
+  if (!shouldCreate) return;
+
+  state = defaultState();
+  state.pages.push(createPage('Nova página'));
+  state.activePageId = state.pages[0].id;
+  currentProjectHandle = null;
+
+  applyTheme(state.theme);
+  autolinkToggle.checked = state.autolinkEnabled;
+  saveState();
+  renderPages();
+  renderRecentColors();
+  renderAnchorsList();
+  loadActivePageToEditor();
 }
 
 function handlePagesClick(event) {
