@@ -1,6 +1,6 @@
 const fieldIds = ["nome","sobrenome","profissao","cidadeNatal","sexo","antepassado","classe","idade","temperamento","lealdade"];
 const attrs = ["forca","destreza","constituicao","inteligencia","sabedoria","carisma"];
-const state = { npc:null, data:null, characteristicData:null, cidades:[], cidadeMap:null };
+const state = { npc:null, data:null, characteristicData:null, cidades:[], cidadeMap:null, locations:[], backgrounds:[] };
 
 const randomFrom = (list) => list[Math.floor(Math.random() * list.length)];
 const normalizeType = (t) => String(t||"").trim().toLowerCase();
@@ -38,17 +38,51 @@ function rerollSingleCharacteristic(key,pack){return generateCharacteristics(pac
 
 function renderCharacteristicsList(c){const el=document.getElementById("caracteristicasValue");el.innerHTML="";[["cabelo","cabelo"],["olhos","olhos"],["rosto","rosto"],["feição","feicao"],["peso","peso"],["cor da pele","pele"],["estrutura corporal","estruturaCorporal"],["características extras","extras"]].forEach(([label,key])=>{const li=document.createElement("li");li.innerHTML=`<button class='reroll-char' type='button' data-char-key='${key}'>🎲</button> <strong>${label}:</strong> <span class='char-value'>${c[key]}</span>`;el.appendChild(li);});}
 function renderSheet(sheet){attrs.forEach((k)=>{document.getElementById(`${k}Value`).textContent = sheet[k];});}
-function renderNpc(npc){fieldIds.forEach((id)=>{const el=document.getElementById(`${id}Value`); if(el) el.textContent=npc[id]||"";}); renderCharacteristicsList(npc.caracteristicas); renderSheet(npc.ficha); document.getElementById("cidadeNatalLink").href=`mapa.html?focus=${encodeURIComponent(npc.cidadeFile)}`; state.npc=npc;}
+function renderNpc(npc){
+fieldIds.forEach((id)=>{const el=document.getElementById(`${id}Value`); if(el) el.textContent=npc[id]||"";});
+renderCharacteristicsList(npc.caracteristicas);
+renderSheet(npc.ficha);
+document.getElementById("cidadeNatalLink").href=`mapa.html?focus=${encodeURIComponent(npc.cidadeFile)}`;
+const bgEl = document.getElementById("backgroundValue");
+if (bgEl) bgEl.innerHTML = npc.background || "";
+state.npc=npc;
+}
 
-async function loadCityVillageLocations(){const files=await (await fetch("data/locations/index.json")).json(); const entries=await Promise.all(files.map(async (f)=>{const d=await (await fetch(`data/locations/${f}`)).json(); return {file:String(f).replace(/\.json$/i,""),type:String(d.type||""),nome:String(d.name||""),x:Number(d.x||0),y:Number(d.y||0)};})); return entries.filter((e)=>e.nome&&isCityOrVillage(e.type));}
+async function loadLocations(){const files=await (await fetch("data/locations/index.json")).json(); return Promise.all(files.map(async (f)=>{const d=await (await fetch(`data/locations/${f}`)).json(); return {file:String(f).replace(/\.json$/i,""),type:String(d.type||""),nome:String(d.name||""),x:Number(d.x||0),y:Number(d.y||0)};}));}
+async function loadCityVillageLocations(){const entries = await loadLocations(); return entries.filter((e)=>e.nome&&isCityOrVillage(e.type));}
 const calculateDistancePercent = (a,b) => (Math.hypot(a.x-b.x,a.y-b.y)/Math.hypot(8000,5000))*100;
 function getAllowedLocations(all){const selected=document.getElementById("rangeCenterSelect").value;const max=Number(document.getElementById("distanceRange").value||100);const center=all.find((e)=>e.nome===selected)||all[0]; if(!center) return []; return all.filter((e)=>calculateDistancePercent(center,e)<=max);}
 function refreshHometownChecks(){const selected = getCheckedValues("cidadeChecks"); const allowed=getAllowedLocations(state.cidades); buildCheckList("cidadeChecks", allowed.map((e)=>e.nome).sort((a,b)=>a.localeCompare(b, "pt-BR"))); document.querySelectorAll("#cidadeChecks input[type='checkbox']").forEach((c)=>{ if(selected.includes(c.value)) c.checked = true; }); return allowed;}
 
 function getNamePoolBySexo(sexo){if(sexo==="homens") return state.data.nomesMasculinos; if(sexo==="mulheres") return state.data.nomesFemininos; return state.data.nomesAndrogenos;}
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const randomLocationBy = (predicate) => {
+  const matches = state.locations.filter((l)=>l.nome && predicate(l));
+  return matches.length ? randomFrom(matches) : randomFrom(state.locations.filter((l)=>l.nome));
+};
+function buildBackground(npc){
+  if(!state.backgrounds.length) return "";
+  const template = randomFrom(state.backgrounds);
+  const randomPoi = randomLocationBy(()=>true);
+  const randomCity = randomLocationBy((l)=>isCityOrVillage(l.type));
+  const randomEvent = randomLocationBy((l)=>normalizeType(l.type).includes("acontecimento"));
+  const mapLink = (loc) => `<a href="mapa.html?focus=${encodeURIComponent(loc.file)}" target="_blank" rel="noopener">${loc.nome}</a>`;
+  const replacements = {
+    NOME: `${npc.nome} ${npc.sobrenome}`,
+    CIDADE_NATAL: mapLink({ nome: npc.cidadeNatal, file: npc.cidadeFile }),
+    PROFISSAO: npc.profissao,
+    PROFISSAO_ALEATORIA: randomFrom(state.data.profissoes),
+    POI: mapLink(randomPoi),
+    CIDADE: mapLink(randomCity),
+    ACONTECIMENTO: mapLink(randomEvent)
+  };
+  return Object.entries(replacements).reduce((text,[key,val])=>text.replace(new RegExp(`\\{${escapeRegExp(key)}\\}`,"g"),String(val)), template);
+}
 
 function buildNpcFromForm(){const allowed=getAllowedLocations(state.cidades); const cidadeNome=pickFromChecks("cidadeChecks", (allowed.length?allowed:state.cidades).map((c)=>c.nome)); const cidade=state.cidadeMap.get(cidadeNome)||state.cidades[0]; const sexo=pickFromChecks("sexoChecks", ["homens","mulheres","androgenos"]); const antepassado=pickFromChecks("antepassadoChecks", state.data.antepassados); const nomeManual=document.getElementById("nomeInput").value.trim(); const nome=nomeManual||randomFrom(getNamePoolBySexo(sexo)); const sobrenome=randomFrom(state.data.sobrenomes); const idadeManual=document.getElementById("idadeInput").value.trim(); const idade=idadeManual||generateAgeForRace(antepassado); const alignVal=Number(document.getElementById("alignmentRange").value||0) * -1;
-return {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe:pickFromChecks("classeChecks",state.data.classes),idade,caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha:generateSheet()};}
+const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe:pickFromChecks("classeChecks",state.data.classes),idade,caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha:generateSheet()};
+npc.background = buildBackground(npc);
+return npc;}
 
 function rerollField(field){if(!state.npc) return; const sexo=pickFromChecks("sexoChecks", ["homens","mulheres","androgenos"]); const allowed=getAllowedLocations(state.cidades);
 if(field==="nome"){ state.npc.nome=(document.getElementById("nomeInput").value.trim()||randomFrom(getNamePoolBySexo(sexo))); state.npc.sobrenome=randomFrom(state.data.sobrenomes); }
@@ -61,10 +95,11 @@ if(field==="idade") state.npc.idade=generateAgeForRace(state.npc.antepassado);
 if(field==="temperamento") state.npc.temperamento=pickFromChecks("temperamentoChecks",state.data.temperamentos);
 if(field==="lealdade") state.npc.lealdade=pickFromChecks("lealdadeChecks",state.data.lealdades);
 if(field==="alinhamento"){const v=Number(document.getElementById("alignmentRange").value||0) * -1; state.npc.lealdade=pickLealdadeByAlignment(v);}
+state.npc.background = buildBackground(state.npc);
 renderNpc(state.npc);
 }
 
-async function init(){const [baseRes,charRes,cidades]=await Promise.all([fetch("./npc-data.json"),fetch("./npc-characteristics.json"),loadCityVillageLocations()]); state.data=await baseRes.json(); state.characteristicData=await charRes.json(); state.cidades=cidades.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.cidadeMap=new Map(state.cidades.map((e)=>[e.nome,e]));
+async function init(){const [baseRes,charRes,cidades,locations,backgroundRes]=await Promise.all([fetch("./npc-data.json"),fetch("./npc-characteristics.json"),loadCityVillageLocations(),loadLocations(),fetch("./data/backgrounds.json")]); state.data=await baseRes.json(); state.characteristicData=await charRes.json(); state.locations=locations.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.backgrounds=(await backgroundRes.json()).templates.map((t)=>String(t.text||"")).filter(Boolean); state.cidades=cidades.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.cidadeMap=new Map(state.cidades.map((e)=>[e.nome,e]));
 populateSelect("rangeCenterSelect",state.cidades.map((c)=>c.nome).sort((a,b)=>a.localeCompare(b, "pt-BR")));
 buildCheckList("profissaoChecks",state.data.profissoes); buildCheckList("antepassadoChecks",state.data.antepassados); buildCheckList("classeChecks",state.data.classes); buildCheckList("temperamentoChecks",state.data.temperamentos); buildCheckList("lealdadeChecks",state.data.lealdades); buildCheckList("sexoChecks", ["homens","mulheres","androgenos"]);
 refreshHometownChecks();
