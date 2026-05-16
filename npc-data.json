@@ -16,5 +16,17 @@
     "Sádico e oportunista",
     "Leal apenas a um ideal pessoal",
     "Trai com facilidade quando pressionado"
-  ]
+  ],
+  "faixaEtariaPorAntepassado": {
+    "Humano": { "min": 16, "max": 90 },
+    "Elfo": { "min": 30, "max": 750 },
+    "Anão": { "min": 25, "max": 350 },
+    "Halfling": { "min": 20, "max": 150 },
+    "Gnomo": { "min": 20, "max": 425 },
+    "Draconato": { "min": 15, "max": 80 },
+    "Tiefling": { "min": 16, "max": 120 },
+    "Orc": { "min": 14, "max": 75 },
+    "Goliath": { "min": 16, "max": 95 },
+    "Aasimar": { "min": 18, "max": 160 }
+  }
 }

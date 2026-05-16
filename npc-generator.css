@@ -130,3 +130,25 @@ button {
   border-radius: 6px;
   font-size: 0.8rem;
 }
+
+
+.check-list {
+  max-height: 140px;
+  overflow: auto;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 6px;
+  background: #0f172a;
+}
+.check-item {
+  display: block;
+  margin: 4px 0;
+  color: var(--text);
+}
+.reroll-field {
+  width: auto;
+  padding: 2px 6px;
+  margin-right: 4px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}

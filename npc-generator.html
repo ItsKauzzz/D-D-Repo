@@ -10,15 +10,15 @@
   <div class="layout">
     <aside class="floating-menu">
       <h2 class="menu-title">Gerador de NPC</h2>
-      <div class="menu-group"><label for="nomeSelect">Nome</label><select id="nomeSelect" multiple size="5"></select></div>
-      <div class="menu-group"><label for="profissaoSelect">Profissão</label><select id="profissaoSelect" multiple size="5"></select></div>
+      <div class="menu-group"><label for="nomeInput">Nome</label><input id="nomeInput" type="text" placeholder="Ex.: Arven, Lyra..." /></div>
+      <div class="menu-group"><label for="profissaoSelect">Profissão</label><select id="profissaoSelect"></select></div>
       <div class="menu-group"><label for="cidadeSelect">Cidade Natal (Cidade/Vila)</label><select id="cidadeSelect"></select></div>
       <div class="menu-group"><label for="generoSelect">Perfil Visual</label><select id="generoSelect"><option value="homens">Homens</option><option value="mulheres">Mulheres</option><option value="androgenos">Andrógenos</option></select></div>
-      <div class="menu-group"><label for="antepassadoSelect">Antepassado</label><select id="antepassadoSelect" multiple size="5"></select></div>
-      <div class="menu-group"><label for="classeSelect">Classe</label><select id="classeSelect" multiple size="6"></select></div>
-      <div class="menu-group"><label for="idadeSelect">Idade</label><select id="idadeSelect" multiple size="5"></select></div>
-      <div class="menu-group"><label for="temperamentoSelect">Temperamento</label><select id="temperamentoSelect" multiple size="5"></select></div>
-      <div class="menu-group"><label for="lealdadeSelect">Lealdade</label><select id="lealdadeSelect" multiple size="5"></select></div>
+      <div class="menu-group"><label for="antepassadoSelect">Antepassado</label><select id="antepassadoSelect"></select></div>
+      <div class="menu-group"><label>Classes (múltipla escolha)</label><div id="classeChecks" class="check-list"></div></div>
+      <div class="menu-group"><label for="idadeInput">Idade (auto pela raça)</label><input id="idadeInput" type="number" min="1" /></div>
+      <div class="menu-group"><label>Temperamentos (múltipla escolha)</label><div id="temperamentoChecks" class="check-list"></div></div>
+      <div class="menu-group"><label>Lealdades (múltipla escolha)</label><div id="lealdadeChecks" class="check-list"></div></div>
       <button id="applyButton" type="button">Aplicar seleções</button>
       <div style="height: 8px;"></div>
       <button id="randomizeButton" type="button">Gerar aleatório</button>
@@ -26,14 +26,8 @@
 
     <aside class="floating-menu floating-menu-right">
       <h2 class="menu-title">Filtro de Origem</h2>
-      <div class="menu-group">
-        <label for="rangeCenterSelect">Cidade/Vila de referência</label>
-        <select id="rangeCenterSelect"></select>
-      </div>
-      <div class="menu-group">
-        <label for="distanceRange">Raio de origem (<span id="distanceValue">100</span>%)</label>
-        <input id="distanceRange" type="range" min="1" max="100" value="100">
-      </div>
+      <div class="menu-group"><label for="rangeCenterSelect">Cidade/Vila de referência</label><select id="rangeCenterSelect"></select></div>
+      <div class="menu-group"><label for="distanceRange">Raio de origem (<span id="distanceValue">100</span>%)</label><input id="distanceRange" type="range" min="1" max="100" value="100"></div>
       <p class="range-help">100% = mundo inteiro (8000x5000). Valores menores restringem a origem a localidades adjacentes.</p>
     </aside>
 
@@ -41,15 +35,15 @@
       <section class="card">
         <h1>Ficha do NPC</h1>
         <ul class="npc-list">
-          <li><strong>Nome:</strong> <span id="nomeValue"></span></li>
-          <li><strong>Profissão:</strong> <span id="profissaoValue"></span></li>
-          <li><strong>Local:</strong> <a id="cidadeNatalLink" href="mapa.html" target="_blank" rel="noopener"><span id="cidadeNatalValue"></span></a></li>
-          <li><strong>Antepassado:</strong> <span id="antepassadoValue"></span></li>
-          <li><strong>Classe:</strong> <span id="classeValue"></span></li>
-          <li><strong>Idade:</strong> <span id="idadeValue"></span></li>
+          <li><button class="reroll-field" data-field="nome">🎲</button> <strong>Nome:</strong> <span id="nomeValue"></span></li>
+          <li><button class="reroll-field" data-field="profissao">🎲</button> <strong>Profissão:</strong> <span id="profissaoValue"></span></li>
+          <li><button class="reroll-field" data-field="cidadeNatal">🎲</button> <strong>Local:</strong> <a id="cidadeNatalLink" href="mapa.html" target="_blank" rel="noopener"><span id="cidadeNatalValue"></span></a></li>
+          <li><button class="reroll-field" data-field="antepassado">🎲</button> <strong>Antepassado:</strong> <span id="antepassadoValue"></span></li>
+          <li><button class="reroll-field" data-field="classe">🎲</button> <strong>Classe:</strong> <span id="classeValue"></span></li>
+          <li><button class="reroll-field" data-field="idade">🎲</button> <strong>Idade:</strong> <span id="idadeValue"></span></li>
           <li><strong>Características:</strong><ul id="caracteristicasValue" class="npc-char-list"></ul></li>
-          <li><strong>Temperamento:</strong> <span id="temperamentoValue"></span></li>
-          <li><strong>Lealdade:</strong> <span id="lealdadeValue"></span></li>
+          <li><button class="reroll-field" data-field="temperamento">🎲</button> <strong>Temperamento:</strong> <span id="temperamentoValue"></span></li>
+          <li><button class="reroll-field" data-field="lealdade">🎲</button> <strong>Lealdade:</strong> <span id="lealdadeValue"></span></li>
         </ul>
       </section>
     </main>
