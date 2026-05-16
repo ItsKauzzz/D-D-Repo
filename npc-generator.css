@@ -281,3 +281,23 @@ button {
   font-weight: 700;
   color: #f59e0b;
 }
+
+.skill-roll-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+}
+.skill-roll-btn {
+  width: auto;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #334155;
+  color: #e2e8f0;
+}
+.skill-roll-result {
+  min-width: 54px;
+  text-align: right;
+  color: #f59e0b;
+  font-weight: 700;
+}

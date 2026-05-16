@@ -98,12 +98,13 @@ const skillToAttr = {
 function renderSkillList(id, skills, profBonus, sheet){
   const el = document.getElementById(id); if(!el) return;
   el.innerHTML = "";
-  (skills||[]).forEach((skill)=>{
+  dndSkills.forEach((skill)=>{
     const attrKey = skillToAttr[skill] || "sabedoria";
     const attrMod = toModifier(sheet?.[attrKey] || 10);
-    const total = attrMod + Number(profBonus || 2);
+    const isProficient = (skills||[]).includes(skill);
+    const total = attrMod + (isProficient ? Number(profBonus || 2) : 0);
     const li=document.createElement("li");
-    li.innerHTML = `${skill} (${attrKey.toUpperCase()} ${attrMod >= 0 ? "+" : ""}${attrMod} + PROF ${profBonus >= 0 ? "+" : ""}${profBonus} = <span class="skill-total-mod">${total >= 0 ? "+" : ""}${total}</span>)`;
+    li.innerHTML = `<div class="skill-roll-row"><span>${skill} (${attrKey.toUpperCase()} ${attrMod >= 0 ? "+" : ""}${attrMod} + PROF ${isProficient ? (profBonus >= 0 ? "+" : "") + profBonus : "+0"} = <span class="skill-total-mod">${total >= 0 ? "+" : ""}${total}</span>)</span><button class="skill-roll-btn" data-skill-mod="${total}" type="button">🎲</button><span class="skill-roll-result"></span></div>`;
     el.appendChild(li);
   });
 }
@@ -271,6 +272,7 @@ document.getElementById("randomizeButton").addEventListener("click",()=>renderNp
 document.getElementById("applyButton").addEventListener("click",()=>renderNpc(buildNpcFromForm()));
 document.querySelector(".npc-list").addEventListener("click",(e)=>{const b=e.target.closest(".reroll-field"); if(b) rerollField(b.dataset.field);});
 document.getElementById("caracteristicasValue").addEventListener("click",(e)=>{const b=e.target.closest(".reroll-char"); if(!b||!state.npc) return; const sexo=pickFromChecks("sexoChecks", ["homens","mulheres","androgenos"]); state.npc.caracteristicas[b.dataset.charKey]=rerollSingleCharacteristic(b.dataset.charKey,state.characteristicData[sexo]); renderNpc(state.npc);});
+document.getElementById("proficienciasSkillsValue").addEventListener("click",(e)=>{const b=e.target.closest(".skill-roll-btn"); if(!b) return; const mod=Number(b.dataset.skillMod||0); const roll=Math.floor(Math.random()*20)+1; const total=roll+mod; const out=b.parentElement.querySelector(".skill-roll-result"); if(out) out.textContent=`${roll} ${mod>=0?'+':''}${mod} = ${total}`;});
 document.querySelectorAll(".clear-checks").forEach((btn)=>btn.addEventListener("click",()=>{const t=btn.dataset.target; document.querySelectorAll(`#${t} input[type='checkbox']`).forEach((c)=>{c.checked=false;});}));
 renderNpc(buildNpcFromForm());
 }
