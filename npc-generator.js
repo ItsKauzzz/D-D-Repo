@@ -1,6 +1,16 @@
 const fieldIds = ["nome", "profissao", "cidadeNatal", "antepassado", "classe", "idade", "temperamento", "lealdade"];
 
 function randomFrom(list) { return list[Math.floor(Math.random() * list.length)]; }
+function getSelectedOrAll(selectId) {
+  const select = document.getElementById(selectId);
+  const selected = [...select.selectedOptions].map((opt) => opt.value);
+  if (selected.length) return selected;
+  return [...select.options].map((opt) => opt.value);
+}
+
+function pickFromSelect(selectId) {
+  return randomFrom(getSelectedOrAll(selectId));
+}
 function populateSelect(id, values) {
   const select = document.getElementById(id);
   const current = select.value;
@@ -38,20 +48,40 @@ function renderCharacteristicsList(characteristics) {
   const listEl = document.getElementById("caracteristicasValue");
   listEl.innerHTML = "";
   const labelMap = [
-    ["CABELO", characteristics.cabelo],
-    ["OLHOS", characteristics.olhos],
-    ["ROSTO", characteristics.rosto],
-    ["FEIÇÃO", characteristics.feicao],
-    ["PESO", characteristics.peso],
-    ["COR DA PELE", characteristics.pele],
-    ["ESTRUTURA CORPORAL", characteristics.estruturaCorporal],
-    ["CARACTERÍSTICAS EXTRAS", characteristics.extras]
+    ["cabelo", characteristics.cabelo],
+    ["olhos", characteristics.olhos],
+    ["rosto", characteristics.rosto],
+    ["feição", characteristics.feicao],
+    ["peso", characteristics.peso],
+    ["cor da pele", characteristics.pele],
+    ["estrutura corporal", characteristics.estruturaCorporal],
+    ["características extras", characteristics.extras]
   ];
-  labelMap.forEach(([label, value]) => {
+  labelMap.forEach(([label, value, key], index) => {
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${label}:</strong> ${value}`;
+    const charKey = ["cabelo","olhos","rosto","feicao","peso","pele","estruturaCorporal","extras"][index];
+    li.innerHTML = `<button class="reroll-char" type="button" data-char-key="${charKey}" title="Rerrolar ${label}" aria-label="Rerrolar ${label}">🎲</button> <strong>${label}:</strong> <span class="char-value">${value}</span>`;
     listEl.appendChild(li);
   });
+}
+
+function rerollSingleCharacteristic(key, profilePack) {
+  if (key === "cabelo") return `${randomFrom(profilePack.cabelosComprimento)} ${randomFrom(profilePack.corCabelos)}`;
+  if (key === "olhos") return `${randomFrom(profilePack.olhos)} (${randomFrom(profilePack.corOlhos)})`;
+  if (key === "rosto") return randomFrom(profilePack.rosto);
+  if (key === "feicao") return randomFrom(profilePack.feicao);
+  if (key === "peso") return randomFrom(profilePack.peso);
+  if (key === "pele") return randomFrom(profilePack.corPele);
+  if (key === "estruturaCorporal") return randomFrom(profilePack.estruturaCorporal);
+  if (key === "extras") {
+    const nonNone = profilePack.caracteristicasExtras.filter((item) => item !== "Nenhuma");
+    const extraCount = Math.random() < 0.45 ? 0 : (Math.random() < 0.8 ? 1 : 2);
+    const extras = [];
+    for (let i = 0; i < extraCount; i += 1) extras.push(randomFrom(nonNone));
+    const uniqueExtras = [...new Set(extras)];
+    return uniqueExtras.length ? uniqueExtras.join(", ") : "Nenhuma";
+  }
+  return "";
 }
 
 function renderNpc(npc) {
@@ -113,16 +143,16 @@ function buildNpcFromForm(cidadeMap, characteristicData) {
   const cidade = cidadeMap.get(cidadeNome);
   const profile = document.getElementById("generoSelect").value;
   return {
-    nome: document.getElementById("nomeSelect").value,
-    profissao: document.getElementById("profissaoSelect").value,
+    nome: pickFromSelect("nomeSelect"),
+    profissao: pickFromSelect("profissaoSelect"),
     cidadeNatal: `${cidade.nome} (${cidade.tipo})`,
     cidadeFile: cidade.file,
-    antepassado: document.getElementById("antepassadoSelect").value,
-    classe: document.getElementById("classeSelect").value,
-    idade: document.getElementById("idadeSelect").value,
+    antepassado: pickFromSelect("antepassadoSelect"),
+    classe: pickFromSelect("classeSelect"),
+    idade: pickFromSelect("idadeSelect"),
     caracteristicas: generateCharacteristics(characteristicData[profile]),
-    temperamento: document.getElementById("temperamentoSelect").value,
-    lealdade: document.getElementById("lealdadeSelect").value
+    temperamento: pickFromSelect("temperamentoSelect"),
+    lealdade: pickFromSelect("lealdadeSelect")
   };
 }
 
@@ -169,6 +199,31 @@ async function init() {
   });
 
   document.getElementById("applyButton").addEventListener("click", () => renderNpc(buildNpcFromForm(cidadeMap, characteristicData)));
+  document.getElementById("caracteristicasValue").addEventListener("click", (event) => {
+    const button = event.target.closest(".reroll-char");
+    if (!button) return;
+    const profile = document.getElementById("generoSelect").value;
+    const pack = characteristicData[profile];
+    const key = button.dataset.charKey;
+    const currentNpc = {
+      nome: document.getElementById("nomeValue").textContent,
+      profissao: document.getElementById("profissaoValue").textContent,
+      cidadeNatal: document.getElementById("cidadeNatalValue").textContent,
+      cidadeFile: new URL(document.getElementById("cidadeNatalLink").href).searchParams.get("focus") || "",
+      antepassado: document.getElementById("antepassadoValue").textContent,
+      classe: document.getElementById("classeValue").textContent,
+      idade: document.getElementById("idadeValue").textContent,
+      temperamento: document.getElementById("temperamentoValue").textContent,
+      lealdade: document.getElementById("lealdadeValue").textContent,
+      caracteristicas: generateCharacteristics(pack)
+    };
+    const nodes = [...document.querySelectorAll("#caracteristicasValue .reroll-char")];
+    const labels = ["cabelo","olhos","rosto","feicao","peso","pele","estruturaCorporal","extras"];
+    const values = [...document.querySelectorAll("#caracteristicasValue .char-value")].map((el) => el.textContent);
+    currentNpc.caracteristicas = Object.fromEntries(labels.map((label, idx) => [label, values[idx] || ""]));
+    currentNpc.caracteristicas[key] = rerollSingleCharacteristic(key, pack);
+    renderNpc(currentNpc);
+  });
   renderNpc(buildNpcFromForm(cidadeMap, characteristicData));
 }
 
