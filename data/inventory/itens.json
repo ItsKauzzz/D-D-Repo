@@ -1,0 +1,180 @@
+{
+  "Itens": {
+    "Aventura e Utilidade": [
+      "Algemas",
+      "Ampulheta",
+      "Âncora",
+      "Balde",
+      "Barraca",
+      "Barril",
+      "Baú",
+      "Caixa",
+      "Caixa de fogo",
+      "Cantil",
+      "Cesto",
+      "Cobertor",
+      "Corrente",
+      "Corda de cânhamo",
+      "Corda de seda",
+      "Escada",
+      "Espelho de aço",
+      "Estrepes",
+      "Frasco",
+      "Funil",
+      "Gancho de escalada",
+      "Garrafa de vidro",
+      "Giz",
+      "Jarra",
+      "Kit de escalada",
+      "Kit de pesca",
+      "Livro",
+      "Lupa",
+      "Machado",
+      "Maleta",
+      "Mapa",
+      "Martelo",
+      "Mochila",
+      "Pá",
+      "Pacote de viagem",
+      "Papel",
+      "Pederneira",
+      "Pena",
+      "Pergaminho",
+      "Picareta",
+      "Pitons",
+      "Pé de cabra",
+      "Rações",
+      "Rede de pesca",
+      "Roupas comuns",
+      "Roupas finas",
+      "Roupas de frio",
+      "Roupas de viagem",
+      "Sabão",
+      "Saco",
+      "Saco de dormir",
+      "Sino",
+      "Tenda",
+      "Tinta",
+      "Vara de 3 metros",
+      "Vela"
+    ],
+
+    "Iluminação e Fogo": [
+      "Lâmpada",
+      "Lanterna coberta",
+      "Lanterna furta-fogo",
+      "Óleo",
+      "Tocha",
+      "Vela"
+    ],
+
+    "Consumíveis": [
+      "Água benta",
+      "Antídoto",
+      "Kit de primeiros socorros",
+      "Poção de cura",
+      "Rações"
+    ],
+
+    "Contêineres": [
+      "Barril",
+      "Baú",
+      "Bolsa",
+      "Caixa",
+      "Cantil",
+      "Frasco",
+      "Garrafa",
+      "Jarra",
+      "Mochila",
+      "Saco"
+    ],
+
+    "Ferramentas": [
+      "Ferramentas de alquimista",
+      "Ferramentas de calígrafo",
+      "Ferramentas de carpinteiro",
+      "Ferramentas de cartógrafo",
+      "Ferramentas de couro",
+      "Ferramentas de cozinheiro",
+      "Ferramentas de ferreiro",
+      "Ferramentas de joalheiro",
+      "Ferramentas de ladrão",
+      "Ferramentas de pedreiro",
+      "Ferramentas de pintor",
+      "Ferramentas de sapateiro",
+      "Ferramentas de tecelão",
+      "Ferramentas de vidreiro",
+      "Kit de disfarce",
+      "Kit de falsificação",
+      "Kit de herbalismo",
+      "Kit de venenos",
+      "Utensílios de navegador"
+    ],
+
+    "Instrumentos Musicais": [
+      "Alaúde",
+      "Corneta",
+      "Flauta",
+      "Flauta de pã",
+      "Gaita de fole",
+      "Harpa",
+      "Lira",
+      "Shawm",
+      "Tambor",
+      "Violino"
+    ],
+
+    "Focos Mágicos": [
+      "Amuleto",
+      "Bastão",
+      "Cajado",
+      "Cristal",
+      "Orbe",
+      "Símbolo sagrado",
+      "Totem druídico",
+      "Varinha"
+    ],
+
+    "Kits e Pacotes": [
+      "Pacote de aventureiro",
+      "Pacote de assaltante",
+      "Pacote de diplomata",
+      "Pacote de estudioso",
+      "Pacote de explorador",
+      "Pacote de sacerdote"
+    ],
+
+    "Montarias e Animais": [
+      "Burro",
+      "Camelo",
+      "Cão de guarda",
+      "Cavalo de carga",
+      "Cavalo de montaria",
+      "Elefante",
+      "Mastim",
+      "Mula",
+      "Pônei"
+    ],
+
+    "Veículos": [
+      "Barco",
+      "Barco a remo",
+      "Carruagem",
+      "Carroça",
+      "Navio",
+      "Trenó"
+    ],
+
+    "Itens Mágicos Comuns": [
+      "Anel de proteção",
+      "Bolsa de contenção",
+      "Botas élficas",
+      "Capa élfica",
+      "Cajado mágico",
+      "Pedra Ioun",
+      "Pergaminho mágico",
+      "Poção mágica",
+      "Varinha mágica"
+    ]
+  }
+}

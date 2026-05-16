@@ -1,0 +1,64 @@
+{
+  "templates": [
+    {
+      "id": "origin_01",
+      "text": "{NOME} nasceu em {CIDADE_NATAL}, onde passou boa parte da juventude aprendendo sobre {PROFISSAO_ALEATORIA}. Apesar disso, acabou seguindo o caminho de {PROFISSAO}."
+    },
+    {
+      "id": "origin_02",
+      "text": "Durante anos, {NOME} viveu em {CIDADE_NATAL}, trabalhando como {PROFISSAO_ALEATORIA}, até que os eventos de {ACONTECIMENTO} mudaram completamente seus planos."
+    },
+    {
+      "id": "origin_03",
+      "text": "{NOME} sempre demonstrou interesse por {PROFISSAO_ALEATORIA}, mas acabou se tornando {PROFISSAO} após deixar {CIDADE_NATAL}."
+    },
+    {
+      "id": "origin_04",
+      "text": "Poucos sabem que {NOME} já viveu próximo de {POI}, lugar onde começou a desenvolver habilidades relacionadas a {PROFISSAO}."
+    },
+    {
+      "id": "origin_05",
+      "text": "Depois dos acontecimentos em {ACONTECIMENTO}, {NOME} decidiu abandonar {CIDADE_NATAL} e viajar em busca de um novo propósito."
+    },
+    {
+      "id": "origin_06",
+      "text": "{NOME} cresceu ouvindo histórias sobre {POI}, o que despertou interesse por aventuras e eventualmente levou à vida de {PROFISSAO}."
+    },
+    {
+      "id": "origin_07",
+      "text": "Ainda jovem, {NOME} deixou {CIDADE_NATAL} para trabalhar com {PROFISSAO_ALEATORIA}, mas acabou encontrando outro destino como {PROFISSAO}."
+    },
+    {
+      "id": "origin_08",
+      "text": "Rumores envolvendo {ACONTECIMENTO} fizeram {NOME} repensar suas escolhas e se mudar para {CIDADE}."
+    },
+    {
+      "id": "origin_09",
+      "text": "{NOME} evita falar sobre o período em que viveu em {CIDADE_NATAL}, principalmente depois do que aconteceu em {POI}."
+    },
+    {
+      "id": "origin_10",
+      "text": "Embora hoje seja conhecido como {PROFISSAO}, {NOME} já trabalhou como {PROFISSAO_ALEATORIA} durante muitos anos."
+    },
+    {
+      "id": "origin_11",
+      "text": "Os conflitos próximos de {CIDADE} obrigaram {NOME} a abandonar antigos planos e buscar uma nova vida."
+    },
+    {
+      "id": "origin_12",
+      "text": "{NOME} viajou entre diversas cidades após os rumores sobre {ACONTECIMENTO}, acumulando experiências e histórias difíceis de confirmar."
+    },
+    {
+      "id": "origin_13",
+      "text": "Mesmo após deixar {CIDADE_NATAL}, {NOME} ainda carrega costumes e hábitos aprendidos na região."
+    },
+    {
+      "id": "origin_14",
+      "text": "A passagem de {NOME} por {POI} marcou profundamente sua visão sobre o mundo."
+    },
+    {
+      "id": "origin_15",
+      "text": "Alguns dizem que {NOME} começou sua carreira após sobreviver aos eventos de {ACONTECIMENTO}, embora os detalhes nunca sejam totalmente claros."
+    }
+  ]
+}

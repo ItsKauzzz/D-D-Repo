@@ -1,0 +1,227 @@
+{
+  "Equipamentos": {
+    "Armas corpo a corpo": [
+      "Adaga",
+      "Alabarda",
+      "Azagaia",
+      "Bordão",
+      "Chicote",
+      "Clava",
+      "Cimitarra",
+      "Espada curta",
+      "Espada longa",
+      "Espadão",
+      "Florete",
+      "Foice",
+      "Glaive",
+      "Lança",
+      "Lança de cavalaria",
+      "Machado de batalha",
+      "Machado grande",
+      "Machadinha",
+      "Maça",
+      "Mangual",
+      "Martelo de guerra",
+      "Martelo leve",
+      "Maul",
+      "Morningstar",
+      "Pique",
+      "Porrete",
+      "Rapieira",
+      "Tridente"
+    ],
+
+    "Armas a distância": [
+      "Arco curto",
+      "Arco longo",
+      "Besta leve",
+      "Besta pesada",
+      "Besta de mão",
+      "Dardo",
+      "Funda",
+      "Rede",
+      "Zarabatana"
+    ],
+
+    "Munições": [
+      "Flechas",
+      "Virotes",
+      "Balas de funda",
+      "Agulhas de zarabatana"
+    ],
+
+    "Armaduras leves": [
+      "Acolchoada",
+      "Couro",
+      "Couro batido"
+    ],
+
+    "Armaduras médias": [
+      "Camisa de malha",
+      "Cota de escamas",
+      "Gibão de peles",
+      "Meia armadura",
+      "Peitoral"
+    ],
+
+    "Armaduras pesadas": [
+      "Cota de anéis",
+      "Cota de malha",
+      "Placas",
+      "Splint"
+    ],
+
+    "Escudos": [
+      "Escudo"
+    ],
+
+    "Ferramentas de artesão": [
+      "Ferramentas de alquimista",
+      "Ferramentas de calígrafo",
+      "Ferramentas de carpinteiro",
+      "Ferramentas de cartógrafo",
+      "Ferramentas de ceramista",
+      "Ferramentas de cobridor",
+      "Ferramentas de cozinheiro",
+      "Ferramentas de couro",
+      "Ferramentas de ferreiro",
+      "Ferramentas de joalheiro",
+      "Ferramentas de pedreiro",
+      "Ferramentas de pintor",
+      "Ferramentas de sapateiro",
+      "Ferramentas de tecelão",
+      "Ferramentas de vidreiro",
+      "Kit de disfarce",
+      "Kit de falsificação",
+      "Kit de herbalismo",
+      "Kit de venenos",
+      "Ferramentas de ladrão",
+      "Utensílios de navegador"
+    ],
+
+    "Instrumentos musicais": [
+      "Alaúde",
+      "Corneta",
+      "Flauta",
+      "Flauta de pã",
+      "Gaita de fole",
+      "Harpa",
+      "Lira",
+      "Shawm",
+      "Tambor",
+      "Violino"
+    ],
+
+    "Focos mágicos": [
+      "Amuleto",
+      "Bastão",
+      "Cajado",
+      "Cristal",
+      "Orbe",
+      "Símbolo sagrado",
+      "Totem druídico",
+      "Varinha"
+    ],
+
+    "Equipamentos de aventura": [
+      "Algemas",
+      "Ampulheta",
+      "Âncora",
+      "Balde",
+      "Barraca",
+      "Barril",
+      "Baú",
+      "Caixa de fogo",
+      "Cantil",
+      "Cesto",
+      "Cobertor",
+      "Corrente",
+      "Corda de cânhamo",
+      "Corda de seda",
+      "Escada",
+      "Espelho de aço",
+      "Estrepes",
+      "Frasco",
+      "Garrafa de vidro",
+      "Gancho de escalada",
+      "Giz",
+      "Jarra",
+      "Kit de escalada",
+      "Kit de pesca",
+      "Lanterna coberta",
+      "Lanterna furta-fogo",
+      "Lâmpada",
+      "Livro",
+      "Lupa",
+      "Machado",
+      "Manta",
+      "Mapa ou pergaminho",
+      "Martelo",
+      "Mochila",
+      "Óleo",
+      "Pá",
+      "Papel",
+      "Pederneira",
+      "Pena",
+      "Pergaminho",
+      "Pitons",
+      "Pé de cabra",
+      "Picareta",
+      "Rações",
+      "Rede de pesca",
+      "Roupas comuns",
+      "Roupas finas",
+      "Roupas de viagem",
+      "Saco",
+      "Saco de dormir",
+      "Sabão",
+      "Sino",
+      "Tenda",
+      "Tinta",
+      "Tocha",
+      "Vara de 3 metros",
+      "Vela"
+    ],
+
+    "Pacotes de equipamento": [
+      "Pacote de aventureiro",
+      "Pacote de assaltante",
+      "Pacote de diplomata",
+      "Pacote de estudioso",
+      "Pacote de explorador",
+      "Pacote de sacerdote"
+    ],
+
+    "Montarias e animais": [
+      "Burro",
+      "Camelo",
+      "Cão de guarda",
+      "Cavalo de carga",
+      "Cavalo de montaria",
+      "Elefante",
+      "Mastim",
+      "Mula",
+      "Pônei"
+    ],
+
+    "Veículos": [
+      "Barco a remo",
+      "Carruagem",
+      "Carroça",
+      "Navio",
+      "Trenó"
+    ],
+
+    "Itens mágicos comuns": [
+      "Anel de proteção",
+      "Bolsa de contenção",
+      "Botas élficas",
+      "Capa élfica",
+      "Cajado mágico",
+      "Pedra Ioun",
+      "Poção de cura",
+      "Pergaminho mágico",
+      "Varinha mágica"
+    ]
+  }
+}
