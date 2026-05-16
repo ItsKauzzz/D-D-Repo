@@ -245,3 +245,9 @@ button {
   align-items: center;
   gap: 8px;
 }
+
+.sheet-lists-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
