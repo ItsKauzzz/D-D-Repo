@@ -207,7 +207,9 @@ function buildProficiencias(classe, level){
   const favoredCount = Math.round(accuracy * tier.skillMax);
   const preferred = [...new Set([...signatures, ...affinity, ...dndSkills])];
   const skillCount = Math.floor(Math.random() * (tier.skillMax - tier.skillMin + 1)) + tier.skillMin;
-  const favoredSkills = randomSample(preferred, Math.min(favoredCount, skillCount));
+  const mandatoryFromSignature = accuracy >= 1 ? signatures.slice(0, Math.min(signatures.length, skillCount)) : [];
+  const remainingPreferredPool = preferred.filter((s)=>!mandatoryFromSignature.includes(s));
+  const favoredSkills = [...mandatoryFromSignature, ...randomSample(remainingPreferredPool, Math.max(0, Math.min(favoredCount, skillCount) - mandatoryFromSignature.length))];
   const remainder = randomSample(dndSkills.filter((s)=>!favoredSkills.includes(s)), Math.max(0, skillCount - favoredSkills.length));
   return { gerais: base, skills: [...favoredSkills, ...remainder] };
 }
