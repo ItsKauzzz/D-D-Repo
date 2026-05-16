@@ -145,6 +145,7 @@ document.getElementById("sheetClassValue").textContent = npc.classe || "";
 document.getElementById("sheetLevelValue").textContent = npc.level || "";
 document.getElementById("sheetProfBonusValue").textContent = `+${npc.proficiencyBonus || 2}`;
 document.getElementById("sheetAcValue").textContent = String(npc.ca ?? 10);
+document.getElementById("sheetHpValue").textContent = String(npc.vida ?? 1);
 renderCharacteristicsList(npc.caracteristicas);
 renderSkillList("proficienciasSkillsValue", npc.proficienciasSkills, npc.proficiencyBonus, npc.ficha);
 renderSimpleList("proficienciasGeraisValue", npc.proficienciasGerais);
@@ -267,6 +268,20 @@ function calculateAc(sheet, loadout){
   if (loadout?.equippedShield) ac += 2;
   return ac;
 }
+const classHitDie = {
+  "Bárbaro": 12, "Guerreiro": 10, "Paladino": 10, "Patrulheiro": 10,
+  "Bardo": 8, "Bruxo": 8, "Clérigo": 8, "Druida": 8, "Ladino": 8, "Monge": 8, "Artífice": 8,
+  "Feiticeiro": 6, "Mago": 6
+};
+function calculateHp(classe, level, sheet){
+  const hitDie = classHitDie[classe] || 8;
+  const conMod = toModifier(sheet.constituicao || 10);
+  const lvl = Math.max(1, Number(level || 1));
+  const avgPerLevel = Math.floor(hitDie / 2) + 1;
+  const base = hitDie + conMod;
+  const extra = (lvl - 1) * (avgPerLevel + conMod);
+  return Math.max(lvl, base + extra);
+}
 function maxSpellLevelByCharacterLevel(level){
   if(level>=17) return 9; if(level>=15) return 8; if(level>=13) return 7; if(level>=11) return 6;
   if(level>=9) return 5; if(level>=7) return 4; if(level>=5) return 3; if(level>=3) return 2; return 1;
@@ -309,7 +324,7 @@ const itemCount = tier.min >= 13 ? 8 : (tier.min >= 9 ? 7 : (tier.min >= 5 ? 6 :
 const profs = buildProficiencias(classe, level);
 const ficha = generateSheet(classe, level);
 const loadout = buildLoadout(classe, state.equipmentData || {});
-const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,level,idade,proficiencyBonus:tier.profBonus,ca:calculateAc(ficha, loadout),caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha,proficienciasGerais:profs.gerais,proficienciasSkills:profs.skills,equipamentos:loadout.equipped,itens:randomSample(state.itemPool, itemCount),magias:buildSpells(classe, level),habilidadesClasse:buildClassFeatures(classe, level)};
+const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,level,idade,proficiencyBonus:tier.profBonus,ca:calculateAc(ficha, loadout),vida:calculateHp(classe, level, ficha),caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha,proficienciasGerais:profs.gerais,proficienciasSkills:profs.skills,equipamentos:loadout.equipped,itens:randomSample(state.itemPool, itemCount),magias:buildSpells(classe, level),habilidadesClasse:buildClassFeatures(classe, level)};
 npc.background = buildBackground(npc);
 return npc;}
 
@@ -319,8 +334,8 @@ if(field==="profissao") state.npc.profissao=pickFromChecks("profissaoChecks", st
 if(field==="cidadeNatal"){const pool=(allowed.length?allowed:state.cidades).map((c)=>c.nome); const c=state.cidadeMap.get(randomFrom(pool)); state.npc.cidadeNatal=`${c.nome} (${c.tipo})`; state.npc.cidadeFile=c.file;}
 if(field==="sexo") { state.npc.sexo=sexo; state.npc.nome=(document.getElementById("nomeInput").value.trim()||randomFrom(getNamePoolBySexo(sexo))); state.npc.caracteristicas=generateCharacteristics(state.characteristicData[sexo]); }
 if(field==="antepassado"){state.npc.antepassado=pickFromChecks("antepassadoChecks",state.data.antepassados); state.npc.idade=generateAgeForRace(state.npc.antepassado);}
-if(field==="classe") { state.npc.classe=pickFromChecks("classeChecks",state.data.classes); state.npc.ficha=generateSheet(state.npc.classe, state.npc.level); const p=buildProficiencias(state.npc.classe, state.npc.level); state.npc.proficienciasGerais=p.gerais; state.npc.proficienciasSkills=p.skills; state.npc.magias=buildSpells(state.npc.classe, state.npc.level); state.npc.habilidadesClasse=buildClassFeatures(state.npc.classe, state.npc.level); }
-if(field==="level"){const {low,high} = getLevelRange(); state.npc.level = Math.floor(Math.random() * (high - low + 1)) + low; const tier=getLevelTier(state.npc.level); state.npc.proficiencyBonus=tier.profBonus; state.npc.ficha=generateSheet(state.npc.classe, state.npc.level); const p=buildProficiencias(state.npc.classe, state.npc.level); state.npc.proficienciasGerais=p.gerais; state.npc.proficienciasSkills=p.skills; state.npc.magias=buildSpells(state.npc.classe, state.npc.level); state.npc.habilidadesClasse=buildClassFeatures(state.npc.classe, state.npc.level);}
+if(field==="classe") { state.npc.classe=pickFromChecks("classeChecks",state.data.classes); state.npc.ficha=generateSheet(state.npc.classe, state.npc.level); const p=buildProficiencias(state.npc.classe, state.npc.level); state.npc.proficienciasGerais=p.gerais; state.npc.proficienciasSkills=p.skills; state.npc.magias=buildSpells(state.npc.classe, state.npc.level); state.npc.habilidadesClasse=buildClassFeatures(state.npc.classe, state.npc.level); state.npc.vida=calculateHp(state.npc.classe, state.npc.level, state.npc.ficha); }
+if(field==="level"){const {low,high} = getLevelRange(); state.npc.level = Math.floor(Math.random() * (high - low + 1)) + low; const tier=getLevelTier(state.npc.level); state.npc.proficiencyBonus=tier.profBonus; state.npc.ficha=generateSheet(state.npc.classe, state.npc.level); const p=buildProficiencias(state.npc.classe, state.npc.level); state.npc.proficienciasGerais=p.gerais; state.npc.proficienciasSkills=p.skills; state.npc.magias=buildSpells(state.npc.classe, state.npc.level); state.npc.habilidadesClasse=buildClassFeatures(state.npc.classe, state.npc.level); state.npc.vida=calculateHp(state.npc.classe, state.npc.level, state.npc.ficha);}
 if(field==="profissao"){const tier=getLevelTier(state.npc.level); const itemCount = tier.min >= 13 ? 8 : (tier.min >= 9 ? 7 : (tier.min >= 5 ? 6 : 5)); const loadout = buildLoadout(state.npc.classe, state.equipmentData || {}); state.npc.equipamentos=loadout.equipped; state.npc.ca=calculateAc(state.npc.ficha, loadout); state.npc.itens=randomSample(state.itemPool, itemCount);}
 if(field==="classe"||field==="level"){const loadout = buildLoadout(state.npc.classe, state.equipmentData || {}); state.npc.equipamentos=loadout.equipped; state.npc.ca=calculateAc(state.npc.ficha, loadout);}
 if(field==="idade") state.npc.idade=generateAgeForRace(state.npc.antepassado);
@@ -354,6 +369,7 @@ document.getElementById("applyButton").addEventListener("click",()=>renderNpc(bu
 document.querySelector(".npc-list").addEventListener("click",(e)=>{const b=e.target.closest(".reroll-field"); if(b) rerollField(b.dataset.field);});
 document.getElementById("caracteristicasValue").addEventListener("click",(e)=>{const b=e.target.closest(".reroll-char"); if(!b||!state.npc) return; const sexo=pickFromChecks("sexoChecks", ["homens","mulheres","androgenos"]); state.npc.caracteristicas[b.dataset.charKey]=rerollSingleCharacteristic(b.dataset.charKey,state.characteristicData[sexo]); renderNpc(state.npc);});
 document.getElementById("proficienciasSkillsValue").addEventListener("click",(e)=>{const b=e.target.closest(".skill-roll-btn"); if(!b) return; const mod=Number(b.dataset.skillMod||0); const roll=Math.floor(Math.random()*20)+1; const total=roll+mod; const out=b.parentElement.querySelector(".skill-roll-result"); if(out) out.textContent=`${roll} ${mod>=0?'+':''}${mod} = ${total}`;});
+document.querySelectorAll(".reroll-section").forEach((btn)=>btn.addEventListener("click",(e)=>{e.preventDefault(); e.stopPropagation(); if(!state.npc) return; const section=btn.dataset.section; if(section==='proficienciasSkills'){const p=buildProficiencias(state.npc.classe,state.npc.level); state.npc.proficienciasGerais=p.gerais; state.npc.proficienciasSkills=p.skills;} if(section==='equipItens'){const tier=getLevelTier(state.npc.level); const itemCount=tier.min>=13?8:(tier.min>=9?7:(tier.min>=5?6:5)); const loadout=buildLoadout(state.npc.classe,state.equipmentData||{}); state.npc.equipamentos=loadout.equipped; state.npc.ca=calculateAc(state.npc.ficha,loadout); state.npc.itens=randomSample(state.itemPool,itemCount);} if(section==='magias'){state.npc.magias=buildSpells(state.npc.classe,state.npc.level);} renderNpc(state.npc);}));
 document.querySelectorAll(".clear-checks").forEach((btn)=>btn.addEventListener("click",()=>{const t=btn.dataset.target; document.querySelectorAll(`#${t} input[type='checkbox']`).forEach((c)=>{c.checked=false;});}));
 renderNpc(buildNpcFromForm());
 }

@@ -64,7 +64,7 @@
       <section class="card">
         <h2>FICHA</h2>
         <p class="sheet-class"><strong>Classe:</strong> <span id="sheetClassValue"></span> · <strong>Level:</strong> <span id="sheetLevelValue"></span> · <strong>Bônus de Proficiência:</strong> <span id="sheetProfBonusValue"></span></p>
-        <p class="sheet-class"><strong>CA:</strong> <span id="sheetAcValue"></span></p>
+        <p class="sheet-class"><strong>CA:</strong> <span id="sheetAcValue"></span> · <strong>Vida:</strong> <span id="sheetHpValue"></span></p>
         <div class="sheet-grid">
           <article class="sheet-attr"><h3>Força</h3><p id="forcaValue" class="sheet-score"></p><p id="forcaMod" class="sheet-mod"></p></article>
           <article class="sheet-attr"><h3>Destreza</h3><p id="destrezaValue" class="sheet-score"></p><p id="destrezaMod" class="sheet-mod"></p></article>
@@ -75,7 +75,7 @@
         </div>
         <div class="sheet-compact">
           <details open>
-            <summary>Proeficiências de Habilidades</summary>
+            <summary>Proeficiências de Habilidades <button class="reroll-section" data-section="proficienciasSkills" type="button">🎲</button></summary>
             <ul id="proficienciasSkillsValue" class="npc-list"></ul>
           </details>
           <details>
@@ -83,7 +83,7 @@
             <ul id="proficienciasGeraisValue" class="npc-list"></ul>
           </details>
           <details>
-            <summary>Equipamentos e Itens</summary>
+            <summary>Equipamentos e Itens <button class="reroll-section" data-section="equipItens" type="button">🎲</button></summary>
             <div class="sheet-lists-grid">
               <section>
                 <h3>Equipamentos</h3>
@@ -96,7 +96,7 @@
             </div>
           </details>
           <details>
-            <summary>Magias</summary>
+            <summary>Magias <button class="reroll-section" data-section="magias" type="button">🎲</button></summary>
             <ul id="magiasValue" class="npc-list"></ul>
           </details>
           <details>
