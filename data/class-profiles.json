@@ -1,0 +1,370 @@
+{
+  "Bardo": {
+    "skillBuckets": [
+      "sociais",
+      "magicas"
+    ],
+    "generalProficiencies": [
+      "Armaduras leves",
+      "Armas simples",
+      "Besta de mão",
+      "Espada curta",
+      "Espada longa",
+      "Florete",
+      "3 instrumentos musicais"
+    ],
+    "equipPreference": {
+      "armor": "Armaduras leves",
+      "shield": false,
+      "melee": true,
+      "ranged": true,
+      "magicalFocus": true
+    },
+    "preferredAttributes": {
+      "primary": [
+        "carisma"
+      ],
+      "secondary": [
+        "destreza",
+        "constituicao"
+      ]
+    }
+  },
+  "Bruxo": {
+    "skillBuckets": [
+      "magicas",
+      "sociais"
+    ],
+    "generalProficiencies": [
+      "Armaduras leves",
+      "Armas simples"
+    ],
+    "equipPreference": {
+      "armor": "Armaduras leves",
+      "shield": false,
+      "melee": false,
+      "ranged": true,
+      "magicalFocus": true
+    },
+    "preferredAttributes": {
+      "primary": [
+        "carisma"
+      ],
+      "secondary": [
+        "constituicao",
+        "destreza"
+      ]
+    }
+  },
+  "Bárbaro": {
+    "skillBuckets": [
+      "marciais"
+    ],
+    "generalProficiencies": [
+      "Armaduras leves",
+      "Armaduras médias",
+      "Escudos",
+      "Armas simples",
+      "Armas marciais"
+    ],
+    "equipPreference": {
+      "armor": "Armaduras médias",
+      "shield": true,
+      "melee": true,
+      "ranged": false,
+      "magicalFocus": false
+    },
+    "preferredAttributes": {
+      "primary": [
+        "forca"
+      ],
+      "secondary": [
+        "constituicao",
+        "destreza"
+      ]
+    }
+  },
+  "Clérigo": {
+    "skillBuckets": [
+      "magicas",
+      "sociais"
+    ],
+    "generalProficiencies": [
+      "Armaduras leves",
+      "Armaduras médias",
+      "Escudos",
+      "Armas simples"
+    ],
+    "equipPreference": {
+      "armor": "Armaduras médias",
+      "shield": true,
+      "melee": true,
+      "ranged": false,
+      "magicalFocus": false
+    },
+    "preferredAttributes": {
+      "primary": [
+        "sabedoria"
+      ],
+      "secondary": [
+        "constituicao",
+        "forca"
+      ]
+    }
+  },
+  "Druida": {
+    "skillBuckets": [
+      "magicas",
+      "marciais"
+    ],
+    "generalProficiencies": [
+      "Armaduras leves",
+      "Armaduras médias",
+      "Escudos",
+      "Clavas",
+      "Adagas",
+      "Azagaias",
+      "Bordões",
+      "Cimitarras",
+      "Funda",
+      "Lanças",
+      "Machadinhas",
+      "Manguais",
+      "Dardos"
+    ],
+    "equipPreference": {
+      "armor": "Armaduras leves",
+      "shield": true,
+      "melee": true,
+      "ranged": false,
+      "magicalFocus": true
+    },
+    "preferredAttributes": {
+      "primary": [
+        "sabedoria"
+      ],
+      "secondary": [
+        "constituicao",
+        "destreza"
+      ]
+    }
+  },
+  "Feiticeiro": {
+    "skillBuckets": [
+      "magicas",
+      "sociais"
+    ],
+    "generalProficiencies": [
+      "Adagas",
+      "Dardos",
+      "Fundas",
+      "Bordões",
+      "Bestas leves"
+    ],
+    "equipPreference": {
+      "armor": null,
+      "shield": false,
+      "melee": false,
+      "ranged": true,
+      "magicalFocus": true
+    },
+    "preferredAttributes": {
+      "primary": [
+        "carisma"
+      ],
+      "secondary": [
+        "constituicao",
+        "destreza"
+      ]
+    }
+  },
+  "Guerreiro": {
+    "skillBuckets": [
+      "marciais"
+    ],
+    "generalProficiencies": [
+      "Todas as armaduras",
+      "Escudos",
+      "Armas simples",
+      "Armas marciais"
+    ],
+    "equipPreference": {
+      "armor": "Armaduras pesadas",
+      "shield": true,
+      "melee": true,
+      "ranged": true,
+      "magicalFocus": false
+    },
+    "preferredAttributes": {
+      "primary": [
+        "forca",
+        "destreza"
+      ],
+      "secondary": [
+        "constituicao"
+      ]
+    }
+  },
+  "Ladino": {
+    "skillBuckets": [
+      "furtivas",
+      "sociais"
+    ],
+    "generalProficiencies": [
+      "Armaduras leves",
+      "Armas simples",
+      "Bestas de mão",
+      "Espadas longas",
+      "Rapieiras",
+      "Espadas curtas",
+      "Ferramentas de ladrão"
+    ],
+    "equipPreference": {
+      "armor": "Armaduras leves",
+      "shield": false,
+      "melee": true,
+      "ranged": true,
+      "magicalFocus": false
+    },
+    "preferredAttributes": {
+      "primary": [
+        "destreza"
+      ],
+      "secondary": [
+        "inteligencia",
+        "carisma"
+      ]
+    }
+  },
+  "Mago": {
+    "skillBuckets": [
+      "magicas"
+    ],
+    "generalProficiencies": [
+      "Adagas",
+      "Dardos",
+      "Fundas",
+      "Bordões",
+      "Bestas leves"
+    ],
+    "equipPreference": {
+      "armor": null,
+      "shield": false,
+      "melee": false,
+      "ranged": true,
+      "magicalFocus": true
+    },
+    "preferredAttributes": {
+      "primary": [
+        "inteligencia"
+      ],
+      "secondary": [
+        "constituicao",
+        "destreza"
+      ]
+    }
+  },
+  "Monge": {
+    "skillBuckets": [
+      "marciais",
+      "furtivas"
+    ],
+    "generalProficiencies": [
+      "Armas simples",
+      "Espadas curtas"
+    ],
+    "equipPreference": {
+      "armor": null,
+      "shield": false,
+      "melee": true,
+      "ranged": false,
+      "magicalFocus": false
+    },
+    "preferredAttributes": {
+      "primary": [
+        "destreza"
+      ],
+      "secondary": [
+        "sabedoria",
+        "constituicao"
+      ]
+    }
+  },
+  "Paladino": {
+    "skillBuckets": [
+      "marciais",
+      "sociais"
+    ],
+    "generalProficiencies": [
+      "Todas as armaduras",
+      "Escudos",
+      "Armas simples",
+      "Armas marciais"
+    ],
+    "equipPreference": {
+      "armor": "Armaduras pesadas",
+      "shield": true,
+      "melee": true,
+      "ranged": false,
+      "magicalFocus": false
+    },
+    "preferredAttributes": {
+      "primary": [
+        "forca",
+        "carisma"
+      ],
+      "secondary": [
+        "constituicao"
+      ]
+    }
+  },
+  "Patrulheiro": {
+    "skillBuckets": [
+      "marciais",
+      "furtivas"
+    ],
+    "generalProficiencies": [
+      "Armaduras leves",
+      "Armaduras médias",
+      "Escudos",
+      "Armas simples",
+      "Armas marciais"
+    ],
+    "equipPreference": {
+      "armor": "Armaduras médias",
+      "shield": false,
+      "melee": true,
+      "ranged": true,
+      "magicalFocus": false
+    },
+    "preferredAttributes": {
+      "primary": [
+        "destreza",
+        "sabedoria"
+      ],
+      "secondary": [
+        "constituicao"
+      ]
+    }
+  },
+  "Artífice": {
+    "skillBuckets": [],
+    "generalProficiencies": [],
+    "equipPreference": {
+      "armor": null,
+      "shield": false,
+      "melee": true,
+      "ranged": true,
+      "magicalFocus": true
+    },
+    "preferredAttributes": {
+      "primary": [
+        "inteligencia"
+      ],
+      "secondary": [
+        "constituicao",
+        "destreza"
+      ]
+    }
+  }
+}

@@ -1,0 +1,476 @@
+{
+  "Bardo": {
+    "1": [
+      {
+        "nome": "Inspiração de Bardo",
+        "descricao": "Como ação bônus, concede 1 dado de Inspiração (d6 no início) a uma criatura a até 18m que possa ouvi-lo. O dado é somado a teste de atributo, jogada de ataque ou teste de resistência (sem dano direto)."
+      },
+      {
+        "nome": "Conjuração",
+        "descricao": "Conjura magias de bardo usando Carisma. CD = 8 + proficiência + CHA; ataque mágico = proficiência + CHA. Alcance e dano variam por magia."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Jack of All Trades",
+        "descricao": "Aplica metade do bônus de proficiência (arredondado para baixo) em testes sem proficiência. Sem alcance e sem dano."
+      },
+      {
+        "nome": "Canção de Descanso",
+        "descricao": "Durante descanso curto, aliados que gastarem Dados de Vida recuperam +1d6 PV (escala com nível de bardo). Efeito de suporte, sem alcance fixo de combate."
+      }
+    ],
+    "3": [
+      {
+        "nome": "Especialização",
+        "descricao": "Escolha perícias para dobrar o bônus de proficiência. Sem alcance e sem dano direto."
+      },
+      {
+        "nome": "Colégio de Bardo",
+        "descricao": "Subclasse concede efeitos adicionais; alcances/danos dependem do colégio escolhido."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Fonte de Inspiração",
+        "descricao": "Recupera usos de Inspiração de Bardo também em descanso curto. Sem dano e sem alcance."
+      }
+    ],
+    "10": [
+      {
+        "nome": "Segredos Mágicos",
+        "descricao": "Aprende magias de outras listas. Alcances e danos passam a depender das magias escolhidas."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Inspiração Superior",
+        "descricao": "Se iniciar combate sem usos de Inspiração de Bardo, recupera 1 uso. Sem alcance e sem dano."
+      }
+    ]
+  },
+  "Bárbaro": {
+    "1": [
+      {
+        "nome": "Fúria",
+        "descricao": "Como ação bônus, entra em fúria por 1 minuto. Ganha vantagem em testes/resistências de Força, bônus de dano em ataques corpo a corpo com Força (+2 inicial) e resistência a dano contundente, perfurante e cortante."
+      },
+      {
+        "nome": "Defesa sem Armadura",
+        "descricao": "CA = 10 + mod Destreza + mod Constituição quando não usa armadura. Sem alcance e sem dano direto."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Ataque Descuidado",
+        "descricao": "No primeiro ataque do turno, pode obter vantagem em ataques corpo a corpo com Força; até seu próximo turno, ataques contra você têm vantagem. Alcance do ataque depende da arma (normalmente 1,5m)."
+      },
+      {
+        "nome": "Sentido de Perigo",
+        "descricao": "Vantagem em testes de resistência de Destreza contra efeitos que você possa ver (ex.: armadilhas/magias de área)."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Ataque Extra",
+        "descricao": "Ao usar Ação Atacar, realiza 2 ataques (em vez de 1). Dano e alcance dependem da arma equipada."
+      },
+      {
+        "nome": "Movimento Aprimorado",
+        "descricao": "+3m de deslocamento enquanto não usa armadura pesada."
+      }
+    ],
+    "7": [
+      {
+        "nome": "Instinto Feral",
+        "descricao": "Vantagem em iniciativa; se surpreendido, pode agir normalmente ao entrar em fúria antes de qualquer ação."
+      }
+    ],
+    "9": [
+      {
+        "nome": "Crítico Brutal",
+        "descricao": "Em acerto crítico corpo a corpo, rola 1 dado adicional de dano da arma (aumenta em níveis maiores)."
+      }
+    ],
+    "11": [
+      {
+        "nome": "Fúria Implacável",
+        "descricao": "Ao cair a 0 PV em fúria, faz teste de CON CD 10 para ficar com 1 PV; CD aumenta a cada uso até descanso."
+      }
+    ],
+    "15": [
+      {
+        "nome": "Fúria Persistente",
+        "descricao": "A fúria só termina cedo se você ficar inconsciente ou escolher encerrar."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Força e Constituição aumentadas",
+        "descricao": "Aumenta Força e Constituição em +4 (máximo 24)."
+      }
+    ]
+  },
+  "Guerreiro": {
+    "1": [
+      {
+        "nome": "Estilo de Luta",
+        "descricao": "Bônus passivo de combate (ex.: +2 em ataques à distância, +1 CA, etc.) conforme estilo escolhido."
+      },
+      {
+        "nome": "Segundo Fôlego",
+        "descricao": "Como ação bônus, recupera 1d10 + nível de guerreiro PV (1 uso por descanso curto/longo)."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Surto de Ação",
+        "descricao": "No seu turno, ganha 1 ação adicional (1 uso por descanso curto/longo no início da progressão)."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Ataque Extra",
+        "descricao": "Ao usar Ação Atacar, realiza 2 ataques. Dano/alcance dependem da arma."
+      }
+    ],
+    "9": [
+      {
+        "nome": "Indomável",
+        "descricao": "Pode repetir 1 teste de resistência falho (usos escalam por nível)."
+      }
+    ],
+    "11": [
+      {
+        "nome": "Ataque Extra Aprimorado (3 ataques)",
+        "descricao": "Ao usar Ação Atacar, realiza 3 ataques."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Ataque Extra Supremo (4 ataques)",
+        "descricao": "Ao usar Ação Atacar, realiza 4 ataques."
+      }
+    ]
+  },
+  "Ladino": {
+    "1": [
+      {
+        "nome": "Ataque Furtivo",
+        "descricao": "1 vez por turno, causa dano extra 1d6 (escala por nível) com arma de acuidade/à distância quando tem vantagem ou aliado adjacente ao alvo. Alcance conforme arma."
+      },
+      {
+        "nome": "Especialização",
+        "descricao": "Dobra bônus de proficiência em perícias/ferramentas escolhidas."
+      },
+      {
+        "nome": "Linguagem de Ladrões",
+        "descricao": "Conhece códigos e mensagens do submundo."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Ação Ardilosa",
+        "descricao": "Como ação bônus, pode Correr, Desengajar ou Esconder."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Esquiva Sobrenatural",
+        "descricao": "Como reação, reduz pela metade o dano de um ataque que o acerte e que você possa ver."
+      }
+    ],
+    "7": [
+      {
+        "nome": "Evasão",
+        "descricao": "Em efeitos com teste de DEX para metade do dano, sofre 0 no sucesso e metade na falha."
+      }
+    ],
+    "11": [
+      {
+        "nome": "Talento Confiável",
+        "descricao": "Em perícias proficientes, resultados de d20 abaixo de 10 contam como 10."
+      }
+    ],
+    "14": [
+      {
+        "nome": "Sentido às Cegas",
+        "descricao": "Percebe criaturas ocultas/invisíveis a até 3m, desde que não esteja surdo/cego total para o contexto."
+      }
+    ],
+    "18": [
+      {
+        "nome": "Elusivo",
+        "descricao": "Nenhuma jogada de ataque contra você tem vantagem enquanto não estiver incapacitado."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Golpe da Sorte",
+        "descricao": "1 vez por descanso curto/longo, transforma falha em acerto em ataque ou sucesso em teste."
+      }
+    ]
+  },
+  "Monge": {
+    "1": [
+      {
+        "nome": "Defesa sem Armadura",
+        "descricao": "CA = 10 + mod Destreza + mod Sabedoria sem armadura/escudo."
+      },
+      {
+        "nome": "Artes Marciais",
+        "descricao": "Usa Destreza para ataques de monge e recebe dado de dano de artes marciais (inicialmente 1d4) com alcance corpo a corpo padrão de 1,5m."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Ki",
+        "descricao": "Gasta pontos de Ki para Rajada de Golpes (2 ataques desarmados bônus), Defesa Paciente (Esquiva) ou Passo do Vento (Desengajar/Correr + salto)."
+      },
+      {
+        "nome": "Movimento sem Armadura",
+        "descricao": "+3m de deslocamento sem armadura/escudo."
+      }
+    ],
+    "3": [
+      {
+        "nome": "Desviar Projéteis",
+        "descricao": "Como reação, reduz dano de ataque à distância em 1d10 + DEX + nível de monge; se zerar dano, pode arremessar de volta (alcance 6/18m, dano da arma)."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Ataque Extra",
+        "descricao": "Ao usar Ação Atacar, realiza 2 ataques."
+      },
+      {
+        "nome": "Golpe Atordoante",
+        "descricao": "Ao acertar ataque corpo a corpo, pode gastar 1 Ki para forçar teste de CON; falha deixa alvo Atordoado até fim do seu próximo turno."
+      }
+    ],
+    "7": [
+      {
+        "nome": "Evasão",
+        "descricao": "Em testes de DEX contra efeitos de área, sofre 0 no sucesso e metade na falha."
+      },
+      {
+        "nome": "Mente Serena",
+        "descricao": "Como ação, encerra em si efeitos de enfeitiçado ou amedrontado."
+      }
+    ],
+    "10": [
+      {
+        "nome": "Pureza Corporal",
+        "descricao": "Imunidade a doenças e venenos (incluindo condição envenenado)."
+      }
+    ],
+    "14": [
+      {
+        "nome": "Alma de Diamante",
+        "descricao": "Proficiência em todos os testes de resistência; pode gastar 1 Ki para repetir teste falho."
+      }
+    ],
+    "18": [
+      {
+        "nome": "Corpo Vazio",
+        "descricao": "Com 4 Ki, fica invisível por 1 minuto e ganha resistência a todos os danos exceto força."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Perfeição Interior",
+        "descricao": "Se iniciar combate sem Ki, recupera 4 pontos automaticamente."
+      }
+    ]
+  },
+  "Mago": {
+    "1": [
+      {
+        "nome": "Conjuração",
+        "descricao": "Você prepara e conjura magias arcanas usando Inteligência como atributo-chave."
+      },
+      {
+        "nome": "Recuperação Arcana",
+        "descricao": "Recupera parte dos espaços de magia em descanso curto."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Tradição Arcana",
+        "descricao": "Escolhe uma escola/tradição que define especialização mágica."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Acesso a Magias de 3º Círculo",
+        "descricao": "Passa a conjurar magias mais poderosas como Bola de Fogo e Contramágica."
+      }
+    ],
+    "10": [
+      {
+        "nome": "Maestria de Tradição",
+        "descricao": "Recebe benefício avançado da tradição arcana escolhida."
+      }
+    ],
+    "18": [
+      {
+        "nome": "Domínio de Magia",
+        "descricao": "Conjura algumas magias de baixo círculo sem gastar espaços."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Magias Assinatura",
+        "descricao": "Define magias emblemáticas que podem ser conjuradas com grande frequência."
+      }
+    ]
+  },
+  "Bruxo": {
+    "1": [
+      {
+        "nome": "Pacto Mágico",
+        "descricao": "Conjuração baseada em pacto com entidade extraplanar, usando Carisma."
+      },
+      {
+        "nome": "Patrono Sobrenatural",
+        "descricao": "Escolhe patrono que concede magias e efeitos exclusivos."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Invocações Místicas",
+        "descricao": "Seleciona invocações que modificam e fortalecem suas capacidades."
+      }
+    ],
+    "3": [
+      {
+        "nome": "Dádiva do Pacto",
+        "descricao": "Recebe benefício central do pacto (lâmina, tomo, corrente etc)."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Magia de Pacto Aprimorada",
+        "descricao": "Espaços de magia de pacto aumentam em poder com o nível."
+      }
+    ],
+    "11": [
+      {
+        "nome": "Arcanum Místico (6º)",
+        "descricao": "Conjura uma magia de 6º círculo por descanso longo."
+      }
+    ],
+    "17": [
+      {
+        "nome": "Arcanum Místico Superior",
+        "descricao": "Desbloqueia arcanos de 9º círculo do patrono."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Mestre Arcano",
+        "descricao": "Recupera espaços de magia de pacto com grande eficiência."
+      }
+    ]
+  },
+  "Druida": {
+    "1": [
+      {
+        "nome": "Conjuração Druídica",
+        "descricao": "Conjura magias ligadas à natureza usando Sabedoria."
+      },
+      {
+        "nome": "Idioma Druídico",
+        "descricao": "Conhece a linguagem secreta dos druidas."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Forma Selvagem",
+        "descricao": "Transforma-se em bestas para combate, exploração e utilidade."
+      },
+      {
+        "nome": "Círculo Druídico",
+        "descricao": "Escolhe um círculo que define seu foco espiritual."
+      }
+    ],
+    "4": [
+      {
+        "nome": "Aprimoramento de Forma Selvagem",
+        "descricao": "Acessa formas mais fortes e versáteis."
+      }
+    ],
+    "8": [
+      {
+        "nome": "Forma Selvagem Aprimorada",
+        "descricao": "Pode assumir formas com maior mobilidade e utilidade tática."
+      }
+    ],
+    "10": [
+      {
+        "nome": "Poder de Círculo Avançado",
+        "descricao": "Recebe traço marcante do círculo escolhido."
+      }
+    ],
+    "18": [
+      {
+        "nome": "Conjuração Bestial",
+        "descricao": "Conjura magias mesmo em forma selvagem em condições específicas."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Arquidruida",
+        "descricao": "Uso quase ilimitado de Forma Selvagem e ápice de conexão natural."
+      }
+    ]
+  },
+  "Clérigo": {
+    "1": [
+      {
+        "nome": "Conjuração Divina",
+        "descricao": "Conjura magias divinas usando Sabedoria."
+      },
+      {
+        "nome": "Domínio Divino",
+        "descricao": "Escolhe domínio que fornece magias e habilidades temáticas."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Canalizar Divindade",
+        "descricao": "Invoca poder divino para efeitos especiais do domínio."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Destruir Mortos-Vivos",
+        "descricao": "Canalizar Divindade passa a aniquilar mortos-vivos fracos."
+      }
+    ],
+    "8": [
+      {
+        "nome": "Poder Divino Aprimorado",
+        "descricao": "Recebe incremento ofensivo vinculado ao domínio."
+      }
+    ],
+    "10": [
+      {
+        "nome": "Intervenção Divina",
+        "descricao": "Pode pedir ajuda direta da divindade em situações críticas."
+      }
+    ],
+    "17": [
+      {
+        "nome": "Traço Supremo de Domínio",
+        "descricao": "Desbloqueia a característica final do seu domínio."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Intervenção Divina Automática",
+        "descricao": "Sua súplica divina passa a ser atendida com máxima confiabilidade."
+      }
+    ]
+  }
+}
