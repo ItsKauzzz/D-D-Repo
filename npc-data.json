@@ -196,12 +196,22 @@
     "Leal ao clã ancestral",
     "Leal ao dinheiro",
     "Leal ao equilíbrio natural",
+    "Leal ao juramento de infância",
+    "Leal ao mentor desaparecido",
+    "Leal ao pacto de sangue",
+    "Leal ao povo oprimido",
+    "Leal ao progresso científico",
     "Leal ao seu senhor feudal",
     "Leal apenas a um ideal pessoal",
+    "Leal à academia arcana",
     "Leal à causa revolucionária",
     "Leal à família acima de tudo",
+    "Leal à memória de um herói",
+    "Leal à paz entre reinos",
     "Leal à própria sobrevivência",
+    "Leal à própria tripulação",
     "Leal à verdade acima de tudo",
+    "Leal à verdade histórica",
     "Lealdade volátil: muda com vantagem",
     "Obedece autoridade sem questionar",
     "Protetor dos fracos, mesmo com risco",
@@ -445,6 +455,41 @@
       "nome": "Maléfico e manipulador",
       "min": -100,
       "max": -50
+    },
+    {
+      "nome": "Leal à paz entre reinos",
+      "min": 40,
+      "max": 100
+    },
+    {
+      "nome": "Leal ao povo oprimido",
+      "min": 30,
+      "max": 100
+    },
+    {
+      "nome": "Leal ao progresso científico",
+      "min": 0,
+      "max": 80
+    },
+    {
+      "nome": "Leal ao pacto de sangue",
+      "min": -20,
+      "max": 60
+    },
+    {
+      "nome": "Leal à própria sobrevivência",
+      "min": -90,
+      "max": 20
+    },
+    {
+      "nome": "Cruel por conveniência",
+      "min": -90,
+      "max": -20
+    },
+    {
+      "nome": "Manipulador calculista",
+      "min": -100,
+      "max": -40
     }
   ]
 }
