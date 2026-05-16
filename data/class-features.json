@@ -1,0 +1,64 @@
+{
+  "Bardo": {
+    "1": [
+      { "nome": "Inspiração de Bardo", "descricao": "Concede um dado de inspiração a um aliado para adicionar em testes, ataques ou salvaguardas." },
+      { "nome": "Conjuração", "descricao": "Você aprende e conjura magias de bardo, usando Carisma como atributo de conjuração." }
+    ],
+    "2": [
+      { "nome": "Jack of All Trades", "descricao": "Adiciona metade do bônus de proficiência em testes sem proficiência plena." },
+      { "nome": "Canção de Descanso", "descricao": "Durante descanso curto, aliados recuperam PV adicionais ao gastar dados de vida." }
+    ],
+    "3": [
+      { "nome": "Especialização", "descricao": "Escolha perícias para dobrar o bônus de proficiência." },
+      { "nome": "Colégio de Bardo", "descricao": "Você escolhe uma subclasse que define estilo e poderes adicionais." }
+    ],
+    "5": [
+      { "nome": "Fonte de Inspiração", "descricao": "Recupera usos de Inspiração de Bardo também em descanso curto." }
+    ],
+    "10": [
+      { "nome": "Segredos Mágicos", "descricao": "Aprende magias de outras listas, ampliando muito a versatilidade." }
+    ],
+    "20": [
+      { "nome": "Inspiração Superior", "descricao": "Se ficar sem usos de inspiração, recupera um uso no início do combate." }
+    ]
+  },
+  "Bárbaro": {
+    "1": ["Fúria", "Defesa sem Armadura"],
+    "2": ["Ataque Descuidado", "Sentido de Perigo"],
+    "5": ["Ataque Extra", "Movimento Aprimorado"],
+    "7": ["Instinto Feral"],
+    "9": ["Crítico Brutal"],
+    "11": ["Fúria Implacável"],
+    "15": ["Fúria Persistente"],
+    "20": ["Força e Constituição aumentadas"]
+  },
+  "Guerreiro": {
+    "1": ["Estilo de Luta", "Segundo Fôlego"],
+    "2": ["Surto de Ação"],
+    "5": ["Ataque Extra"],
+    "9": ["Indomável"],
+    "11": ["Ataque Extra Aprimorado (3 ataques)"],
+    "20": ["Ataque Extra Supremo (4 ataques)"]
+  },
+  "Ladino": {
+    "1": ["Ataque Furtivo", "Especialização", "Linguagem de Ladrões"],
+    "2": ["Ação Ardilosa"],
+    "5": ["Esquiva Sobrenatural"],
+    "7": ["Evasão"],
+    "11": ["Talento Confiável"],
+    "14": ["Sentido às Cegas"],
+    "18": ["Elusivo"],
+    "20": ["Golpe da Sorte"]
+  },
+  "Monge": {
+    "1": ["Defesa sem Armadura", "Artes Marciais"],
+    "2": ["Ki", "Movimento sem Armadura"],
+    "3": ["Desviar Projéteis"],
+    "5": ["Ataque Extra", "Golpe Atordoante"],
+    "7": ["Evasão", "Mente Serena"],
+    "10": ["Pureza Corporal"],
+    "14": ["Alma de Diamante"],
+    "18": ["Corpo Vazio"],
+    "20": ["Perfeição Interior"]
+  }
+}

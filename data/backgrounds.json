@@ -59,6 +59,50 @@
     {
       "id": "origin_15",
       "text": "Alguns dizem que {NOME} começou sua carreira após sobreviver aos eventos de {ACONTECIMENTO}, embora os detalhes nunca sejam totalmente claros."
+    },
+    {
+      "id": "origin_16",
+      "text": "Quando ainda vivia em {CIDADE_NATAL}, {NOME} foi aprendiz de {PROFISSAO_ALEATORIA} e aprendeu a observar cada detalhe ao redor. Tudo mudou após uma expedição para {POI}, onde descobriu informações que jamais deveriam ter vindo à tona. Desde então, escolheu o caminho de {PROFISSAO} para transformar conhecimento em sobrevivência."
+    },
+    {
+      "id": "origin_17",
+      "text": "A trajetória de {NOME} começou de forma simples em {CIDADE_NATAL}, mas os rumores sobre {ACONTECIMENTO} trouxeram medo e ambição na mesma medida. Entre perdas e alianças improváveis, deixou para trás a antiga rotina de {PROFISSAO_ALEATORIA} e passou a atuar como {PROFISSAO}, sempre em busca de respostas."
+    },
+    {
+      "id": "origin_18",
+      "text": "Pouco antes de se tornar {PROFISSAO}, {NOME} percorreu estradas ligando {CIDADE} a {POI}, vivendo de pequenos trabalhos como {PROFISSAO_ALEATORIA}. Durante essas viagens, testemunhou sinais ligados a {ACONTECIMENTO}; sinais que, até hoje, surgem em seus relatos com precisão desconfortável."
+    },
+    {
+      "id": "origin_19",
+      "text": "Em {CIDADE_NATAL}, {NOME} era visto como alguém discreto, dedicado ao ofício de {PROFISSAO_ALEATORIA}. Após o ocorrido em {ACONTECIMENTO}, porém, passou a investigar velhos registros e histórias locais. Essa busca o levou até {POI}, onde tomou a decisão definitiva de seguir como {PROFISSAO}."
+    },
+    {
+      "id": "origin_20",
+      "text": "{NOME} cresceu ouvindo que ninguém retorna igual depois de cruzar as redondezas de {POI}. Anos depois, trabalhando como {PROFISSAO_ALEATORIA}, confirmou essa lenda ao sobreviver a uma crise ligada a {ACONTECIMENTO}. Desde então, deixou {CIDADE_NATAL} e assumiu a identidade profissional de {PROFISSAO}."
+    },
+    {
+      "id": "origin_21",
+      "text": "A história de {NOME} é marcada por duas fases: a vida comum em {CIDADE_NATAL}, atuando como {PROFISSAO_ALEATORIA}, e o período posterior aos eventos de {ACONTECIMENTO}. Entre uma fase e outra, existe uma passagem por {CIDADE} que quase nunca é explicada, mas que moldou seu comportamento atual como {PROFISSAO}."
+    },
+    {
+      "id": "origin_22",
+      "text": "Depois de anos servindo como {PROFISSAO_ALEATORIA}, {NOME} foi enviado para tratar de assuntos em {POI}. O trabalho parecia simples, até os acontecimentos em {ACONTECIMENTO} tornarem tudo instável. Sem confiança nas antigas autoridades de {CIDADE_NATAL}, escolheu trilhar seu próprio caminho como {PROFISSAO}."
+    },
+    {
+      "id": "origin_23",
+      "text": "As primeiras memórias de {NOME} envolvem ruas estreitas de {CIDADE_NATAL}, histórias de viajantes e promessas de fortuna distante. Já adulto, atuando como {PROFISSAO_ALEATORIA}, encontrou em {POI} pistas sobre uma rede de conflitos ligada a {ACONTECIMENTO}. A partir dali, abraçou a carreira de {PROFISSAO} para enfrentar ameaças que antes ignorava."
+    },
+    {
+      "id": "origin_24",
+      "text": "Para a maioria das pessoas, {NOME} apenas mudou de profissão. A verdade é que a transição de {PROFISSAO_ALEATORIA} para {PROFISSAO} começou após uma missão em {CIDADE} e terminou com uma fuga apressada de {POI}. O gatilho final foi {ACONTECIMENTO}, que destruiu as poucas certezas que ainda restavam."
+    },
+    {
+      "id": "origin_25",
+      "text": "Nem todos acreditam quando {NOME} descreve o que viu em {ACONTECIMENTO}, mas o impacto é inegável. Antes desse episódio, levava uma vida previsível em {CIDADE_NATAL}, com trabalhos ligados a {PROFISSAO_ALEATORIA}. Depois, passou a estudar rotas, alianças e segredos de {POI}, consolidando-se como {PROFISSAO}."
+    },
+    {
+      "id": "origin_26",
+      "text": "{NOME} aprendeu cedo que sobreviver exige adaptação. Em {CIDADE_NATAL}, começou como {PROFISSAO_ALEATORIA}, desenvolvendo disciplina e contatos valiosos. Quando os conflitos de {ACONTECIMENTO} alcançaram a região de {CIDADE}, foi forçado a escolher entre fugir ou agir. A decisão o levou a {POI} e selou seu destino como {PROFISSAO}."
     }
   ]
 }
