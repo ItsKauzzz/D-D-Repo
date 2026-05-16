@@ -239,3 +239,9 @@ button {
   font-size: 0.86rem;
   color: var(--muted);
 }
+
+.level-range-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

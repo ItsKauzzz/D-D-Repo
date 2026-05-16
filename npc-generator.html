@@ -29,8 +29,11 @@
       <div class="menu-group"><label for="alignmentRange">Alinhamento: <span id="alignmentLabel">Neutro</span></label><input id="alignmentRange" class="alignment-range" type="range" min="-100" max="100" value="0"></div>
       <div class="menu-group">
         <label>Level: do level <span id="levelMinValue">1</span> até <span id="levelMaxValue">20</span></label>
-        <input id="levelMinRange" type="range" min="1" max="20" value="1">
-        <input id="levelMaxRange" type="range" min="1" max="20" value="20">
+        <div class="level-range-box">
+          <input id="levelMinInput" type="number" min="1" max="20" value="1">
+          <span>até</span>
+          <input id="levelMaxInput" type="number" min="1" max="20" value="20">
+        </div>
       </div>
       <p class="range-help">100% = mundo inteiro (8000x5000). Valores menores restringem a origem a localidades adjacentes.</p>
     </aside>
@@ -56,6 +59,18 @@
       <section class="card">
         <h2>BACKGROUND</h2>
         <p id="backgroundValue"></p>
+      </section>
+      <section class="card">
+        <h2>PROEFICIÊNCIAS</h2>
+        <ul id="proficienciasValue" class="npc-list"></ul>
+      </section>
+      <section class="card">
+        <h2>EQUIPAMENTOS</h2>
+        <ul id="equipamentosValue" class="npc-list"></ul>
+      </section>
+      <section class="card">
+        <h2>ITENS</h2>
+        <ul id="itensValue" class="npc-list"></ul>
       </section>
 
       <section class="card">

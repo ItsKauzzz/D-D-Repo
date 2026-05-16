@@ -1,6 +1,6 @@
 const fieldIds = ["nome","sobrenome","profissao","cidadeNatal","sexo","antepassado","classe","level","idade","temperamento","lealdade"];
 const attrs = ["forca","destreza","constituicao","inteligencia","sabedoria","carisma"];
-const state = { npc:null, data:null, characteristicData:null, cidades:[], cidadeMap:null, locations:[], backgrounds:[] };
+const state = { npc:null, data:null, characteristicData:null, cidades:[], cidadeMap:null, locations:[], backgrounds:[], equipmentPool:[], itemPool:[] };
 
 const randomFrom = (list) => list[Math.floor(Math.random() * list.length)];
 const normalizeType = (t) => String(t||"").trim().toLowerCase();
@@ -58,12 +58,16 @@ function generateCharacteristics(pack){const nonNone=pack.caracteristicasExtras.
 function rerollSingleCharacteristic(key,pack){return generateCharacteristics(pack)[key]||"";}
 
 function renderCharacteristicsList(c){const el=document.getElementById("caracteristicasValue");el.innerHTML="";[["cabelo","cabelo"],["olhos","olhos"],["rosto","rosto"],["feição","feicao"],["peso","peso"],["cor da pele","pele"],["estrutura corporal","estruturaCorporal"],["características extras","extras"]].forEach(([label,key])=>{const li=document.createElement("li");li.innerHTML=`<button class='reroll-char' type='button' data-char-key='${key}'>🎲</button> <strong>${label}:</strong> <span class='char-value'>${c[key]}</span>`;el.appendChild(li);});}
+function renderSimpleList(id, items){const el=document.getElementById(id); if(!el) return; el.innerHTML=""; (items||[]).forEach((item)=>{const li=document.createElement("li"); li.textContent=item; el.appendChild(li);});}
 function renderSheet(sheet){attrs.forEach((k)=>{document.getElementById(`${k}Value`).textContent = sheet[k]; const mod = toModifier(sheet[k]); document.getElementById(`${k}Mod`).textContent = `MOD ${mod >= 0 ? "+" : ""}${mod}`;});}
 function renderNpc(npc){
 fieldIds.forEach((id)=>{const el=document.getElementById(`${id}Value`); if(el) el.textContent=npc[id]||"";});
 document.getElementById("sheetClassValue").textContent = npc.classe || "";
 document.getElementById("sheetLevelValue").textContent = npc.level || "";
 renderCharacteristicsList(npc.caracteristicas);
+renderSimpleList("proficienciasValue", npc.proficiencias);
+renderSimpleList("equipamentosValue", npc.equipamentos);
+renderSimpleList("itensValue", npc.itens);
 renderSheet(npc.ficha);
 document.getElementById("cidadeNatalLink").href=`mapa.html?focus=${encodeURIComponent(npc.cidadeFile)}`;
 const bgEl = document.getElementById("backgroundValue");
@@ -101,15 +105,31 @@ function buildBackground(npc){
   };
   return Object.entries(replacements).reduce((text,[key,val])=>text.replace(new RegExp(`\\{${escapeRegExp(key)}\\}`,"g"),String(val)), template);
 }
+const dndSkills = ["Acrobacia","Arcanismo","Atletismo","Atuação","Enganação","Furtividade","História","Intimidação","Intuição","Investigação","Lidar com Animais","Medicina","Natureza","Percepção","Persuasão","Prestidigitação","Religião","Sobrevivência"];
+const classProficiencyMap = {
+  "Bardo": ["Armaduras leves", "Armas simples", "Besta de mão", "Espada curta", "Espada longa", "Florete", "3 instrumentos musicais"],
+  "Bruxo": ["Armaduras leves", "Armas simples"],
+  "Bárbaro": ["Armaduras leves", "Armaduras médias", "Escudos", "Armas simples", "Armas marciais"],
+  "Clérigo": ["Armaduras leves", "Armaduras médias", "Escudos", "Armas simples"],
+  "Druida": ["Armaduras leves", "Armaduras médias", "Escudos", "Clavas", "Adagas", "Azagaias", "Bordões", "Cimitarras", "Funda", "Lanças", "Machadinhas", "Manguais", "Dardos"],
+  "Feiticeiro": ["Adagas", "Dardos", "Fundas", "Bordões", "Bestas leves"],
+  "Guerreiro": ["Todas as armaduras", "Escudos", "Armas simples", "Armas marciais"],
+  "Ladino": ["Armaduras leves", "Armas simples", "Bestas de mão", "Espadas longas", "Rapieiras", "Espadas curtas", "Ferramentas de ladrão"],
+  "Mago": ["Adagas", "Dardos", "Fundas", "Bordões", "Bestas leves"],
+  "Monge": ["Armas simples", "Espadas curtas"],
+  "Paladino": ["Todas as armaduras", "Escudos", "Armas simples", "Armas marciais"],
+  "Patrulheiro": ["Armaduras leves", "Armaduras médias", "Escudos", "Armas simples", "Armas marciais"]
+};
+function randomSample(list, n){const pool=[...list]; const out=[]; while(pool.length && out.length<n){ out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]); } return out;}
+function flattenPool(data, rootKey){const root = data?.[rootKey] || {}; return Object.values(root).flat().filter(Boolean);}
+function getLevelRange(){const minInput = Number(document.getElementById("levelMinInput").value || 1); const maxInput = Number(document.getElementById("levelMaxInput").value || 20); const low = Math.max(1, Math.min(minInput, maxInput)); const high = Math.min(20, Math.max(minInput, maxInput)); return {low,high};}
+function buildProficiencias(classe){const base = classProficiencyMap[classe] || []; return [...base, ...randomSample(dndSkills, 3)];}
 
 function buildNpcFromForm(){const allowed=getAllowedLocations(state.cidades); const cidadeNome=pickFromChecks("cidadeChecks", (allowed.length?allowed:state.cidades).map((c)=>c.nome)); const cidade=state.cidadeMap.get(cidadeNome)||state.cidades[0]; const sexo=pickFromChecks("sexoChecks", ["homens","mulheres","androgenos"]); const antepassado=pickFromChecks("antepassadoChecks", state.data.antepassados); const nomeManual=document.getElementById("nomeInput").value.trim(); const nome=nomeManual||randomFrom(getNamePoolBySexo(sexo)); const sobrenome=randomFrom(state.data.sobrenomes); const idadeManual=document.getElementById("idadeInput").value.trim(); const idade=idadeManual||generateAgeForRace(antepassado); const alignVal=Number(document.getElementById("alignmentRange").value||0) * -1;
 const classe = pickFromChecks("classeChecks",state.data.classes);
-const levelMin = Number(document.getElementById("levelMinRange").value || 1);
-const levelMax = Number(document.getElementById("levelMaxRange").value || 20);
-const low = Math.min(levelMin, levelMax);
-const high = Math.max(levelMin, levelMax);
+const {low,high} = getLevelRange();
 const level = Math.floor(Math.random() * (high - low + 1)) + low;
-const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,level,idade,caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha:generateSheet(classe)};
+const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,level,idade,caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha:generateSheet(classe),proficiencias:buildProficiencias(classe),equipamentos:randomSample(state.equipmentPool, 4),itens:randomSample(state.itemPool, 5)};
 npc.background = buildBackground(npc);
 return npc;}
 
@@ -119,8 +139,9 @@ if(field==="profissao") state.npc.profissao=pickFromChecks("profissaoChecks", st
 if(field==="cidadeNatal"){const pool=(allowed.length?allowed:state.cidades).map((c)=>c.nome); const c=state.cidadeMap.get(randomFrom(pool)); state.npc.cidadeNatal=`${c.nome} (${c.tipo})`; state.npc.cidadeFile=c.file;}
 if(field==="sexo") { state.npc.sexo=sexo; state.npc.nome=(document.getElementById("nomeInput").value.trim()||randomFrom(getNamePoolBySexo(sexo))); state.npc.caracteristicas=generateCharacteristics(state.characteristicData[sexo]); }
 if(field==="antepassado"){state.npc.antepassado=pickFromChecks("antepassadoChecks",state.data.antepassados); state.npc.idade=generateAgeForRace(state.npc.antepassado);}
-if(field==="classe") { state.npc.classe=pickFromChecks("classeChecks",state.data.classes); state.npc.ficha=generateSheet(state.npc.classe); }
-if(field==="level"){const levelMin = Number(document.getElementById("levelMinRange").value || 1); const levelMax = Number(document.getElementById("levelMaxRange").value || 20); const low = Math.min(levelMin, levelMax); const high = Math.max(levelMin, levelMax); state.npc.level = Math.floor(Math.random() * (high - low + 1)) + low;}
+if(field==="classe") { state.npc.classe=pickFromChecks("classeChecks",state.data.classes); state.npc.ficha=generateSheet(state.npc.classe); state.npc.proficiencias=buildProficiencias(state.npc.classe); }
+if(field==="level"){const {low,high} = getLevelRange(); state.npc.level = Math.floor(Math.random() * (high - low + 1)) + low;}
+if(field==="profissao"){state.npc.equipamentos=randomSample(state.equipmentPool, 4); state.npc.itens=randomSample(state.itemPool, 5);}
 if(field==="idade") state.npc.idade=generateAgeForRace(state.npc.antepassado);
 if(field==="temperamento") state.npc.temperamento=pickFromChecks("temperamentoChecks",state.data.temperamentos);
 if(field==="lealdade") state.npc.lealdade=pickFromChecks("lealdadeChecks",state.data.lealdades);
@@ -129,15 +150,15 @@ state.npc.background = buildBackground(state.npc);
 renderNpc(state.npc);
 }
 
-async function init(){const [baseRes,charRes,cidades,locations,backgroundRes]=await Promise.all([fetch("./npc-data.json"),fetch("./npc-characteristics.json"),loadCityVillageLocations(),loadLocations(),fetch("./data/backgrounds.json")]); state.data=await baseRes.json(); state.characteristicData=await charRes.json(); state.locations=locations.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.backgrounds=(await backgroundRes.json()).templates.map((t)=>String(t.text||"")).filter(Boolean); state.cidades=cidades.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.cidadeMap=new Map(state.cidades.map((e)=>[e.nome,e]));
+async function init(){const [baseRes,charRes,cidades,locations,backgroundRes,equipmentRes,itemRes]=await Promise.all([fetch("./npc-data.json"),fetch("./npc-characteristics.json"),loadCityVillageLocations(),loadLocations(),fetch("./data/backgrounds.json"),fetch("./data/inventory/equipment.json"),fetch("./data/inventory/itens.json")]); state.data=await baseRes.json(); state.characteristicData=await charRes.json(); state.locations=locations.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.backgrounds=(await backgroundRes.json()).templates.map((t)=>String(t.text||"")).filter(Boolean); state.cidades=cidades.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.cidadeMap=new Map(state.cidades.map((e)=>[e.nome,e])); state.equipmentPool=flattenPool(await equipmentRes.json(), "Equipamentos"); state.itemPool=flattenPool(await itemRes.json(), "Itens");
 populateSelect("rangeCenterSelect",state.cidades.map((c)=>c.nome).sort((a,b)=>a.localeCompare(b, "pt-BR")));
 buildCheckList("profissaoChecks",state.data.profissoes); buildCheckList("antepassadoChecks",state.data.antepassados); buildCheckList("classeChecks",state.data.classes); buildCheckList("temperamentoChecks",state.data.temperamentos); buildCheckList("lealdadeChecks",state.data.lealdades); buildCheckList("sexoChecks", ["homens","mulheres","androgenos"]);
 refreshHometownChecks();
 const updateRange=()=>{document.getElementById("distanceValue").textContent=document.getElementById("distanceRange").value; refreshHometownChecks();};
 document.getElementById("distanceRange").addEventListener("input",updateRange); document.getElementById("rangeCenterSelect").addEventListener("change",updateRange);
 const align=document.getElementById("alignmentRange"); const alignLabel=document.getElementById("alignmentLabel");
-const levelMinRange=document.getElementById("levelMinRange");
-const levelMaxRange=document.getElementById("levelMaxRange");
+const levelMinRange=document.getElementById("levelMinInput");
+const levelMaxRange=document.getElementById("levelMaxInput");
 const levelMinValue=document.getElementById("levelMinValue");
 const levelMaxValue=document.getElementById("levelMaxValue");
 const syncLevelLabels = ()=>{levelMinValue.textContent = levelMinRange.value; levelMaxValue.textContent = levelMaxRange.value;};
