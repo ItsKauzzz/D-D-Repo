@@ -1,20 +1,20 @@
 {
   "nomes": ["Aldren","Mirella","Torvak","Selene","Branor","Ilyana","Darian","Kaelis","Thorin","Elara","Fenric","Nyssa","Garrick","Liora","Bram","Vex"],
   "profissoes": ["Ferreiro","Curandeira","Mercador","Caçador","Escriba","Alquimista","Batedor","Carpinteira","Taberneiro","Pescadora","Guarda da Cidade","Mensageiro","Bibliotecária","Ourives","Estalajadeiro","Teceleiro"],
-  "cidadesNatais": [
-    {"nome":"Clarencourt","tipo":"Cidade","file":"clarencourt"},
-    {"nome":"Serenia","tipo":"Cidade","file":"serenia"},
-    {"nome":"Porto de Desembarque","tipo":"Cidade","file":"porto_de_desembarque"},
-    {"nome":"Elmanther","tipo":"Cidade","file":"elmanther"},
-    {"nome":"Vila Bruma","tipo":"Vila","file":"vila_bruma"},
-    {"nome":"Galanta","tipo":"Cidade","file":"galanta"},
-    {"nome":"Velistra","tipo":"Cidade","file":"velistra"},
-    {"nome":"Nyonk","tipo":"Vila","file":"nyonk"},
-    {"nome":"Riacho Cristalino","tipo":"Vila","file":"riacho_cristalino"}
-  ],
   "antepassados": ["Humano","Elfo","Anão","Halfling","Gnomo","Draconato","Tiefling","Orc","Goliath","Aasimar"],
   "classes": ["Bárbaro","Bardo","Bruxo","Clérigo","Druida","Feiticeiro","Guerreiro","Ladino","Mago","Monge","Paladino","Patrulheiro"],
   "idades": ["18","22","27","31","36","42","49","57","64","73"],
   "temperamentos": ["Calmo","Impulsivo","Cauteloso","Carismático","Reservado","Idealista","Pragmático","Sarcástico","Honrado","Ambicioso"],
-  "lealdades": ["Reino","Família","Guilda","Companhia de Aventureiros","Templo Local","Ordem Arcana","Coroa","Clã","Nenhuma (mercenário)","A si mesmo"]
+  "lealdades": [
+    "Fiel aos amigos e à companhia",
+    "Leal à família acima de tudo",
+    "Segue os próprios interesses primeiro",
+    "Cumpre promessas, mas cobra caro",
+    "Obedece autoridade sem questionar",
+    "Lealdade volátil: muda com vantagem",
+    "Protetor dos fracos, mesmo com risco",
+    "Sádico e oportunista",
+    "Leal apenas a um ideal pessoal",
+    "Trai com facilidade quando pressionado"
+  ]
 }

@@ -1,4 +1,4 @@
-const fieldIds = ["nome", "profissao", "cidadeNatal", "antepassado", "classe", "idade", "caracteristicas", "temperamento", "lealdade"];
+const fieldIds = ["nome", "profissao", "cidadeNatal", "antepassado", "classe", "idade", "temperamento", "lealdade"];
 
 function randomFrom(list) { return list[Math.floor(Math.random() * list.length)]; }
 function populateSelect(id, values) {
@@ -22,12 +22,58 @@ function generateCharacteristics(pack) {
   const uniqueExtras = [...new Set(extras)];
   const extrasText = uniqueExtras.length ? uniqueExtras.join(", ") : "Nenhuma";
 
-  return `Cabelo ${randomFrom(pack.cabelosComprimento)} ${randomFrom(pack.corCabelos)}; olhos ${randomFrom(pack.olhos)} (${randomFrom(pack.corOlhos)}); rosto ${randomFrom(pack.rosto)}; feição ${randomFrom(pack.feicao)}; peso ${randomFrom(pack.peso)}; pele ${randomFrom(pack.corPele)}; estrutura ${randomFrom(pack.estruturaCorporal)}; extras: ${extrasText}.`;
+  return {
+    cabelo: `${randomFrom(pack.cabelosComprimento)} ${randomFrom(pack.corCabelos)}`,
+    olhos: `${randomFrom(pack.olhos)} (${randomFrom(pack.corOlhos)})`,
+    rosto: randomFrom(pack.rosto),
+    feicao: randomFrom(pack.feicao),
+    peso: randomFrom(pack.peso),
+    pele: randomFrom(pack.corPele),
+    estruturaCorporal: randomFrom(pack.estruturaCorporal),
+    extras: extrasText
+  };
+}
+
+function renderCharacteristicsList(characteristics) {
+  const listEl = document.getElementById("caracteristicasValue");
+  listEl.innerHTML = "";
+  const labelMap = [
+    ["CABELO", characteristics.cabelo],
+    ["OLHOS", characteristics.olhos],
+    ["ROSTO", characteristics.rosto],
+    ["FEIÇÃO", characteristics.feicao],
+    ["PESO", characteristics.peso],
+    ["COR DA PELE", characteristics.pele],
+    ["ESTRUTURA CORPORAL", characteristics.estruturaCorporal],
+    ["CARACTERÍSTICAS EXTRAS", characteristics.extras]
+  ];
+  labelMap.forEach(([label, value]) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${label}:</strong> ${value}`;
+    listEl.appendChild(li);
+  });
 }
 
 function renderNpc(npc) {
   fieldIds.forEach((fieldId) => { document.getElementById(`${fieldId}Value`).textContent = npc[fieldId]; });
+  renderCharacteristicsList(npc.caracteristicas);
   document.getElementById("cidadeNatalLink").href = `mapa.html?focus=${encodeURIComponent(npc.cidadeFile)}`;
+}
+
+function normalizeType(type) { return String(type || "").trim().toLowerCase(); }
+function isCityOrVillage(type) {
+  const t = normalizeType(type);
+  return t.includes("cidade") || t.includes("vila");
+}
+
+async function loadCityVillageLocations() {
+  const indexResponse = await fetch("data/locations/index.json");
+  const files = await indexResponse.json();
+  const entries = await Promise.all(files.map(async (file) => {
+    const data = await (await fetch(`data/locations/${file}`)).json();
+    return { file: String(file).replace(/\.json$/i, ""), type: String(data.type || ""), nome: String(data.name || "") };
+  }));
+  return entries.filter((entry) => entry.nome && isCityOrVillage(entry.type));
 }
 
 function buildNpcFromForm(cidadeMap, characteristicData) {
@@ -49,15 +95,15 @@ function buildNpcFromForm(cidadeMap, characteristicData) {
 }
 
 async function init() {
-  const [baseRes, charRes] = await Promise.all([fetch("./npc-data.json"), fetch("./npc-characteristics.json")]);
+  const [baseRes, charRes, cidades] = await Promise.all([fetch("./npc-data.json"), fetch("./npc-characteristics.json"), loadCityVillageLocations()]);
   const data = await baseRes.json();
   const characteristicData = await charRes.json();
-  const cidades = data.cidadesNatais;
-  const cidadeMap = new Map(cidades.map((entry) => [entry.nome, entry]));
+  const normalizedCidades = cidades.map((entry) => ({ nome: entry.nome, tipo: entry.type, file: entry.file }));
+  const cidadeMap = new Map(normalizedCidades.map((entry) => [entry.nome, entry]));
 
   populateSelect("nomeSelect", data.nomes);
   populateSelect("profissaoSelect", data.profissoes);
-  populateSelect("cidadeSelect", cidades.map((c) => c.nome));
+  populateSelect("cidadeSelect", normalizedCidades.map((c) => c.nome));
   populateSelect("antepassadoSelect", data.antepassados);
   populateSelect("classeSelect", data.classes);
   populateSelect("idadeSelect", data.idades);
@@ -67,7 +113,7 @@ async function init() {
   document.getElementById("randomizeButton").addEventListener("click", () => {
     document.getElementById("nomeSelect").value = randomFrom(data.nomes);
     document.getElementById("profissaoSelect").value = randomFrom(data.profissoes);
-    document.getElementById("cidadeSelect").value = randomFrom(cidades).nome;
+    document.getElementById("cidadeSelect").value = randomFrom(normalizedCidades).nome;
     document.getElementById("antepassadoSelect").value = randomFrom(data.antepassados);
     document.getElementById("classeSelect").value = randomFrom(data.classes);
     document.getElementById("idadeSelect").value = randomFrom(data.idades);

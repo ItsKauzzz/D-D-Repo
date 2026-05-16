@@ -95,3 +95,14 @@ button {
   min-width: 145px;
   display: inline-block;
 }
+
+
+.npc-char-list {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+}
+
+.npc-char-list li {
+  padding: 3px 0;
+  border-bottom: none;
+}
