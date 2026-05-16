@@ -1,10 +1,3 @@
-const fallbackOptions = {
-  antepassados: ["Camponês", "Nobre", "Exilado", "Mercenário", "Erudito"],
-  classes: ["Guerreiro", "Mago", "Ladino", "Clérigo", "Patrulheiro"],
-  temperamentos: ["Calmo", "Impulsivo", "Cínico", "Carismático", "Reservado"],
-  lealdades: ["Reino", "Família", "Guilda", "A si mesmo", "Ordem arcana"]
-};
-
 const fieldIds = [
   "nome",
   "profissao",
@@ -52,8 +45,8 @@ function buildNpcFromForm() {
     cidadeNatal: document.getElementById("cidadeSelect").value,
     antepassado: document.getElementById("antepassadoSelect").value,
     classe: document.getElementById("classeSelect").value,
-    idade: document.getElementById("idadeInput").value || "Desconhecida",
-    caracteristicas: "(Gerador dedicado será integrado em breve)",
+    idade: document.getElementById("idadeSelect").value,
+    caracteristicas: document.getElementById("caracteristicasSelect").value,
     temperamento: document.getElementById("temperamentoSelect").value,
     lealdade: document.getElementById("lealdadeSelect").value
   };
@@ -66,20 +59,23 @@ async function init() {
   populateSelect("nomeSelect", data.nomes);
   populateSelect("profissaoSelect", data.profissoes);
   populateSelect("cidadeSelect", data.cidadesNatais);
-  populateSelect("antepassadoSelect", fallbackOptions.antepassados);
-  populateSelect("classeSelect", fallbackOptions.classes);
-  populateSelect("temperamentoSelect", fallbackOptions.temperamentos);
-  populateSelect("lealdadeSelect", fallbackOptions.lealdades);
+  populateSelect("antepassadoSelect", data.antepassados);
+  populateSelect("classeSelect", data.classes);
+  populateSelect("idadeSelect", data.idades);
+  populateSelect("caracteristicasSelect", data.caracteristicasPlaceholder);
+  populateSelect("temperamentoSelect", data.temperamentos);
+  populateSelect("lealdadeSelect", data.lealdades);
 
   document.getElementById("randomizeButton").addEventListener("click", () => {
     document.getElementById("nomeSelect").value = randomFrom(data.nomes);
     document.getElementById("profissaoSelect").value = randomFrom(data.profissoes);
     document.getElementById("cidadeSelect").value = randomFrom(data.cidadesNatais);
-    document.getElementById("antepassadoSelect").value = randomFrom(fallbackOptions.antepassados);
-    document.getElementById("classeSelect").value = randomFrom(fallbackOptions.classes);
-    document.getElementById("idadeInput").value = String(Math.floor(Math.random() * 50) + 18);
-    document.getElementById("temperamentoSelect").value = randomFrom(fallbackOptions.temperamentos);
-    document.getElementById("lealdadeSelect").value = randomFrom(fallbackOptions.lealdades);
+    document.getElementById("antepassadoSelect").value = randomFrom(data.antepassados);
+    document.getElementById("classeSelect").value = randomFrom(data.classes);
+    document.getElementById("idadeSelect").value = randomFrom(data.idades);
+    document.getElementById("caracteristicasSelect").value = randomFrom(data.caracteristicasPlaceholder);
+    document.getElementById("temperamentoSelect").value = randomFrom(data.temperamentos);
+    document.getElementById("lealdadeSelect").value = randomFrom(data.lealdades);
     renderNpc(buildNpcFromForm());
   });
 

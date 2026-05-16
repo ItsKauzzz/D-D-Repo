@@ -7,7 +7,15 @@
     "Branor",
     "Ilyana",
     "Darian",
-    "Kaelis"
+    "Kaelis",
+    "Thorin",
+    "Elara",
+    "Fenric",
+    "Nyssa",
+    "Garrick",
+    "Liora",
+    "Bram",
+    "Vex"
   ],
   "profissoes": [
     "Ferreiro",
@@ -17,7 +25,15 @@
     "Escriba",
     "Alquimista",
     "Batedor",
-    "Carpinteira"
+    "Carpinteira",
+    "Taberneiro",
+    "Pescadora",
+    "Guarda da Cidade",
+    "Mensageiro",
+    "Bibliotecária",
+    "Ourives",
+    "Estalajadeiro",
+    "Teceleiro"
   ],
   "cidadesNatais": [
     "Clarencourt",
@@ -28,5 +44,79 @@
     "Galanta",
     "Velistra",
     "Nyonk"
+  ],
+  "antepassados": [
+    "Humano",
+    "Elfo",
+    "Anão",
+    "Halfling",
+    "Gnomo",
+    "Draconato",
+    "Tiefling",
+    "Orc",
+    "Goliath",
+    "Aasimar"
+  ],
+  "classes": [
+    "Bárbaro",
+    "Bardo",
+    "Bruxo",
+    "Clérigo",
+    "Druida",
+    "Feiticeiro",
+    "Guerreiro",
+    "Ladino",
+    "Mago",
+    "Monge",
+    "Paladino",
+    "Patrulheiro"
+  ],
+  "idades": [
+    "18",
+    "22",
+    "27",
+    "31",
+    "36",
+    "42",
+    "49",
+    "57",
+    "64",
+    "73"
+  ],
+  "caracteristicasPlaceholder": [
+    "Cicatriz no supercílio esquerdo",
+    "Olhar atento e desconfiado",
+    "Voz calma e firme",
+    "Riso fácil em momentos tensos",
+    "Mãos sempre manchadas de tinta",
+    "Manto com símbolos arcanos antigos",
+    "Perfume de ervas medicinais",
+    "Postura militar impecável",
+    "Amuleto gasto no pescoço",
+    "Sotaque marcado de terras distantes"
+  ],
+  "temperamentos": [
+    "Calmo",
+    "Impulsivo",
+    "Cauteloso",
+    "Carismático",
+    "Reservado",
+    "Idealista",
+    "Pragmático",
+    "Sarcástico",
+    "Honrado",
+    "Ambicioso"
+  ],
+  "lealdades": [
+    "Reino",
+    "Família",
+    "Guilda",
+    "Companhia de Aventureiros",
+    "Templo Local",
+    "Ordem Arcana",
+    "Coroa",
+    "Clã",
+    "Nenhuma (mercenário)",
+    "A si mesmo"
   ]
 }
