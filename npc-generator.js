@@ -54,10 +54,10 @@ const levelTiers = [
   { min: 17, max: 20, profBonus: 6, skillMin: 9, skillMax: 11, tier: "lendario", tags: ["Múltiplas habilidades especiais", "Equipamentos lendários"] }
 ];
 const tierArrays = {
-  comum: [13,12,11,10,9,8],
-  treinado: [15,14,13,12,11,10],
-  elite: [18,16,15,14,13,12],
-  lendario: [20,18,17,16,15,14]
+  comum: [12,11,10,10,9,8],
+  treinado: [14,13,12,11,10,9],
+  elite: [16,15,14,13,12,10],
+  lendario: [18,17,16,15,13,12]
 };
 function getLevelTier(level){ return levelTiers.find((t)=>level>=t.min&&level<=t.max) || levelTiers[0]; }
 const getClassAccuracy = () => Number(document.getElementById("classAccurateRange")?.value || 50) / 100;
@@ -169,9 +169,24 @@ function buildBackground(npc){
 const dndSkills = ["Acrobacia","Arcanismo","Atletismo","Atuação","Enganação","Furtividade","História","Intimidação","Intuição","Investigação","Lidar com Animais","Medicina","Natureza","Percepção","Persuasão","Prestidigitação","Religião","Sobrevivência"];
 const skillBuckets = {
   marciais: ["Atletismo","Acrobacia","Sobrevivência","Intimidação"],
-  magicas: ["Arcanismo","Religião","História","Intuição"],
+  magicas: ["Arcanismo","Religião","História","Intuição","Natureza"],
   sociais: ["Persuasão","Enganação","Atuação"],
   furtivas: ["Furtividade","Prestidigitação","Investigação"]
+};
+const classSignatureSkills = {
+  "Bardo": ["Enganação","Persuasão","Atuação"],
+  "Bruxo": ["Arcanismo","Enganação","Intimidação"],
+  "Bárbaro": ["Atletismo","Intimidação","Sobrevivência"],
+  "Clérigo": ["Religião","Intuição","Medicina"],
+  "Druida": ["Natureza","Lidar com Animais","Sobrevivência"],
+  "Feiticeiro": ["Arcanismo","Persuasão","Enganação"],
+  "Guerreiro": ["Atletismo","Intimidação","Acrobacia"],
+  "Ladino": ["Furtividade","Prestidigitação","Investigação"],
+  "Mago": ["Arcanismo","História","Investigação"],
+  "Monge": ["Acrobacia","Intuição","Atletismo"],
+  "Paladino": ["Persuasão","Intimidação","Religião"],
+  "Patrulheiro": ["Sobrevivência","Natureza","Lidar com Animais"],
+  "Artífice": ["Arcanismo","Investigação","Prestidigitação"]
 };
 const getClassProfile = (classe) => state.classProfiles?.[classe] || {};
 const armorBaseAc = {
@@ -187,9 +202,10 @@ function buildProficiencias(classe, level){
   const tier = getLevelTier(level);
   const base = getClassProfile(classe).generalProficiencies || [];
   const affinity = (getClassProfile(classe).skillBuckets || []).flatMap((k)=>skillBuckets[k] || []);
+  const signatures = classSignatureSkills[classe] || [];
   const accuracy = Number(document.getElementById("classAccurateRange")?.value || 50) / 100;
   const favoredCount = Math.round(accuracy * tier.skillMax);
-  const preferred = [...new Set([...affinity, ...dndSkills])];
+  const preferred = [...new Set([...signatures, ...affinity, ...dndSkills])];
   const skillCount = Math.floor(Math.random() * (tier.skillMax - tier.skillMin + 1)) + tier.skillMin;
   const favoredSkills = randomSample(preferred, Math.min(favoredCount, skillCount));
   const remainder = randomSample(dndSkills.filter((s)=>!favoredSkills.includes(s)), Math.max(0, skillCount - favoredSkills.length));
