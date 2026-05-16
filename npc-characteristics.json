@@ -1,0 +1,38 @@
+{
+  "homens": {
+    "cabelosComprimento": ["Raspado", "Curto", "Médio"],
+    "corCabelos": ["Preto", "Castanho escuro", "Castanho claro", "Loiro escuro", "Ruivo"],
+    "olhos": ["Afundados", "Pálpebras pesadas", "Arregalados", "Atentos"],
+    "corOlhos": ["Castanho", "Azul", "Verde", "Cinza", "Âmbar"],
+    "rosto": ["Quadrado", "Oval", "Alongado", "Mandíbula marcada"],
+    "feicao": ["Sorridente", "Séria", "Misteriosa", "Cansada", "Confiante"],
+    "peso": ["Magro", "Atlético", "Robusto", "Pesado"],
+    "corPele": ["Clara", "Morena clara", "Morena", "Escura", "Oliva"],
+    "caracteristicasExtras": ["Nenhuma", "Cicatriz no queixo", "Barba trançada", "Tatuagens tribais", "Colar de dente", "Luvas de couro", "Óculos redondos"],
+    "estruturaCorporal": ["Esguio", "Largo de ombros", "Compacto", "Alto e forte"]
+  },
+  "mulheres": {
+    "cabelosComprimento": ["Curto", "Médio", "Longo", "Muito longo"],
+    "corCabelos": ["Preto", "Castanho", "Loiro", "Ruivo", "Branco prateado"],
+    "olhos": ["Ameixa", "Amendoados", "Grandes", "Atentos"],
+    "corOlhos": ["Castanho", "Azul", "Verde", "Cinza", "Violeta"],
+    "rosto": ["Oval", "Coração", "Redondo", "Angular"],
+    "feicao": ["Feliz", "Triste", "Misteriosa", "Serena", "Determinada"],
+    "peso": ["Leve", "Médio", "Atlético", "Robusto"],
+    "corPele": ["Clara", "Morena clara", "Morena", "Escura", "Dourada"],
+    "caracteristicasExtras": ["Nenhuma", "Sardas", "Cicatriz na sobrancelha", "Brincos longos", "Tatuagem floral", "Colares em camadas", "Relógio de bolso"],
+    "estruturaCorporal": ["Esbelta", "Atlética", "Curvilínea", "Forte"]
+  },
+  "androgenos": {
+    "cabelosComprimento": ["Raspado lateral", "Curto", "Médio", "Longo"],
+    "corCabelos": ["Preto", "Castanho", "Cinza", "Branco", "Colorido arcano"],
+    "olhos": ["Ameaçadores", "Suaves", "Intensos", "Inexpressivos"],
+    "corOlhos": ["Castanho", "Cinza", "Âmbar", "Heterocromia", "Azul glacial"],
+    "rosto": ["Angular", "Suave", "Andrógino clássico", "Assimétrico"],
+    "feicao": ["Enigmática", "Acolhedora", "Melancólica", "Irônica", "Impassível"],
+    "peso": ["Leve", "Médio", "Atlético", "Robusto"],
+    "corPele": ["Clara", "Morena", "Escura", "Oliva", "Pálida"],
+    "caracteristicasExtras": ["Nenhuma", "Piercings", "Runas na pele", "Óculos hexagonais", "Cicatrizes finas", "Luvas rendadas", "Anéis múltiplos"],
+    "estruturaCorporal": ["Esguia", "Atlética", "Compacta", "Alta"]
+  }
+}

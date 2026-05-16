@@ -10,17 +10,15 @@
   <div class="layout">
     <aside class="floating-menu">
       <h2 class="menu-title">Gerador de NPC</h2>
-
       <div class="menu-group"><label for="nomeSelect">Nome</label><select id="nomeSelect"></select></div>
       <div class="menu-group"><label for="profissaoSelect">Profissão</label><select id="profissaoSelect"></select></div>
-      <div class="menu-group"><label for="cidadeSelect">Cidade Natal</label><select id="cidadeSelect"></select></div>
+      <div class="menu-group"><label for="cidadeSelect">Cidade Natal (Cidade/Vila)</label><select id="cidadeSelect"></select></div>
+      <div class="menu-group"><label for="generoSelect">Perfil Visual</label><select id="generoSelect"><option value="homens">Homens</option><option value="mulheres">Mulheres</option><option value="androgenos">Andrógenos</option></select></div>
       <div class="menu-group"><label for="antepassadoSelect">Antepassado</label><select id="antepassadoSelect"></select></div>
       <div class="menu-group"><label for="classeSelect">Classe</label><select id="classeSelect"></select></div>
       <div class="menu-group"><label for="idadeSelect">Idade</label><select id="idadeSelect"></select></div>
-      <div class="menu-group"><label for="caracteristicasSelect">Características</label><select id="caracteristicasSelect"></select></div>
       <div class="menu-group"><label for="temperamentoSelect">Temperamento</label><select id="temperamentoSelect"></select></div>
       <div class="menu-group"><label for="lealdadeSelect">Lealdade</label><select id="lealdadeSelect"></select></div>
-
       <button id="applyButton" type="button">Aplicar seleções</button>
       <div style="height: 8px;"></div>
       <button id="randomizeButton" type="button">Gerar aleatório</button>
@@ -32,7 +30,7 @@
         <ul class="npc-list">
           <li><strong>Nome:</strong> <span id="nomeValue"></span></li>
           <li><strong>Profissão:</strong> <span id="profissaoValue"></span></li>
-          <li><strong>Cidade Natal:</strong> <span id="cidadeNatalValue"></span></li>
+          <li><strong>Local:</strong> <a id="cidadeNatalLink" href="mapa.html" target="_blank" rel="noopener"><span id="cidadeNatalValue"></span></a></li>
           <li><strong>Antepassado:</strong> <span id="antepassadoValue"></span></li>
           <li><strong>Classe:</strong> <span id="classeValue"></span></li>
           <li><strong>Idade:</strong> <span id="idadeValue"></span></li>
@@ -43,7 +41,6 @@
       </section>
     </main>
   </div>
-
   <script src="npc-generator.js"></script>
 </body>
 </html>

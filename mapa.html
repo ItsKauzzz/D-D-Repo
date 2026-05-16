@@ -734,6 +734,21 @@
       return [...discovered].sort();
     }
 
+
+    function getQueryFocusId() {
+      const params = new URLSearchParams(window.location.search);
+      const raw = params.get('focus');
+      if (!raw) return '';
+      return raw.endsWith('.json') ? raw.replace(/\.json$/i, '') : raw;
+    }
+
+    function focusLocationFromQuery() {
+      const target = getQueryFocusId();
+      if (!target) return;
+      const location = locations.find((entry) => entry.id === target || entry.id === `${target}.json` || String(entry.name).toLowerCase() === target.toLowerCase());
+      if (!location) return;
+      focusLocation(location);
+    }
     async function loadLocations() {
       const files = await discoverLocationFiles();
       if (!files.length) {
@@ -1429,6 +1444,7 @@
     applyZoom();
     loadTypeConfig()
       .then(() => loadLocations())
+      .then(() => focusLocationFromQuery())
       .catch((error) => {
         console.error('Erro ao carregar pontos de interesse:', error);
         poiList.innerHTML = '<li>Não foi possível carregar os pontos de interesse.</li>';
