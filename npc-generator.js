@@ -1,6 +1,6 @@
 const fieldIds = ["nome","sobrenome","profissao","cidadeNatal","sexo","antepassado","classe","level","idade","temperamento","lealdade"];
 const attrs = ["forca","destreza","constituicao","inteligencia","sabedoria","carisma"];
-const state = { npc:null, data:null, characteristicData:null, cidades:[], cidadeMap:null, locations:[], backgrounds:[], equipmentPool:[], itemPool:[], classProfiles:{}, classSpells:{}, classFeatures:{} };
+const state = { npc:null, data:null, characteristicData:null, cidades:[], cidadeMap:null, locations:[], backgrounds:[], equipmentPool:[], itemPool:[], classProfiles:{}, classSpells:{}, classFeatures:{}, spellDescriptions:{} };
 
 const randomFrom = (list) => list[Math.floor(Math.random() * list.length)];
 const normalizeType = (t) => String(t||"").trim().toLowerCase();
@@ -93,6 +93,18 @@ function renderFeatureList(id, items){
     el.appendChild(li);
   });
 }
+function renderSpellList(id, items){
+  const el=document.getElementById(id); if(!el) return; el.innerHTML="";
+  (items||[]).forEach((item)=>{
+    const li=document.createElement("li");
+    const match = String(item).match(/^([^:]+:\s*)?(.*)$/);
+    const prefix = match?.[1] || "";
+    const spellName = (match?.[2] || String(item)).trim();
+    const desc = state.spellDescriptions[spellName] || "Descrição curta indisponível para esta magia.";
+    li.innerHTML = `<strong>${prefix}${spellName}</strong><span class="feature-desc">${desc}</span>`;
+    el.appendChild(li);
+  });
+}
 const skillToAttr = {
   "Acrobacia": "destreza",
   "Arcanismo": "inteligencia",
@@ -138,7 +150,7 @@ renderSkillList("proficienciasSkillsValue", npc.proficienciasSkills, npc.profici
 renderSimpleList("proficienciasGeraisValue", npc.proficienciasGerais);
 renderSimpleList("equipamentosValue", npc.equipamentos);
 renderSimpleList("itensValue", npc.itens);
-renderSimpleList("magiasValue", npc.magias);
+renderSpellList("magiasValue", npc.magias);
 renderFeatureList("habilidadesClasseValue", npc.habilidadesClasse);
 renderSheet(npc.ficha);
 document.getElementById("cidadeNatalLink").href=`mapa.html?focus=${encodeURIComponent(npc.cidadeFile)}`;
@@ -319,7 +331,7 @@ state.npc.background = buildBackground(state.npc);
 renderNpc(state.npc);
 }
 
-async function init(){const [baseRes,charRes,cidades,locations,backgroundRes,equipmentRes,itemRes,classProfilesRes,classSpellsRes,classFeaturesRes]=await Promise.all([fetch("./npc-data.json"),fetch("./npc-characteristics.json"),loadCityVillageLocations(),loadLocations(),fetch("./data/backgrounds.json"),fetch("./data/inventory/equipment.json"),fetch("./data/inventory/itens.json"),fetch("./data/class-profiles.json"),fetch("./data/class-spells.json"),fetch("./data/class-features.json")]); state.data=await baseRes.json(); state.characteristicData=await charRes.json(); state.locations=locations.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.backgrounds=(await backgroundRes.json()).templates.map((t)=>String(t.text||"")).filter(Boolean); state.cidades=cidades.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.cidadeMap=new Map(state.cidades.map((e)=>[e.nome,e])); state.equipmentData=await equipmentRes.json(); state.itemPool=flattenPool(await itemRes.json(), "Itens"); state.equipmentPool=flattenPool(state.equipmentData, "Equipamentos"); state.classProfiles=await classProfilesRes.json(); state.classSpells=await classSpellsRes.json(); state.classFeatures=await classFeaturesRes.json();
+async function init(){const [baseRes,charRes,cidades,locations,backgroundRes,equipmentRes,itemRes,classProfilesRes,classSpellsRes,classFeaturesRes,spellDescriptionsRes]=await Promise.all([fetch("./npc-data.json"),fetch("./npc-characteristics.json"),loadCityVillageLocations(),loadLocations(),fetch("./data/backgrounds.json"),fetch("./data/inventory/equipment.json"),fetch("./data/inventory/itens.json"),fetch("./data/class-profiles.json"),fetch("./data/class-spells.json"),fetch("./data/class-features.json"),fetch("./data/spell-descriptions.json")]); state.data=await baseRes.json(); state.characteristicData=await charRes.json(); state.locations=locations.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.backgrounds=(await backgroundRes.json()).templates.map((t)=>String(t.text||"")).filter(Boolean); state.cidades=cidades.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.cidadeMap=new Map(state.cidades.map((e)=>[e.nome,e])); state.equipmentData=await equipmentRes.json(); state.itemPool=flattenPool(await itemRes.json(), "Itens"); state.equipmentPool=flattenPool(state.equipmentData, "Equipamentos"); state.classProfiles=await classProfilesRes.json(); state.classSpells=await classSpellsRes.json(); state.classFeatures=await classFeaturesRes.json(); state.spellDescriptions=(await spellDescriptionsRes.json()).spells || {};
 populateSelect("rangeCenterSelect",state.cidades.map((c)=>c.nome).sort((a,b)=>a.localeCompare(b, "pt-BR")));
 buildCheckList("profissaoChecks",state.data.profissoes); buildCheckList("antepassadoChecks",state.data.antepassados); buildCheckList("classeChecks",state.data.classes); buildCheckList("temperamentoChecks",state.data.temperamentos); buildCheckList("lealdadeChecks",state.data.lealdades); buildCheckList("sexoChecks", ["homens","mulheres","androgenos"]);
 refreshHometownChecks();
