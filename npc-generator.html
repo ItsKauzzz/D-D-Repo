@@ -27,6 +27,11 @@
       <div class="menu-group"><label for="rangeCenterSelect">Cidade/Vila de referência</label><select id="rangeCenterSelect"></select></div>
       <div class="menu-group"><label for="distanceRange">Raio de origem (<span id="distanceValue">100</span>%)</label><input id="distanceRange" type="range" min="1" max="100" value="100"></div>
       <div class="menu-group"><label for="alignmentRange">Alinhamento: <span id="alignmentLabel">Neutro</span></label><input id="alignmentRange" class="alignment-range" type="range" min="-100" max="100" value="0"></div>
+      <div class="menu-group">
+        <label>Level: do level <span id="levelMinValue">1</span> até <span id="levelMaxValue">20</span></label>
+        <input id="levelMinRange" type="range" min="1" max="20" value="1">
+        <input id="levelMaxRange" type="range" min="1" max="20" value="20">
+      </div>
       <p class="range-help">100% = mundo inteiro (8000x5000). Valores menores restringem a origem a localidades adjacentes.</p>
     </aside>
 
@@ -40,6 +45,7 @@
           <li><button class="reroll-field" data-field="sexo">🎲</button> <strong>Sexo:</strong> <span id="sexoValue"></span></li>
           <li><button class="reroll-field" data-field="antepassado">🎲</button> <strong>Antepassado:</strong> <span id="antepassadoValue"></span></li>
           <li><button class="reroll-field" data-field="classe">🎲</button> <strong>Classe:</strong> <span id="classeValue"></span></li>
+          <li><button class="reroll-field" data-field="level">🎲</button> <strong>Level:</strong> <span id="levelValue"></span></li>
           <li><button class="reroll-field" data-field="idade">🎲</button> <strong>Idade:</strong> <span id="idadeValue"></span></li>
                     <li><strong>Características:</strong><ul id="caracteristicasValue" class="npc-char-list"></ul></li>
           <li><button class="reroll-field" data-field="temperamento">🎲</button> <strong>Temperamento:</strong> <span id="temperamentoValue"></span></li>
@@ -54,6 +60,7 @@
 
       <section class="card">
         <h2>FICHA</h2>
+        <p class="sheet-class"><strong>Classe:</strong> <span id="sheetClassValue"></span> · <strong>Level:</strong> <span id="sheetLevelValue"></span></p>
         <div class="sheet-grid">
           <article class="sheet-attr"><h3>Força</h3><p id="forcaValue" class="sheet-score"></p><p id="forcaMod" class="sheet-mod"></p></article>
           <article class="sheet-attr"><h3>Destreza</h3><p id="destrezaValue" class="sheet-score"></p><p id="destrezaMod" class="sheet-mod"></p></article>

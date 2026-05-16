@@ -209,6 +209,10 @@ button {
   grid-template-columns: repeat(6, minmax(90px, 1fr));
   gap: 10px;
 }
+.sheet-class {
+  margin: 0 0 10px 0;
+  color: var(--muted);
+}
 
 .sheet-attr {
   border: 1px solid #334155;

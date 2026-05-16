@@ -1,4 +1,4 @@
-const fieldIds = ["nome","sobrenome","profissao","cidadeNatal","sexo","antepassado","classe","idade","temperamento","lealdade"];
+const fieldIds = ["nome","sobrenome","profissao","cidadeNatal","sexo","antepassado","classe","level","idade","temperamento","lealdade"];
 const attrs = ["forca","destreza","constituicao","inteligencia","sabedoria","carisma"];
 const state = { npc:null, data:null, characteristicData:null, cidades:[], cidadeMap:null, locations:[], backgrounds:[] };
 
@@ -31,16 +31,15 @@ function buildCheckList(containerId, values) {
 }
 
 function generateAgeForRace(race){const r=state.data.faixaEtariaPorAntepassado[race]||{min:18,max:80}; return String(Math.floor(Math.random()*(r.max-r.min+1))+r.min);}
-function randomAttr(){ return Math.floor(Math.random()*16)+3; }
 const classAttributePriority = {
-  "Bardo": ["carisma", "destreza", "constituicao", "sabedoria", "inteligencia", "forca"],
+  "Bardo": ["carisma", "destreza", "constituicao", "inteligencia", "sabedoria", "forca"],
   "Bruxo": ["carisma", "constituicao", "destreza", "sabedoria", "inteligencia", "forca"],
   "Bárbaro": ["forca", "constituicao", "destreza", "sabedoria", "carisma", "inteligencia"],
-  "Clérigo": ["sabedoria", "constituicao", "carisma", "forca", "destreza", "inteligencia"],
+  "Clérigo": ["sabedoria", "constituicao", "forca", "carisma", "destreza", "inteligencia"],
   "Druida": ["sabedoria", "constituicao", "destreza", "inteligencia", "carisma", "forca"],
-  "Feiticeiro": ["carisma", "constituicao", "destreza", "inteligencia", "sabedoria", "forca"],
+  "Feiticeiro": ["carisma", "constituicao", "destreza", "sabedoria", "inteligencia", "forca"],
   "Guerreiro": ["forca", "constituicao", "destreza", "sabedoria", "carisma", "inteligencia"],
-  "Ladino": ["destreza", "inteligencia", "carisma", "constituicao", "sabedoria", "forca"],
+  "Ladino": ["destreza", "inteligencia", "constituicao", "carisma", "sabedoria", "forca"],
   "Mago": ["inteligencia", "constituicao", "destreza", "sabedoria", "carisma", "forca"],
   "Monge": ["destreza", "sabedoria", "constituicao", "forca", "inteligencia", "carisma"],
   "Paladino": ["forca", "carisma", "constituicao", "sabedoria", "destreza", "inteligencia"],
@@ -62,6 +61,8 @@ function renderCharacteristicsList(c){const el=document.getElementById("caracter
 function renderSheet(sheet){attrs.forEach((k)=>{document.getElementById(`${k}Value`).textContent = sheet[k]; const mod = toModifier(sheet[k]); document.getElementById(`${k}Mod`).textContent = `MOD ${mod >= 0 ? "+" : ""}${mod}`;});}
 function renderNpc(npc){
 fieldIds.forEach((id)=>{const el=document.getElementById(`${id}Value`); if(el) el.textContent=npc[id]||"";});
+document.getElementById("sheetClassValue").textContent = npc.classe || "";
+document.getElementById("sheetLevelValue").textContent = npc.level || "";
 renderCharacteristicsList(npc.caracteristicas);
 renderSheet(npc.ficha);
 document.getElementById("cidadeNatalLink").href=`mapa.html?focus=${encodeURIComponent(npc.cidadeFile)}`;
@@ -103,7 +104,12 @@ function buildBackground(npc){
 
 function buildNpcFromForm(){const allowed=getAllowedLocations(state.cidades); const cidadeNome=pickFromChecks("cidadeChecks", (allowed.length?allowed:state.cidades).map((c)=>c.nome)); const cidade=state.cidadeMap.get(cidadeNome)||state.cidades[0]; const sexo=pickFromChecks("sexoChecks", ["homens","mulheres","androgenos"]); const antepassado=pickFromChecks("antepassadoChecks", state.data.antepassados); const nomeManual=document.getElementById("nomeInput").value.trim(); const nome=nomeManual||randomFrom(getNamePoolBySexo(sexo)); const sobrenome=randomFrom(state.data.sobrenomes); const idadeManual=document.getElementById("idadeInput").value.trim(); const idade=idadeManual||generateAgeForRace(antepassado); const alignVal=Number(document.getElementById("alignmentRange").value||0) * -1;
 const classe = pickFromChecks("classeChecks",state.data.classes);
-const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,idade,caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha:generateSheet(classe)};
+const levelMin = Number(document.getElementById("levelMinRange").value || 1);
+const levelMax = Number(document.getElementById("levelMaxRange").value || 20);
+const low = Math.min(levelMin, levelMax);
+const high = Math.max(levelMin, levelMax);
+const level = Math.floor(Math.random() * (high - low + 1)) + low;
+const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,level,idade,caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha:generateSheet(classe)};
 npc.background = buildBackground(npc);
 return npc;}
 
@@ -114,6 +120,7 @@ if(field==="cidadeNatal"){const pool=(allowed.length?allowed:state.cidades).map(
 if(field==="sexo") { state.npc.sexo=sexo; state.npc.nome=(document.getElementById("nomeInput").value.trim()||randomFrom(getNamePoolBySexo(sexo))); state.npc.caracteristicas=generateCharacteristics(state.characteristicData[sexo]); }
 if(field==="antepassado"){state.npc.antepassado=pickFromChecks("antepassadoChecks",state.data.antepassados); state.npc.idade=generateAgeForRace(state.npc.antepassado);}
 if(field==="classe") { state.npc.classe=pickFromChecks("classeChecks",state.data.classes); state.npc.ficha=generateSheet(state.npc.classe); }
+if(field==="level"){const levelMin = Number(document.getElementById("levelMinRange").value || 1); const levelMax = Number(document.getElementById("levelMaxRange").value || 20); const low = Math.min(levelMin, levelMax); const high = Math.max(levelMin, levelMax); state.npc.level = Math.floor(Math.random() * (high - low + 1)) + low;}
 if(field==="idade") state.npc.idade=generateAgeForRace(state.npc.antepassado);
 if(field==="temperamento") state.npc.temperamento=pickFromChecks("temperamentoChecks",state.data.temperamentos);
 if(field==="lealdade") state.npc.lealdade=pickFromChecks("lealdadeChecks",state.data.lealdades);
@@ -129,6 +136,14 @@ refreshHometownChecks();
 const updateRange=()=>{document.getElementById("distanceValue").textContent=document.getElementById("distanceRange").value; refreshHometownChecks();};
 document.getElementById("distanceRange").addEventListener("input",updateRange); document.getElementById("rangeCenterSelect").addEventListener("change",updateRange);
 const align=document.getElementById("alignmentRange"); const alignLabel=document.getElementById("alignmentLabel");
+const levelMinRange=document.getElementById("levelMinRange");
+const levelMaxRange=document.getElementById("levelMaxRange");
+const levelMinValue=document.getElementById("levelMinValue");
+const levelMaxValue=document.getElementById("levelMaxValue");
+const syncLevelLabels = ()=>{levelMinValue.textContent = levelMinRange.value; levelMaxValue.textContent = levelMaxRange.value;};
+levelMinRange.addEventListener("input",syncLevelLabels);
+levelMaxRange.addEventListener("input",syncLevelLabels);
+syncLevelLabels();
 align.addEventListener("input",()=>{alignLabel.textContent=labelAlignment(Number(align.value)); if(state.npc){state.npc.lealdade=pickLealdadeByAlignment(Number(align.value) * -1); renderNpc(state.npc);}});
 document.getElementById("randomizeButton").addEventListener("click",()=>renderNpc(buildNpcFromForm()));
 document.getElementById("applyButton").addEventListener("click",()=>renderNpc(buildNpcFromForm()));
