@@ -21,7 +21,7 @@ function calculateDistancePercent(a,b){return (Math.hypot(a.x-b.x,a.y-b.y)/Math.
 function getAllowedLocations(all){const selected=document.getElementById("rangeCenterSelect").value;const max=Number(document.getElementById("distanceRange").value||100);const center=all.find(e=>e.nome===selected)||all[0]; if(!center) return []; return all.filter(e=>calculateDistancePercent(center,e)<=max);}
 function refreshHometownOptions(){const prev=document.getElementById("cidadeSelect").value; const allowed=getAllowedLocations(state.cidades); populateSelect("cidadeSelect",allowed.map(e=>e.nome)); if(prev&&allowed.some(e=>e.nome===prev))document.getElementById("cidadeSelect").value=prev; return allowed;}
 
-function buildNpcFromForm(){const cidadeNome=document.getElementById("cidadeSelect").value; const cidade=state.cidadeMap.get(cidadeNome); const profile=document.getElementById("generoSelect").value; const antepassado=document.getElementById("antepassadoSelect").value; const nomeManual=document.getElementById("nomeInput").value.trim(); const nome=nomeManual||randomFrom(state.data.nomes);
+function buildNpcFromForm(){const cidadeNome=document.getElementById("cidadeSelect").value; const cidade=state.cidadeMap.get(cidadeNome); const profile=document.getElementById("generoSelect").value; const antepassado=pickFromChecks("antepassadoChecks",state.data.antepassados); const nomeManual=document.getElementById("nomeInput").value.trim(); const nome=nomeManual||randomFrom(state.data.nomes);
  const idadeManual=document.getElementById("idadeInput").value.trim(); const idade=idadeManual||generateAgeForRace(antepassado);
  return {nome, profissao:document.getElementById("profissaoSelect").value, cidadeNatal:`${cidade.nome} (${cidade.tipo})`, cidadeFile:cidade.file, antepassado, classe:pickFromChecks("classeChecks",state.data.classes), idade, caracteristicas:generateCharacteristics(state.characteristicData[profile]), temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos), lealdade:pickFromChecks("lealdadeChecks",state.data.lealdades)};}
 
@@ -29,7 +29,7 @@ function rerollField(field){if(!state.npc) return; const profile=document.getEle
  if(field==="nome") state.npc.nome=(document.getElementById("nomeInput").value.trim()||randomFrom(state.data.nomes));
  if(field==="profissao") state.npc.profissao=document.getElementById("profissaoSelect").value;
  if(field==="cidadeNatal"){const pool=allowed.length?allowed:state.cidades; const c=randomFrom(pool); state.npc.cidadeNatal=`${c.nome} (${c.tipo})`; state.npc.cidadeFile=c.file;}
- if(field==="antepassado"){state.npc.antepassado=document.getElementById("antepassadoSelect").value; state.npc.idade=generateAgeForRace(state.npc.antepassado);}
+ if(field==="antepassado"){state.npc.antepassado=pickFromChecks("antepassadoChecks",state.data.antepassados); state.npc.idade=generateAgeForRace(state.npc.antepassado);}
  if(field==="classe") state.npc.classe=pickFromChecks("classeChecks",state.data.classes);
  if(field==="idade") state.npc.idade=generateAgeForRace(state.npc.antepassado);
  if(field==="temperamento") state.npc.temperamento=pickFromChecks("temperamentoChecks",state.data.temperamentos);
@@ -39,11 +39,11 @@ function rerollField(field){if(!state.npc) return; const profile=document.getEle
 }
 
 async function init(){const [baseRes,charRes,cidades]=await Promise.all([fetch("./npc-data.json"),fetch("./npc-characteristics.json"),loadCityVillageLocations()]); state.data=await baseRes.json(); state.characteristicData=await charRes.json(); state.cidades=cidades.map(e=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.cidadeMap=new Map(state.cidades.map(e=>[e.nome,e]));
- populateSelect("profissaoSelect",state.data.profissoes); populateSelect("antepassadoSelect",state.data.antepassados); populateSelect("rangeCenterSelect",state.cidades.map(c=>c.nome)); refreshHometownOptions();
- buildCheckList("classeChecks",state.data.classes); buildCheckList("temperamentoChecks",state.data.temperamentos); buildCheckList("lealdadeChecks",state.data.lealdades);
+ populateSelect("profissaoSelect",state.data.profissoes); populateSelect("rangeCenterSelect",state.cidades.map(c=>c.nome)); refreshHometownOptions();
+ buildCheckList("antepassadoChecks",state.data.antepassados); buildCheckList("classeChecks",state.data.classes); buildCheckList("temperamentoChecks",state.data.temperamentos); buildCheckList("lealdadeChecks",state.data.lealdades);
  const updateRange=()=>{document.getElementById("distanceValue").textContent=document.getElementById("distanceRange").value; refreshHometownOptions();};
  document.getElementById("distanceRange").addEventListener("input",updateRange); document.getElementById("rangeCenterSelect").addEventListener("change",updateRange);
- document.getElementById("randomizeButton").addEventListener("click",()=>{const allowed=refreshHometownOptions(); const pool=allowed.length?allowed:state.cidades; document.getElementById("cidadeSelect").value=randomFrom(pool).nome; document.getElementById("profissaoSelect").value=randomFrom(state.data.profissoes); document.getElementById("antepassadoSelect").value=randomFrom(state.data.antepassados); document.getElementById("generoSelect").value=randomFrom(["homens","mulheres","androgenos"]); renderNpc(buildNpcFromForm());});
+ document.getElementById("randomizeButton").addEventListener("click",()=>{const allowed=refreshHometownOptions(); const pool=allowed.length?allowed:state.cidades; document.getElementById("cidadeSelect").value=randomFrom(pool).nome; document.getElementById("profissaoSelect").value=randomFrom(state.data.profissoes); document.getElementById("generoSelect").value=randomFrom(["homens","mulheres","androgenos"]); renderNpc(buildNpcFromForm());});
  document.getElementById("applyButton").addEventListener("click",()=>renderNpc(buildNpcFromForm()));
  document.querySelector(".npc-list").addEventListener("click",(e)=>{const b=e.target.closest(".reroll-field"); if(b) rerollField(b.dataset.field);});
  document.getElementById("caracteristicasValue").addEventListener("click",(e)=>{const b=e.target.closest(".reroll-char"); if(!b||!state.npc) return; const pack=state.characteristicData[document.getElementById("generoSelect").value]; state.npc.caracteristicas[b.dataset.charKey]=rerollSingleCharacteristic(b.dataset.charKey,pack); renderNpc(state.npc);});

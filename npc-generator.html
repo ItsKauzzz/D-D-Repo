@@ -14,14 +14,12 @@
       <div class="menu-group"><label for="profissaoSelect">Profissão</label><select id="profissaoSelect"></select></div>
       <div class="menu-group"><label for="cidadeSelect">Cidade Natal (Cidade/Vila)</label><select id="cidadeSelect"></select></div>
       <div class="menu-group"><label for="generoSelect">Perfil Visual</label><select id="generoSelect"><option value="homens">Homens</option><option value="mulheres">Mulheres</option><option value="androgenos">Andrógenos</option></select></div>
-      <div class="menu-group"><label for="antepassadoSelect">Antepassado</label><select id="antepassadoSelect"></select></div>
+      <div class="menu-group"><label>Raças / Antepassados (múltipla escolha)</label><div id="antepassadoChecks" class="check-list"></div></div>
       <div class="menu-group"><label>Classes (múltipla escolha)</label><div id="classeChecks" class="check-list"></div></div>
       <div class="menu-group"><label for="idadeInput">Idade (auto pela raça)</label><input id="idadeInput" type="number" min="1" /></div>
       <div class="menu-group"><label>Temperamentos (múltipla escolha)</label><div id="temperamentoChecks" class="check-list"></div></div>
       <div class="menu-group"><label>Lealdades (múltipla escolha)</label><div id="lealdadeChecks" class="check-list"></div></div>
       <button id="applyButton" type="button">Aplicar seleções</button>
-      <div style="height: 8px;"></div>
-      <button id="randomizeButton" type="button">Gerar aleatório</button>
     </aside>
 
     <aside class="floating-menu floating-menu-right">
@@ -33,7 +31,7 @@
 
     <main class="content">
       <section class="card">
-        <h1>Ficha do NPC</h1>
+        <h1>Caracteristicas</h1>
         <ul class="npc-list">
           <li><button class="reroll-field" data-field="nome">🎲</button> <strong>Nome:</strong> <span id="nomeValue"></span></li>
           <li><button class="reroll-field" data-field="profissao">🎲</button> <strong>Profissão:</strong> <span id="profissaoValue"></span></li>
@@ -47,6 +45,9 @@
         </ul>
       </section>
     </main>
+  </div>
+  <div class="floating-generate">
+    <button id="randomizeButton" type="button">Gerar aleatório</button>
   </div>
   <script src="npc-generator.js"></script>
 </body>
