@@ -27,6 +27,15 @@
       <div class="menu-group"><label for="rangeCenterSelect">Cidade/Vila de referência</label><select id="rangeCenterSelect"></select></div>
       <div class="menu-group"><label for="distanceRange">Raio de origem (<span id="distanceValue">100</span>%)</label><input id="distanceRange" type="range" min="1" max="100" value="100"></div>
       <div class="menu-group"><label for="alignmentRange">Alinhamento: <span id="alignmentLabel">Neutro</span></label><input id="alignmentRange" class="alignment-range" type="range" min="-100" max="100" value="0"></div>
+      <div class="menu-group"><label for="classAccurateRange">Class Accurate: <span id="classAccurateValue">50</span>%</label><input id="classAccurateRange" type="range" min="0" max="100" value="50"></div>
+      <div class="menu-group">
+        <label>Level: do level <span id="levelMinValue">1</span> até <span id="levelMaxValue">20</span></label>
+        <div class="level-range-box">
+          <input id="levelMinInput" type="number" min="1" max="20" value="1">
+          <span>até</span>
+          <input id="levelMaxInput" type="number" min="1" max="20" value="20">
+        </div>
+      </div>
       <p class="range-help">100% = mundo inteiro (8000x5000). Valores menores restringem a origem a localidades adjacentes.</p>
     </aside>
 
@@ -40,6 +49,7 @@
           <li><button class="reroll-field" data-field="sexo">🎲</button> <strong>Sexo:</strong> <span id="sexoValue"></span></li>
           <li><button class="reroll-field" data-field="antepassado">🎲</button> <strong>Antepassado:</strong> <span id="antepassadoValue"></span></li>
           <li><button class="reroll-field" data-field="classe">🎲</button> <strong>Classe:</strong> <span id="classeValue"></span></li>
+          <li><button class="reroll-field" data-field="level">🎲</button> <strong>Level:</strong> <span id="levelValue"></span></li>
           <li><button class="reroll-field" data-field="idade">🎲</button> <strong>Idade:</strong> <span id="idadeValue"></span></li>
                     <li><strong>Características:</strong><ul id="caracteristicasValue" class="npc-char-list"></ul></li>
           <li><button class="reroll-field" data-field="temperamento">🎲</button> <strong>Temperamento:</strong> <span id="temperamentoValue"></span></li>
@@ -48,15 +58,52 @@
       </section>
 
       <section class="card">
+        <h2>BACKGROUND</h2>
+        <p id="backgroundValue"></p>
+      </section>
+      <section class="card">
         <h2>FICHA</h2>
-        <ul class="npc-list">
-          <li><strong>Força:</strong> <span id="forcaValue"></span></li>
-          <li><strong>Destreza:</strong> <span id="destrezaValue"></span></li>
-          <li><strong>Constituição:</strong> <span id="constituicaoValue"></span></li>
-          <li><strong>Inteligência:</strong> <span id="inteligenciaValue"></span></li>
-          <li><strong>Sabedoria:</strong> <span id="sabedoriaValue"></span></li>
-          <li><strong>Carisma:</strong> <span id="carismaValue"></span></li>
-        </ul>
+        <p class="sheet-class"><strong>Classe:</strong> <span id="sheetClassValue"></span> · <strong>Level:</strong> <span id="sheetLevelValue"></span> · <strong>Bônus de Proficiência:</strong> <span id="sheetProfBonusValue"></span></p>
+        <p class="sheet-class"><strong>CA:</strong> <span id="sheetAcValue"></span></p>
+        <div class="sheet-grid">
+          <article class="sheet-attr"><h3>Força</h3><p id="forcaValue" class="sheet-score"></p><p id="forcaMod" class="sheet-mod"></p></article>
+          <article class="sheet-attr"><h3>Destreza</h3><p id="destrezaValue" class="sheet-score"></p><p id="destrezaMod" class="sheet-mod"></p></article>
+          <article class="sheet-attr"><h3>Constituição</h3><p id="constituicaoValue" class="sheet-score"></p><p id="constituicaoMod" class="sheet-mod"></p></article>
+          <article class="sheet-attr"><h3>Inteligência</h3><p id="inteligenciaValue" class="sheet-score"></p><p id="inteligenciaMod" class="sheet-mod"></p></article>
+          <article class="sheet-attr"><h3>Sabedoria</h3><p id="sabedoriaValue" class="sheet-score"></p><p id="sabedoriaMod" class="sheet-mod"></p></article>
+          <article class="sheet-attr"><h3>Carisma</h3><p id="carismaValue" class="sheet-score"></p><p id="carismaMod" class="sheet-mod"></p></article>
+        </div>
+        <div class="sheet-compact">
+          <details open>
+            <summary>Proeficiências de Habilidades</summary>
+            <ul id="proficienciasSkillsValue" class="npc-list"></ul>
+          </details>
+          <details>
+            <summary>Proeficiências Gerais (armas, armaduras, ferramentas e instrumentos)</summary>
+            <ul id="proficienciasGeraisValue" class="npc-list"></ul>
+          </details>
+          <details>
+            <summary>Equipamentos e Itens</summary>
+            <div class="sheet-lists-grid">
+              <section>
+                <h3>Equipamentos</h3>
+                <ul id="equipamentosValue" class="npc-list"></ul>
+              </section>
+              <section>
+                <h3>Itens</h3>
+                <ul id="itensValue" class="npc-list"></ul>
+              </section>
+            </div>
+          </details>
+          <details>
+            <summary>Magias</summary>
+            <ul id="magiasValue" class="npc-list"></ul>
+          </details>
+          <details>
+            <summary>Habilidades de Classe</summary>
+            <ul id="habilidadesClasseValue" class="npc-list"></ul>
+          </details>
+        </div>
       </section>
     </main>
   </div>
