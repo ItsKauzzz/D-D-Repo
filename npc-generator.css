@@ -34,6 +34,18 @@ body {
   padding: 16px;
 }
 
+.floating-menu-right {
+  margin-left: 0;
+  order: 3;
+}
+
+.range-help {
+  color: var(--muted);
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
 .menu-title { margin-top: 0; }
 
 .menu-group { margin-bottom: 12px; }

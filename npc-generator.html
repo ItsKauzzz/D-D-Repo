@@ -24,6 +24,19 @@
       <button id="randomizeButton" type="button">Gerar aleatório</button>
     </aside>
 
+    <aside class="floating-menu floating-menu-right">
+      <h2 class="menu-title">Filtro de Origem</h2>
+      <div class="menu-group">
+        <label for="rangeCenterSelect">Cidade/Vila de referência</label>
+        <select id="rangeCenterSelect"></select>
+      </div>
+      <div class="menu-group">
+        <label for="distanceRange">Raio de origem (<span id="distanceValue">100</span>%)</label>
+        <input id="distanceRange" type="range" min="1" max="100" value="100">
+      </div>
+      <p class="range-help">100% = mundo inteiro (8000x5000). Valores menores restringem a origem a localidades adjacentes.</p>
+    </aside>
+
     <main class="content">
       <section class="card">
         <h1>Ficha do NPC</h1>

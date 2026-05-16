@@ -71,9 +71,41 @@ async function loadCityVillageLocations() {
   const files = await indexResponse.json();
   const entries = await Promise.all(files.map(async (file) => {
     const data = await (await fetch(`data/locations/${file}`)).json();
-    return { file: String(file).replace(/\.json$/i, ""), type: String(data.type || ""), nome: String(data.name || "") };
+    return {
+      file: String(file).replace(/\.json$/i, ""),
+      type: String(data.type || ""),
+      nome: String(data.name || ""),
+      x: Number(data.x || 0),
+      y: Number(data.y || 0)
+    };
   }));
   return entries.filter((entry) => entry.nome && isCityOrVillage(entry.type));
+}
+
+function calculateDistancePercent(origin, target) {
+  const mapWidth = 8000;
+  const mapHeight = 5000;
+  const maxDistance = Math.hypot(mapWidth, mapHeight);
+  const distance = Math.hypot(origin.x - target.x, origin.y - target.y);
+  return (distance / maxDistance) * 100;
+}
+
+function getAllowedLocations(allLocations) {
+  const selectedName = document.getElementById("rangeCenterSelect").value;
+  const maxPercent = Number(document.getElementById("distanceRange").value || 100);
+  const center = allLocations.find((entry) => entry.nome === selectedName) || allLocations[0];
+  if (!center) return [];
+  return allLocations.filter((entry) => calculateDistancePercent(center, entry) <= maxPercent);
+}
+
+function refreshHometownOptions(allLocations) {
+  const previous = document.getElementById("cidadeSelect").value;
+  const allowed = getAllowedLocations(allLocations);
+  populateSelect("cidadeSelect", allowed.map((entry) => entry.nome));
+  if (previous && allowed.some((entry) => entry.nome === previous)) {
+    document.getElementById("cidadeSelect").value = previous;
+  }
+  return allowed;
 }
 
 function buildNpcFromForm(cidadeMap, characteristicData) {
@@ -98,22 +130,35 @@ async function init() {
   const [baseRes, charRes, cidades] = await Promise.all([fetch("./npc-data.json"), fetch("./npc-characteristics.json"), loadCityVillageLocations()]);
   const data = await baseRes.json();
   const characteristicData = await charRes.json();
-  const normalizedCidades = cidades.map((entry) => ({ nome: entry.nome, tipo: entry.type, file: entry.file }));
+  const normalizedCidades = cidades.map((entry) => ({ nome: entry.nome, tipo: entry.type, file: entry.file, x: entry.x, y: entry.y }));
   const cidadeMap = new Map(normalizedCidades.map((entry) => [entry.nome, entry]));
 
   populateSelect("nomeSelect", data.nomes);
   populateSelect("profissaoSelect", data.profissoes);
-  populateSelect("cidadeSelect", normalizedCidades.map((c) => c.nome));
+  populateSelect("rangeCenterSelect", normalizedCidades.map((c) => c.nome));
+  refreshHometownOptions(normalizedCidades);
   populateSelect("antepassadoSelect", data.antepassados);
   populateSelect("classeSelect", data.classes);
   populateSelect("idadeSelect", data.idades);
   populateSelect("temperamentoSelect", data.temperamentos);
   populateSelect("lealdadeSelect", data.lealdades);
 
+  const distanceRange = document.getElementById("distanceRange");
+  const distanceValue = document.getElementById("distanceValue");
+  const rangeCenterSelect = document.getElementById("rangeCenterSelect");
+  const updateRange = () => {
+    distanceValue.textContent = distanceRange.value;
+    refreshHometownOptions(normalizedCidades);
+  };
+  distanceRange.addEventListener("input", updateRange);
+  rangeCenterSelect.addEventListener("change", updateRange);
+
   document.getElementById("randomizeButton").addEventListener("click", () => {
+    const allowedCidades = refreshHometownOptions(normalizedCidades);
     document.getElementById("nomeSelect").value = randomFrom(data.nomes);
     document.getElementById("profissaoSelect").value = randomFrom(data.profissoes);
-    document.getElementById("cidadeSelect").value = randomFrom(normalizedCidades).nome;
+    const pool = allowedCidades.length ? allowedCidades : normalizedCidades;
+    document.getElementById("cidadeSelect").value = randomFrom(pool).nome;
     document.getElementById("antepassadoSelect").value = randomFrom(data.antepassados);
     document.getElementById("classeSelect").value = randomFrom(data.classes);
     document.getElementById("idadeSelect").value = randomFrom(data.idades);
