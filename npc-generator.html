@@ -11,9 +11,9 @@
     <aside class="floating-menu">
       <h2 class="menu-title">Gerador de NPC</h2>
       <div class="menu-group"><label for="nomeInput">Nome</label><input id="nomeInput" type="text" placeholder="Ex.: Arven, Lyra..." /></div>
-      <div class="menu-group"><label for="profissaoSelect">Profissão</label><select id="profissaoSelect"></select></div>
-      <div class="menu-group"><label for="cidadeSelect">Cidade Natal (Cidade/Vila)</label><select id="cidadeSelect"></select></div>
-      <div class="menu-group"><label for="generoSelect">Perfil Visual</label><select id="generoSelect"><option value="homens">Homens</option><option value="mulheres">Mulheres</option><option value="androgenos">Andrógenos</option></select></div>
+      <div class="menu-group"><label>Profissões (múltipla escolha)</label><div id="profissaoChecks" class="check-list"></div></div>
+      <div class="menu-group"><label>Cidades natais (múltipla escolha)</label><div id="cidadeChecks" class="check-list"></div></div>
+      <div class="menu-group"><label>Sexo / Perfil visual (múltipla escolha)</label><div id="sexoChecks" class="check-list"></div></div>
       <div class="menu-group"><label>Raças / Antepassados (múltipla escolha)</label><div id="antepassadoChecks" class="check-list"></div></div>
       <div class="menu-group"><label>Classes (múltipla escolha)</label><div id="classeChecks" class="check-list"></div></div>
       <div class="menu-group"><label for="idadeInput">Idade (auto pela raça)</label><input id="idadeInput" type="number" min="1" /></div>
@@ -26,6 +26,7 @@
       <h2 class="menu-title">Filtro de Origem</h2>
       <div class="menu-group"><label for="rangeCenterSelect">Cidade/Vila de referência</label><select id="rangeCenterSelect"></select></div>
       <div class="menu-group"><label for="distanceRange">Raio de origem (<span id="distanceValue">100</span>%)</label><input id="distanceRange" type="range" min="1" max="100" value="100"></div>
+      <div class="menu-group"><label for="alignmentRange">Alinhamento: <span id="alignmentLabel">Neutro</span></label><input id="alignmentRange" class="alignment-range" type="range" min="-100" max="100" value="0"></div>
       <p class="range-help">100% = mundo inteiro (8000x5000). Valores menores restringem a origem a localidades adjacentes.</p>
     </aside>
 
@@ -39,9 +40,22 @@
           <li><button class="reroll-field" data-field="antepassado">🎲</button> <strong>Antepassado:</strong> <span id="antepassadoValue"></span></li>
           <li><button class="reroll-field" data-field="classe">🎲</button> <strong>Classe:</strong> <span id="classeValue"></span></li>
           <li><button class="reroll-field" data-field="idade">🎲</button> <strong>Idade:</strong> <span id="idadeValue"></span></li>
+          <li><button class="reroll-field" data-field="alinhamento">🎲</button> <strong>Alinhamento:</strong> <span id="alinhamentoValue"></span></li>
           <li><strong>Características:</strong><ul id="caracteristicasValue" class="npc-char-list"></ul></li>
           <li><button class="reroll-field" data-field="temperamento">🎲</button> <strong>Temperamento:</strong> <span id="temperamentoValue"></span></li>
           <li><button class="reroll-field" data-field="lealdade">🎲</button> <strong>Lealdade:</strong> <span id="lealdadeValue"></span></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>FICHA</h2>
+        <ul class="npc-list">
+          <li><strong>Força:</strong> <span id="forcaValue"></span></li>
+          <li><strong>Destreza:</strong> <span id="destrezaValue"></span></li>
+          <li><strong>Constituição:</strong> <span id="constituicaoValue"></span></li>
+          <li><strong>Inteligência:</strong> <span id="inteligenciaValue"></span></li>
+          <li><strong>Sabedoria:</strong> <span id="sabedoriaValue"></span></li>
+          <li><strong>Carisma:</strong> <span id="carismaValue"></span></li>
         </ul>
       </section>
     </main>
