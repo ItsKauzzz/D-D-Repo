@@ -60,11 +60,20 @@ const tierArrays = {
   lendario: [20,18,17,16,15,14]
 };
 function getLevelTier(level){ return levelTiers.find((t)=>level>=t.min&&level<=t.max) || levelTiers[0]; }
+const getClassAccuracy = () => Number(document.getElementById("classAccurateRange")?.value || 50) / 100;
 function generateSheet(characterClass, level){
   const tier = getLevelTier(level);
-  const orderedAttrs = classAttributePriority[characterClass] || attrs;
+  const profile = getClassProfile(characterClass).preferredAttributes || {};
+  const fallback = classAttributePriority[characterClass] || attrs;
+  const prioritized = [...(profile.primary || []), ...(profile.secondary || [])];
+  const orderedAttrs = [...new Set([...prioritized, ...fallback, ...attrs])];
   const base = tierArrays[tier.tier] || standardArray;
-  const spread = [...base].sort(()=>Math.random()-0.5);
+  const spread = [...base].sort((a,b)=>b-a);
+  const accuracy = getClassAccuracy();
+  if (accuracy < 1) {
+    const shuffleMoves = Math.floor((1 - accuracy) * spread.length);
+    for(let i=0;i<shuffleMoves;i++){ const a=Math.floor(Math.random()*spread.length); const b=Math.floor(Math.random()*spread.length); [spread[a],spread[b]]=[spread[b],spread[a]]; }
+  }
   const sheet = {};
   orderedAttrs.forEach((attr, idx)=>{sheet[attr]=spread[idx];});
   return sheet;
@@ -104,7 +113,7 @@ function renderSkillList(id, skills, profBonus, sheet){
     const isProficient = (skills||[]).includes(skill);
     const total = attrMod + (isProficient ? Number(profBonus || 2) : 0);
     const li=document.createElement("li");
-    li.innerHTML = `<div class="skill-roll-row"><span>${skill} (${attrKey.toUpperCase()} ${attrMod >= 0 ? "+" : ""}${attrMod} + PROF ${isProficient ? (profBonus >= 0 ? "+" : "") + profBonus : "+0"} = <span class="skill-total-mod">${total >= 0 ? "+" : ""}${total}</span>)</span><button class="skill-roll-btn" data-skill-mod="${total}" type="button">🎲</button><span class="skill-roll-result"></span></div>`;
+    li.innerHTML = `<div class="skill-roll-row ${isProficient ? "" : "skill-not-proficient"}"><span>${skill} (${attrKey.toUpperCase()} ${attrMod >= 0 ? "+" : ""}${attrMod} + PROF ${isProficient ? (profBonus >= 0 ? "+" : "") + profBonus : "+0"} = <span class="skill-total-mod">${total >= 0 ? "+" : ""}${total}</span>)</span><button class="skill-roll-btn" data-skill-mod="${total}" type="button">🎲</button><span class="skill-roll-result"></span></div>`;
     el.appendChild(li);
   });
 }
