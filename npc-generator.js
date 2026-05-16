@@ -32,12 +32,34 @@ function buildCheckList(containerId, values) {
 
 function generateAgeForRace(race){const r=state.data.faixaEtariaPorAntepassado[race]||{min:18,max:80}; return String(Math.floor(Math.random()*(r.max-r.min+1))+r.min);}
 function randomAttr(){ return Math.floor(Math.random()*16)+3; }
-function generateSheet(){ return {forca:randomAttr(),destreza:randomAttr(),constituicao:randomAttr(),inteligencia:randomAttr(),sabedoria:randomAttr(),carisma:randomAttr()}; }
+const classAttributePriority = {
+  "Bardo": ["carisma", "destreza", "constituicao", "sabedoria", "inteligencia", "forca"],
+  "Bruxo": ["carisma", "constituicao", "destreza", "sabedoria", "inteligencia", "forca"],
+  "Bárbaro": ["forca", "constituicao", "destreza", "sabedoria", "carisma", "inteligencia"],
+  "Clérigo": ["sabedoria", "constituicao", "carisma", "forca", "destreza", "inteligencia"],
+  "Druida": ["sabedoria", "constituicao", "destreza", "inteligencia", "carisma", "forca"],
+  "Feiticeiro": ["carisma", "constituicao", "destreza", "inteligencia", "sabedoria", "forca"],
+  "Guerreiro": ["forca", "constituicao", "destreza", "sabedoria", "carisma", "inteligencia"],
+  "Ladino": ["destreza", "inteligencia", "carisma", "constituicao", "sabedoria", "forca"],
+  "Mago": ["inteligencia", "constituicao", "destreza", "sabedoria", "carisma", "forca"],
+  "Monge": ["destreza", "sabedoria", "constituicao", "forca", "inteligencia", "carisma"],
+  "Paladino": ["forca", "carisma", "constituicao", "sabedoria", "destreza", "inteligencia"],
+  "Patrulheiro": ["destreza", "sabedoria", "constituicao", "forca", "inteligencia", "carisma"]
+};
+const standardArray = [15,14,13,12,10,8];
+function generateSheet(characterClass){
+  const orderedAttrs = classAttributePriority[characterClass] || attrs;
+  const spread = [...standardArray].sort(()=>Math.random()-0.5);
+  const sheet = {};
+  orderedAttrs.forEach((attr, idx)=>{sheet[attr]=spread[idx];});
+  return sheet;
+}
+const toModifier = (value) => Math.floor((Number(value) - 10) / 2);
 function generateCharacteristics(pack){const nonNone=pack.caracteristicasExtras.filter(i=>i!=="Nenhuma");const n=Math.random()<0.45?0:(Math.random()<0.8?1:2);const extras=[...new Set(Array.from({length:n},()=>randomFrom(nonNone)))];return{cabelo:`${randomFrom(pack.cabelosComprimento)} ${randomFrom(pack.corCabelos)}`,olhos:`${randomFrom(pack.olhos)} (${randomFrom(pack.corOlhos)})`,rosto:randomFrom(pack.rosto),feicao:randomFrom(pack.feicao),peso:randomFrom(pack.peso),pele:randomFrom(pack.corPele),estruturaCorporal:randomFrom(pack.estruturaCorporal),extras:extras.length?extras.join(", "):"Nenhuma"};}
 function rerollSingleCharacteristic(key,pack){return generateCharacteristics(pack)[key]||"";}
 
 function renderCharacteristicsList(c){const el=document.getElementById("caracteristicasValue");el.innerHTML="";[["cabelo","cabelo"],["olhos","olhos"],["rosto","rosto"],["feição","feicao"],["peso","peso"],["cor da pele","pele"],["estrutura corporal","estruturaCorporal"],["características extras","extras"]].forEach(([label,key])=>{const li=document.createElement("li");li.innerHTML=`<button class='reroll-char' type='button' data-char-key='${key}'>🎲</button> <strong>${label}:</strong> <span class='char-value'>${c[key]}</span>`;el.appendChild(li);});}
-function renderSheet(sheet){attrs.forEach((k)=>{document.getElementById(`${k}Value`).textContent = sheet[k];});}
+function renderSheet(sheet){attrs.forEach((k)=>{document.getElementById(`${k}Value`).textContent = sheet[k]; const mod = toModifier(sheet[k]); document.getElementById(`${k}Mod`).textContent = `MOD ${mod >= 0 ? "+" : ""}${mod}`;});}
 function renderNpc(npc){
 fieldIds.forEach((id)=>{const el=document.getElementById(`${id}Value`); if(el) el.textContent=npc[id]||"";});
 renderCharacteristicsList(npc.caracteristicas);
@@ -80,7 +102,8 @@ function buildBackground(npc){
 }
 
 function buildNpcFromForm(){const allowed=getAllowedLocations(state.cidades); const cidadeNome=pickFromChecks("cidadeChecks", (allowed.length?allowed:state.cidades).map((c)=>c.nome)); const cidade=state.cidadeMap.get(cidadeNome)||state.cidades[0]; const sexo=pickFromChecks("sexoChecks", ["homens","mulheres","androgenos"]); const antepassado=pickFromChecks("antepassadoChecks", state.data.antepassados); const nomeManual=document.getElementById("nomeInput").value.trim(); const nome=nomeManual||randomFrom(getNamePoolBySexo(sexo)); const sobrenome=randomFrom(state.data.sobrenomes); const idadeManual=document.getElementById("idadeInput").value.trim(); const idade=idadeManual||generateAgeForRace(antepassado); const alignVal=Number(document.getElementById("alignmentRange").value||0) * -1;
-const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe:pickFromChecks("classeChecks",state.data.classes),idade,caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha:generateSheet()};
+const classe = pickFromChecks("classeChecks",state.data.classes);
+const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,idade,caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha:generateSheet(classe)};
 npc.background = buildBackground(npc);
 return npc;}
 
@@ -90,7 +113,7 @@ if(field==="profissao") state.npc.profissao=pickFromChecks("profissaoChecks", st
 if(field==="cidadeNatal"){const pool=(allowed.length?allowed:state.cidades).map((c)=>c.nome); const c=state.cidadeMap.get(randomFrom(pool)); state.npc.cidadeNatal=`${c.nome} (${c.tipo})`; state.npc.cidadeFile=c.file;}
 if(field==="sexo") { state.npc.sexo=sexo; state.npc.nome=(document.getElementById("nomeInput").value.trim()||randomFrom(getNamePoolBySexo(sexo))); state.npc.caracteristicas=generateCharacteristics(state.characteristicData[sexo]); }
 if(field==="antepassado"){state.npc.antepassado=pickFromChecks("antepassadoChecks",state.data.antepassados); state.npc.idade=generateAgeForRace(state.npc.antepassado);}
-if(field==="classe") state.npc.classe=pickFromChecks("classeChecks",state.data.classes);
+if(field==="classe") { state.npc.classe=pickFromChecks("classeChecks",state.data.classes); state.npc.ficha=generateSheet(state.npc.classe); }
 if(field==="idade") state.npc.idade=generateAgeForRace(state.npc.antepassado);
 if(field==="temperamento") state.npc.temperamento=pickFromChecks("temperamentoChecks",state.data.temperamentos);
 if(field==="lealdade") state.npc.lealdade=pickFromChecks("lealdadeChecks",state.data.lealdades);
