@@ -282,5 +282,195 @@
         "descricao": "Recupera Ki ao iniciar combate com reserva muito baixa."
       }
     ]
+  },
+  "Mago": {
+    "1": [
+      {
+        "nome": "Conjuração",
+        "descricao": "Você prepara e conjura magias arcanas usando Inteligência como atributo-chave."
+      },
+      {
+        "nome": "Recuperação Arcana",
+        "descricao": "Recupera parte dos espaços de magia em descanso curto."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Tradição Arcana",
+        "descricao": "Escolhe uma escola/tradição que define especialização mágica."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Acesso a Magias de 3º Círculo",
+        "descricao": "Passa a conjurar magias mais poderosas como Bola de Fogo e Contramágica."
+      }
+    ],
+    "10": [
+      {
+        "nome": "Maestria de Tradição",
+        "descricao": "Recebe benefício avançado da tradição arcana escolhida."
+      }
+    ],
+    "18": [
+      {
+        "nome": "Domínio de Magia",
+        "descricao": "Conjura algumas magias de baixo círculo sem gastar espaços."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Magias Assinatura",
+        "descricao": "Define magias emblemáticas que podem ser conjuradas com grande frequência."
+      }
+    ]
+  },
+  "Bruxo": {
+    "1": [
+      {
+        "nome": "Pacto Mágico",
+        "descricao": "Conjuração baseada em pacto com entidade extraplanar, usando Carisma."
+      },
+      {
+        "nome": "Patrono Sobrenatural",
+        "descricao": "Escolhe patrono que concede magias e efeitos exclusivos."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Invocações Místicas",
+        "descricao": "Seleciona invocações que modificam e fortalecem suas capacidades."
+      }
+    ],
+    "3": [
+      {
+        "nome": "Dádiva do Pacto",
+        "descricao": "Recebe benefício central do pacto (lâmina, tomo, corrente etc)."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Magia de Pacto Aprimorada",
+        "descricao": "Espaços de magia de pacto aumentam em poder com o nível."
+      }
+    ],
+    "11": [
+      {
+        "nome": "Arcanum Místico (6º)",
+        "descricao": "Conjura uma magia de 6º círculo por descanso longo."
+      }
+    ],
+    "17": [
+      {
+        "nome": "Arcanum Místico Superior",
+        "descricao": "Desbloqueia arcanos de 9º círculo do patrono."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Mestre Arcano",
+        "descricao": "Recupera espaços de magia de pacto com grande eficiência."
+      }
+    ]
+  },
+  "Druida": {
+    "1": [
+      {
+        "nome": "Conjuração Druídica",
+        "descricao": "Conjura magias ligadas à natureza usando Sabedoria."
+      },
+      {
+        "nome": "Idioma Druídico",
+        "descricao": "Conhece a linguagem secreta dos druidas."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Forma Selvagem",
+        "descricao": "Transforma-se em bestas para combate, exploração e utilidade."
+      },
+      {
+        "nome": "Círculo Druídico",
+        "descricao": "Escolhe um círculo que define seu foco espiritual."
+      }
+    ],
+    "4": [
+      {
+        "nome": "Aprimoramento de Forma Selvagem",
+        "descricao": "Acessa formas mais fortes e versáteis."
+      }
+    ],
+    "8": [
+      {
+        "nome": "Forma Selvagem Aprimorada",
+        "descricao": "Pode assumir formas com maior mobilidade e utilidade tática."
+      }
+    ],
+    "10": [
+      {
+        "nome": "Poder de Círculo Avançado",
+        "descricao": "Recebe traço marcante do círculo escolhido."
+      }
+    ],
+    "18": [
+      {
+        "nome": "Conjuração Bestial",
+        "descricao": "Conjura magias mesmo em forma selvagem em condições específicas."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Arquidruida",
+        "descricao": "Uso quase ilimitado de Forma Selvagem e ápice de conexão natural."
+      }
+    ]
+  },
+  "Clérigo": {
+    "1": [
+      {
+        "nome": "Conjuração Divina",
+        "descricao": "Conjura magias divinas usando Sabedoria."
+      },
+      {
+        "nome": "Domínio Divino",
+        "descricao": "Escolhe domínio que fornece magias e habilidades temáticas."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Canalizar Divindade",
+        "descricao": "Invoca poder divino para efeitos especiais do domínio."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Destruir Mortos-Vivos",
+        "descricao": "Canalizar Divindade passa a aniquilar mortos-vivos fracos."
+      }
+    ],
+    "8": [
+      {
+        "nome": "Poder Divino Aprimorado",
+        "descricao": "Recebe incremento ofensivo vinculado ao domínio."
+      }
+    ],
+    "10": [
+      {
+        "nome": "Intervenção Divina",
+        "descricao": "Pode pedir ajuda direta da divindade em situações críticas."
+      }
+    ],
+    "17": [
+      {
+        "nome": "Traço Supremo de Domínio",
+        "descricao": "Desbloqueia a característica final do seu domínio."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Intervenção Divina Automática",
+        "descricao": "Sua súplica divina passa a ser atendida com máxima confiabilidade."
+      }
+    ]
   }
 }
