@@ -71,19 +71,28 @@
           <article class="sheet-attr"><h3>Sabedoria</h3><p id="sabedoriaValue" class="sheet-score"></p><p id="sabedoriaMod" class="sheet-mod"></p></article>
           <article class="sheet-attr"><h3>Carisma</h3><p id="carismaValue" class="sheet-score"></p><p id="carismaMod" class="sheet-mod"></p></article>
         </div>
-        <h3>Proeficiências de Habilidades</h3>
-        <ul id="proficienciasSkillsValue" class="npc-list"></ul>
-        <h3>Proeficiências Gerais (armas, armaduras, ferramentas e instrumentos)</h3>
-        <ul id="proficienciasGeraisValue" class="npc-list"></ul>
-        <div class="sheet-lists-grid">
-          <section>
-            <h3>Equipamentos</h3>
-            <ul id="equipamentosValue" class="npc-list"></ul>
-          </section>
-          <section>
-            <h3>Itens</h3>
-            <ul id="itensValue" class="npc-list"></ul>
-          </section>
+        <div class="sheet-compact">
+          <details open>
+            <summary>Proeficiências de Habilidades</summary>
+            <ul id="proficienciasSkillsValue" class="npc-list"></ul>
+          </details>
+          <details>
+            <summary>Proeficiências Gerais (armas, armaduras, ferramentas e instrumentos)</summary>
+            <ul id="proficienciasGeraisValue" class="npc-list"></ul>
+          </details>
+          <details>
+            <summary>Equipamentos e Itens</summary>
+            <div class="sheet-lists-grid">
+              <section>
+                <h3>Equipamentos</h3>
+                <ul id="equipamentosValue" class="npc-list"></ul>
+              </section>
+              <section>
+                <h3>Itens</h3>
+                <ul id="itensValue" class="npc-list"></ul>
+              </section>
+            </div>
+          </details>
         </div>
       </section>
     </main>

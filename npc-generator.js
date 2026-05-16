@@ -75,12 +75,35 @@ function rerollSingleCharacteristic(key,pack){return generateCharacteristics(pac
 
 function renderCharacteristicsList(c){const el=document.getElementById("caracteristicasValue");el.innerHTML="";[["cabelo","cabelo"],["olhos","olhos"],["rosto","rosto"],["feição","feicao"],["peso","peso"],["cor da pele","pele"],["estrutura corporal","estruturaCorporal"],["características extras","extras"]].forEach(([label,key])=>{const li=document.createElement("li");li.innerHTML=`<button class='reroll-char' type='button' data-char-key='${key}'>🎲</button> <strong>${label}:</strong> <span class='char-value'>${c[key]}</span>`;el.appendChild(li);});}
 function renderSimpleList(id, items){const el=document.getElementById(id); if(!el) return; el.innerHTML=""; (items||[]).forEach((item)=>{const li=document.createElement("li"); li.textContent=item; el.appendChild(li);});}
-function renderSkillList(id, skills, profBonus){
+const skillToAttr = {
+  "Acrobacia": "destreza",
+  "Arcanismo": "inteligencia",
+  "Atletismo": "forca",
+  "Atuação": "carisma",
+  "Enganação": "carisma",
+  "Furtividade": "destreza",
+  "História": "inteligencia",
+  "Intimidação": "carisma",
+  "Intuição": "sabedoria",
+  "Investigação": "inteligencia",
+  "Lidar com Animais": "sabedoria",
+  "Medicina": "sabedoria",
+  "Natureza": "inteligencia",
+  "Percepção": "sabedoria",
+  "Persuasão": "carisma",
+  "Prestidigitação": "destreza",
+  "Religião": "inteligencia",
+  "Sobrevivência": "sabedoria"
+};
+function renderSkillList(id, skills, profBonus, sheet){
   const el = document.getElementById(id); if(!el) return;
   el.innerHTML = "";
   (skills||[]).forEach((skill)=>{
+    const attrKey = skillToAttr[skill] || "sabedoria";
+    const attrMod = toModifier(sheet?.[attrKey] || 10);
+    const total = attrMod + Number(profBonus || 2);
     const li=document.createElement("li");
-    li.textContent = `${skill} (MOD +${profBonus||2})`;
+    li.textContent = `${skill} (${attrKey.toUpperCase()} ${attrMod >= 0 ? "+" : ""}${attrMod} + PROF ${profBonus >= 0 ? "+" : ""}${profBonus} = ${total >= 0 ? "+" : ""}${total})`;
     el.appendChild(li);
   });
 }
@@ -91,7 +114,7 @@ document.getElementById("sheetClassValue").textContent = npc.classe || "";
 document.getElementById("sheetLevelValue").textContent = npc.level || "";
 document.getElementById("sheetProfBonusValue").textContent = `+${npc.proficiencyBonus || 2}`;
 renderCharacteristicsList(npc.caracteristicas);
-renderSkillList("proficienciasSkillsValue", npc.proficienciasSkills, npc.proficiencyBonus);
+renderSkillList("proficienciasSkillsValue", npc.proficienciasSkills, npc.proficiencyBonus, npc.ficha);
 renderSimpleList("proficienciasGeraisValue", npc.proficienciasGerais);
 renderSimpleList("equipamentosValue", npc.equipamentos);
 renderSimpleList("itensValue", npc.itens);
