@@ -3,49 +3,49 @@
     "1": [
       {
         "nome": "Inspiração de Bardo",
-        "descricao": "Concede um dado de inspiração a um aliado para adicionar em testes, ataques ou salvaguardas."
+        "descricao": "Como ação bônus, concede 1 dado de Inspiração (d6 no início) a uma criatura a até 18m que possa ouvi-lo. O dado é somado a teste de atributo, jogada de ataque ou teste de resistência (sem dano direto)."
       },
       {
         "nome": "Conjuração",
-        "descricao": "Você aprende e conjura magias de bardo, usando Carisma como atributo de conjuração."
+        "descricao": "Conjura magias de bardo usando Carisma. CD = 8 + proficiência + CHA; ataque mágico = proficiência + CHA. Alcance e dano variam por magia."
       }
     ],
     "2": [
       {
         "nome": "Jack of All Trades",
-        "descricao": "Adiciona metade do bônus de proficiência em testes sem proficiência plena."
+        "descricao": "Aplica metade do bônus de proficiência (arredondado para baixo) em testes sem proficiência. Sem alcance e sem dano."
       },
       {
         "nome": "Canção de Descanso",
-        "descricao": "Durante descanso curto, aliados recuperam PV adicionais ao gastar dados de vida."
+        "descricao": "Durante descanso curto, aliados que gastarem Dados de Vida recuperam +1d6 PV (escala com nível de bardo). Efeito de suporte, sem alcance fixo de combate."
       }
     ],
     "3": [
       {
         "nome": "Especialização",
-        "descricao": "Escolha perícias para dobrar o bônus de proficiência."
+        "descricao": "Escolha perícias para dobrar o bônus de proficiência. Sem alcance e sem dano direto."
       },
       {
         "nome": "Colégio de Bardo",
-        "descricao": "Você escolhe uma subclasse que define estilo e poderes adicionais."
+        "descricao": "Subclasse concede efeitos adicionais; alcances/danos dependem do colégio escolhido."
       }
     ],
     "5": [
       {
         "nome": "Fonte de Inspiração",
-        "descricao": "Recupera usos de Inspiração de Bardo também em descanso curto."
+        "descricao": "Recupera usos de Inspiração de Bardo também em descanso curto. Sem dano e sem alcance."
       }
     ],
     "10": [
       {
         "nome": "Segredos Mágicos",
-        "descricao": "Aprende magias de outras listas, ampliando muito a versatilidade."
+        "descricao": "Aprende magias de outras listas. Alcances e danos passam a depender das magias escolhidas."
       }
     ],
     "20": [
       {
         "nome": "Inspiração Superior",
-        "descricao": "Se ficar sem usos de inspiração, recupera um uso no início do combate."
+        "descricao": "Se iniciar combate sem usos de Inspiração de Bardo, recupera 1 uso. Sem alcance e sem dano."
       }
     ]
   },
@@ -53,61 +53,61 @@
     "1": [
       {
         "nome": "Fúria",
-        "descricao": "Entra em estado de fúria para causar mais dano e resistir a dano físico."
+        "descricao": "Como ação bônus, entra em fúria por 1 minuto. Ganha vantagem em testes/resistências de Força, bônus de dano em ataques corpo a corpo com Força (+2 inicial) e resistência a dano contundente, perfurante e cortante."
       },
       {
         "nome": "Defesa sem Armadura",
-        "descricao": "CA baseada em Constituição e Destreza quando sem armadura pesada."
+        "descricao": "CA = 10 + mod Destreza + mod Constituição quando não usa armadura. Sem alcance e sem dano direto."
       }
     ],
     "2": [
       {
         "nome": "Ataque Descuidado",
-        "descricao": "Ganha vantagem em ataques corpo a corpo usando Força, mas ataques contra você também têm vantagem."
+        "descricao": "No primeiro ataque do turno, pode obter vantagem em ataques corpo a corpo com Força; até seu próximo turno, ataques contra você têm vantagem. Alcance do ataque depende da arma (normalmente 1,5m)."
       },
       {
         "nome": "Sentido de Perigo",
-        "descricao": "Vantagem em testes de Destreza contra efeitos visíveis."
+        "descricao": "Vantagem em testes de resistência de Destreza contra efeitos que você possa ver (ex.: armadilhas/magias de área)."
       }
     ],
     "5": [
       {
         "nome": "Ataque Extra",
-        "descricao": "Pode atacar duas vezes ao usar a ação Atacar."
+        "descricao": "Ao usar Ação Atacar, realiza 2 ataques (em vez de 1). Dano e alcance dependem da arma equipada."
       },
       {
         "nome": "Movimento Aprimorado",
-        "descricao": "Aumento de deslocamento enquanto não usa armadura pesada."
+        "descricao": "+3m de deslocamento enquanto não usa armadura pesada."
       }
     ],
     "7": [
       {
         "nome": "Instinto Feral",
-        "descricao": "Vantagem em iniciativa e age normalmente mesmo surpreendido em certas condições."
+        "descricao": "Vantagem em iniciativa; se surpreendido, pode agir normalmente ao entrar em fúria antes de qualquer ação."
       }
     ],
     "9": [
       {
         "nome": "Crítico Brutal",
-        "descricao": "Acrescenta dados extras de dano ao acertar crítico com ataques corpo a corpo."
+        "descricao": "Em acerto crítico corpo a corpo, rola 1 dado adicional de dano da arma (aumenta em níveis maiores)."
       }
     ],
     "11": [
       {
         "nome": "Fúria Implacável",
-        "descricao": "Pode evitar cair a 0 PV ao passar em teste de Constituição."
+        "descricao": "Ao cair a 0 PV em fúria, faz teste de CON CD 10 para ficar com 1 PV; CD aumenta a cada uso até descanso."
       }
     ],
     "15": [
       {
         "nome": "Fúria Persistente",
-        "descricao": "Sua fúria só termina cedo em situações muito específicas."
+        "descricao": "A fúria só termina cedo se você ficar inconsciente ou escolher encerrar."
       }
     ],
     "20": [
       {
         "nome": "Força e Constituição aumentadas",
-        "descricao": "Aumenta os limites e valores máximos de Força e Constituição."
+        "descricao": "Aumenta Força e Constituição em +4 (máximo 24)."
       }
     ]
   },
@@ -115,41 +115,41 @@
     "1": [
       {
         "nome": "Estilo de Luta",
-        "descricao": "Escolhe um estilo que concede bônus passivo em combate."
+        "descricao": "Bônus passivo de combate (ex.: +2 em ataques à distância, +1 CA, etc.) conforme estilo escolhido."
       },
       {
         "nome": "Segundo Fôlego",
-        "descricao": "Recupera PV como ação bônus uma vez por descanso."
+        "descricao": "Como ação bônus, recupera 1d10 + nível de guerreiro PV (1 uso por descanso curto/longo)."
       }
     ],
     "2": [
       {
         "nome": "Surto de Ação",
-        "descricao": "Ganha uma ação adicional no turno, 1 vez por descanso curto."
+        "descricao": "No seu turno, ganha 1 ação adicional (1 uso por descanso curto/longo no início da progressão)."
       }
     ],
     "5": [
       {
         "nome": "Ataque Extra",
-        "descricao": "Pode atacar duas vezes ao usar a ação Atacar."
+        "descricao": "Ao usar Ação Atacar, realiza 2 ataques. Dano/alcance dependem da arma."
       }
     ],
     "9": [
       {
         "nome": "Indomável",
-        "descricao": "Pode repetir um teste de resistência que falhou."
+        "descricao": "Pode repetir 1 teste de resistência falho (usos escalam por nível)."
       }
     ],
     "11": [
       {
         "nome": "Ataque Extra Aprimorado (3 ataques)",
-        "descricao": "Agora realiza três ataques com a ação Atacar."
+        "descricao": "Ao usar Ação Atacar, realiza 3 ataques."
       }
     ],
     "20": [
       {
         "nome": "Ataque Extra Supremo (4 ataques)",
-        "descricao": "Agora realiza quatro ataques com a ação Atacar."
+        "descricao": "Ao usar Ação Atacar, realiza 4 ataques."
       }
     ]
   },
@@ -157,57 +157,57 @@
     "1": [
       {
         "nome": "Ataque Furtivo",
-        "descricao": "Causa dano adicional quando atende condições de furtividade/vantagem."
+        "descricao": "1 vez por turno, causa dano extra 1d6 (escala por nível) com arma de acuidade/à distância quando tem vantagem ou aliado adjacente ao alvo. Alcance conforme arma."
       },
       {
         "nome": "Especialização",
-        "descricao": "Dobra bônus de proficiência em perícias escolhidas."
+        "descricao": "Dobra bônus de proficiência em perícias/ferramentas escolhidas."
       },
       {
         "nome": "Linguagem de Ladrões",
-        "descricao": "Conhece códigos secretos e sinais do submundo."
+        "descricao": "Conhece códigos e mensagens do submundo."
       }
     ],
     "2": [
       {
         "nome": "Ação Ardilosa",
-        "descricao": "Pode Correr, Desengajar ou Esconder como ação bônus."
+        "descricao": "Como ação bônus, pode Correr, Desengajar ou Esconder."
       }
     ],
     "5": [
       {
         "nome": "Esquiva Sobrenatural",
-        "descricao": "Usa reação para reduzir pela metade dano de um ataque que acertou."
+        "descricao": "Como reação, reduz pela metade o dano de um ataque que o acerte e que você possa ver."
       }
     ],
     "7": [
       {
         "nome": "Evasão",
-        "descricao": "Em testes de Destreza, sofre menos ou nenhum dano em efeitos de área."
+        "descricao": "Em efeitos com teste de DEX para metade do dano, sofre 0 no sucesso e metade na falha."
       }
     ],
     "11": [
       {
         "nome": "Talento Confiável",
-        "descricao": "Resultados baixos em perícias proficientes contam como mínimo 10."
+        "descricao": "Em perícias proficientes, resultados de d20 abaixo de 10 contam como 10."
       }
     ],
     "14": [
       {
         "nome": "Sentido às Cegas",
-        "descricao": "Percebe criaturas próximas mesmo sem enxergar claramente."
+        "descricao": "Percebe criaturas ocultas/invisíveis a até 3m, desde que não esteja surdo/cego total para o contexto."
       }
     ],
     "18": [
       {
         "nome": "Elusivo",
-        "descricao": "Inimigos têm dificuldade extrema para obter vantagem contra você."
+        "descricao": "Nenhuma jogada de ataque contra você tem vantagem enquanto não estiver incapacitado."
       }
     ],
     "20": [
       {
         "nome": "Golpe da Sorte",
-        "descricao": "Pode transformar falha em acerto/sucesso em momentos críticos."
+        "descricao": "1 vez por descanso curto/longo, transforma falha em acerto em ataque ou sucesso em teste."
       }
     ]
   },
@@ -215,71 +215,71 @@
     "1": [
       {
         "nome": "Defesa sem Armadura",
-        "descricao": "CA calculada sem armadura usando Destreza e Sabedoria."
+        "descricao": "CA = 10 + mod Destreza + mod Sabedoria sem armadura/escudo."
       },
       {
         "nome": "Artes Marciais",
-        "descricao": "Ataques desarmados melhorados e uso de Destreza para ataques de monge."
+        "descricao": "Usa Destreza para ataques de monge e recebe dado de dano de artes marciais (inicialmente 1d4) com alcance corpo a corpo padrão de 1,5m."
       }
     ],
     "2": [
       {
         "nome": "Ki",
-        "descricao": "Gasta pontos de Ki para técnicas especiais (rajada, esquiva, deslocamento)."
+        "descricao": "Gasta pontos de Ki para Rajada de Golpes (2 ataques desarmados bônus), Defesa Paciente (Esquiva) ou Passo do Vento (Desengajar/Correr + salto)."
       },
       {
         "nome": "Movimento sem Armadura",
-        "descricao": "Aumento de deslocamento enquanto sem armadura/escudo."
+        "descricao": "+3m de deslocamento sem armadura/escudo."
       }
     ],
     "3": [
       {
         "nome": "Desviar Projéteis",
-        "descricao": "Reduz dano de ataques à distância e pode arremessar de volta."
+        "descricao": "Como reação, reduz dano de ataque à distância em 1d10 + DEX + nível de monge; se zerar dano, pode arremessar de volta (alcance 6/18m, dano da arma)."
       }
     ],
     "5": [
       {
         "nome": "Ataque Extra",
-        "descricao": "Pode atacar duas vezes com a ação Atacar."
+        "descricao": "Ao usar Ação Atacar, realiza 2 ataques."
       },
       {
         "nome": "Golpe Atordoante",
-        "descricao": "Pode tentar atordoar alvo após acertar ataque corpo a corpo."
+        "descricao": "Ao acertar ataque corpo a corpo, pode gastar 1 Ki para forçar teste de CON; falha deixa alvo Atordoado até fim do seu próximo turno."
       }
     ],
     "7": [
       {
         "nome": "Evasão",
-        "descricao": "Reduz ou anula dano em efeitos de Destreza."
+        "descricao": "Em testes de DEX contra efeitos de área, sofre 0 no sucesso e metade na falha."
       },
       {
         "nome": "Mente Serena",
-        "descricao": "Ação para encerrar efeitos de medo ou enfeitiçamento em si."
+        "descricao": "Como ação, encerra em si efeitos de enfeitiçado ou amedrontado."
       }
     ],
     "10": [
       {
         "nome": "Pureza Corporal",
-        "descricao": "Imunidade a doenças e venenos."
+        "descricao": "Imunidade a doenças e venenos (incluindo condição envenenado)."
       }
     ],
     "14": [
       {
         "nome": "Alma de Diamante",
-        "descricao": "Proficiência em todos os testes de resistência e possibilidade de repetir falha."
+        "descricao": "Proficiência em todos os testes de resistência; pode gastar 1 Ki para repetir teste falho."
       }
     ],
     "18": [
       {
         "nome": "Corpo Vazio",
-        "descricao": "Pode ficar invisível e ganhar resistência a quase todo dano."
+        "descricao": "Com 4 Ki, fica invisível por 1 minuto e ganha resistência a todos os danos exceto força."
       }
     ],
     "20": [
       {
         "nome": "Perfeição Interior",
-        "descricao": "Recupera Ki ao iniciar combate com reserva muito baixa."
+        "descricao": "Se iniciar combate sem Ki, recupera 4 pontos automaticamente."
       }
     ]
   },
