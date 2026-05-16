@@ -64,52 +64,52 @@
   "profissoes": [
     "Acrobata",
     "Alquimista",
-    "Ama de companhia (F)",
+    "Ama(o) de companhia",
     "Apotecário",
     "Arauto",
     "Armeiro",
     "Artista",
     "Ator",
     "Atriz",
-    "Bailarina (F)",
+    "Bailarino(a)",
     "Batedor",
-    "Bibliotecária",
-    "Carpinteira",
+    "Bibliotecário(a)",
+    "Carpinteiro(a)",
     "Cartógrafo",
     "Caçador",
     "Caçador de Recompensas",
     "Cervejeiro",
-    "Cortesã (F)",
-    "Costureira (F)",
-    "Cozinheira",
-    "Curandeira",
-    "Dançarina (F)",
+    "Cortesã(o)",
+    "Costureiro(a)",
+    "Cozinheiro(a)",
+    "Curandeiro(a)",
+    "Dançarino(a)",
     "Diplomata",
     "Escriba",
     "Escultor",
     "Estalajadeiro",
     "Ferreiro",
     "Guarda da Cidade",
-    "Guardiã da corte (F)",
+    "Guardião(ã) da corte",
     "Herbalista",
-    "Joalheira",
+    "Joalheiro(a)",
     "Lenhador",
-    "Maga de corte (F)",
+    "Mago(a) de corte",
     "Marinheiro",
     "Mensageiro",
     "Mercador",
     "Mineiro",
     "Musicista",
-    "Navegadora",
+    "Navegador(a)",
     "Ourives",
     "Padeiro",
-    "Parteira (F)",
+    "Parteiro(a)",
     "Pedreiro",
-    "Pescadora",
-    "Pintora",
+    "Pescador(a)",
+    "Pintor(a)",
     "Professor",
-    "Sacerdotisa (F)",
-    "Taberneiro",
+    "Sacerdote(sa)",
+    "Taverneiro(a)",
     "Teceleiro",
     "Tutor"
   ],
@@ -369,5 +369,82 @@
     "Kaelis",
     "Noemi",
     "Vex"
+  ],
+  "lealdadesPonderadas": [
+    {
+      "nome": "Altruísta e protetor do bem comum",
+      "min": 70,
+      "max": 100
+    },
+    {
+      "nome": "Fiel aos amigos e à companhia",
+      "min": 40,
+      "max": 100
+    },
+    {
+      "nome": "Leal à família acima de tudo",
+      "min": 30,
+      "max": 100
+    },
+    {
+      "nome": "Defensor da cidade natal",
+      "min": 35,
+      "max": 90
+    },
+    {
+      "nome": "Fiel ao código de honra",
+      "min": 20,
+      "max": 95
+    },
+    {
+      "nome": "Devoto à própria fé",
+      "min": 10,
+      "max": 90
+    },
+    {
+      "nome": "Leal ao equilíbrio natural",
+      "min": 0,
+      "max": 80
+    },
+    {
+      "nome": "Cumpre promessas, mas cobra caro",
+      "min": -20,
+      "max": 40
+    },
+    {
+      "nome": "Leal ao dinheiro",
+      "min": -50,
+      "max": 30
+    },
+    {
+      "nome": "Segue os próprios interesses primeiro",
+      "min": -70,
+      "max": 20
+    },
+    {
+      "nome": "Lealdade volátil: muda com vantagem",
+      "min": -80,
+      "max": 10
+    },
+    {
+      "nome": "Trai com facilidade quando pressionado",
+      "min": -90,
+      "max": 0
+    },
+    {
+      "nome": "Leal ao caos e à destruição",
+      "min": -100,
+      "max": -40
+    },
+    {
+      "nome": "Sádico e oportunista",
+      "min": -100,
+      "max": -40
+    },
+    {
+      "nome": "Maléfico e manipulador",
+      "min": -100,
+      "max": -50
+    }
   ]
 }
