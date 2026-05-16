@@ -1,0 +1,38 @@
+{
+  "Bardo": {
+    "truques": ["Amizade","Consertar","Globos de Luz","Ilusão Menor","Luz","Mensagem","Mãos Mágicas","Prestidigitação","Vicious Mockery","True Strike"],
+    "1": ["Compreender Idiomas","Curar Ferimentos","Detectar Magia","Destruição Sussurrante","Disfarçar-se","Enfeitiçar Pessoa","Falar com Animais","Identificar","Onda Trovejante","Palavra Curativa","Queda Suave","Riso Histérico de Tasha","Sono"],
+    "2": ["Acalmar Emoções","Detectar Pensamentos","Invisibilidade","Névoa Mental","Restauração Menor","Silêncio","Sugestão","Zona da Verdade"],
+    "3": ["Clarevidência","Contramágica","Dissipar Magia","Falar com Mortos","Hipnotizar","Imagem Maior","Leomund Tiny Hut","Medo"],
+    "4": ["Confusão","Invisibilidade Maior","Metamorfose","Porta Dimensional"],
+    "5": ["Animar Objetos","Dominar Pessoa","Restauração Maior","Sonho","Telecinese"],
+    "6": ["Dança Irresistível de Otto","Encontrar o Caminho","Ilusão Programada","Visão da Verdade"],
+    "7": ["Palavra Divina","Teletransporte","Projeto de Imagem"],
+    "8": ["Palavra de Poder Atordoar","Dominar Monstro","Labirinto"],
+    "9": ["Palavra de Poder Matar","Previsão","Metamorfose Verdadeira"]
+  },
+  "Bruxo": {
+    "truques": ["Eldritch Blast","Ilusão Menor","Mãos Mágicas","Prestidigitação","Rajada de Veneno","Toque Chocante","True Strike"],
+    "1": ["Armadura de Agathys","Braços de Hadar","Compreender Idiomas","Enfeitiçar Pessoa","Proteção contra o Bem e Mal","Raio de Bruxa","Servo Invisível"],
+    "2": ["Despedaçar","Escuridão","Invisibilidade","Raio Ardente","Sugestão","Segurar Pessoa"],
+    "3": ["Contramágica","Dissipar Magia","Fome de Hadar","Medo","Padrão Hipnótico"],
+    "4": ["Banimento","Blight","Invisibilidade Maior","Porta Dimensional"],
+    "5": ["Dominar Pessoa","Enervação","Segurar Monstro","Telecinese"],
+    "6": ["Círculo da Morte","Criar Mortos-Vivos","Visão da Verdade"],
+    "7": ["Dedo da Morte","Etéreo","Plano Etéreo"],
+    "8": ["Dominar Monstro","Palavra de Poder Atordoar"],
+    "9": ["Aprisionamento","Palavra de Poder Matar","Premonição"]
+  },
+  "Clérigo": {
+    "truques": ["Chama Sagrada","Guiar","Luz","Palavra Radiante","Resistência","Thaumaturgy"],
+    "1": ["Benção","Curar Ferimentos","Detectar Magia","Detectar o Bem e Mal","Escudo da Fé","Ferimentos Inflict","Palavra Curativa","Proteção contra o Bem e Mal","Purificar Alimentos e Bebidas","Santuário"],
+    "2": ["Arma Espiritual","Auxílio","Calma Emocional","Lesser Restoration","Oração de Cura","Silêncio","Zona da Verdade"],
+    "3": ["Animar Mortos","Clarividência","Dissipar Magia","Falar com Mortos","Guardians Espirituais","Revivificar"],
+    "4": ["Banimento","Guardião da Fé","Liberdade de Movimento","Proteção contra a Morte"],
+    "5": ["Coluna de Chamas","Comunhão","Curar Ferimentos em Massa","Restauração Maior","Reviver os Mortos"],
+    "6": ["Barreira de Lâminas","Cura Completa","Encontrar o Caminho","Palavra de Retorno"],
+    "7": ["Ressurreição","Símbolo","Tempestade de Fogo"],
+    "8": ["Aura Sagrada","Terremoto"],
+    "9": ["Cura em Massa","Portal","Ressurreição Verdadeira"]
+  }
+}
