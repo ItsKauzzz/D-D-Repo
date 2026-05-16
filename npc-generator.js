@@ -1,6 +1,6 @@
 const fieldIds = ["nome","sobrenome","profissao","cidadeNatal","sexo","antepassado","classe","level","idade","temperamento","lealdade"];
 const attrs = ["forca","destreza","constituicao","inteligencia","sabedoria","carisma"];
-const state = { npc:null, data:null, characteristicData:null, cidades:[], cidadeMap:null, locations:[], backgrounds:[], equipmentPool:[], itemPool:[] };
+const state = { npc:null, data:null, characteristicData:null, cidades:[], cidadeMap:null, locations:[], backgrounds:[], equipmentPool:[], itemPool:[], classProfiles:{} };
 
 const randomFrom = (list) => list[Math.floor(Math.random() * list.length)];
 const normalizeType = (t) => String(t||"").trim().toLowerCase();
@@ -163,48 +163,7 @@ const skillBuckets = {
   sociais: ["Persuasão","Enganação","Atuação"],
   furtivas: ["Furtividade","Prestidigitação","Investigação"]
 };
-const classSkillAffinity = {
-  "Bardo": ["sociais","magicas"],
-  "Bruxo": ["magicas","sociais"],
-  "Bárbaro": ["marciais"],
-  "Clérigo": ["magicas","sociais"],
-  "Druida": ["magicas","marciais"],
-  "Feiticeiro": ["magicas","sociais"],
-  "Guerreiro": ["marciais"],
-  "Ladino": ["furtivas","sociais"],
-  "Mago": ["magicas"],
-  "Monge": ["marciais","furtivas"],
-  "Paladino": ["marciais","sociais"],
-  "Patrulheiro": ["marciais","furtivas"]
-};
-const classProficiencyMap = {
-  "Bardo": ["Armaduras leves", "Armas simples", "Besta de mão", "Espada curta", "Espada longa", "Florete", "3 instrumentos musicais"],
-  "Bruxo": ["Armaduras leves", "Armas simples"],
-  "Bárbaro": ["Armaduras leves", "Armaduras médias", "Escudos", "Armas simples", "Armas marciais"],
-  "Clérigo": ["Armaduras leves", "Armaduras médias", "Escudos", "Armas simples"],
-  "Druida": ["Armaduras leves", "Armaduras médias", "Escudos", "Clavas", "Adagas", "Azagaias", "Bordões", "Cimitarras", "Funda", "Lanças", "Machadinhas", "Manguais", "Dardos"],
-  "Feiticeiro": ["Adagas", "Dardos", "Fundas", "Bordões", "Bestas leves"],
-  "Guerreiro": ["Todas as armaduras", "Escudos", "Armas simples", "Armas marciais"],
-  "Ladino": ["Armaduras leves", "Armas simples", "Bestas de mão", "Espadas longas", "Rapieiras", "Espadas curtas", "Ferramentas de ladrão"],
-  "Mago": ["Adagas", "Dardos", "Fundas", "Bordões", "Bestas leves"],
-  "Monge": ["Armas simples", "Espadas curtas"],
-  "Paladino": ["Todas as armaduras", "Escudos", "Armas simples", "Armas marciais"],
-  "Patrulheiro": ["Armaduras leves", "Armaduras médias", "Escudos", "Armas simples", "Armas marciais"]
-};
-const classEquipPreferences = {
-  "Bardo": { armor: "Armaduras leves", shield: false, melee: true, ranged: true, magicalFocus: true },
-  "Bruxo": { armor: "Armaduras leves", shield: false, melee: false, ranged: true, magicalFocus: true },
-  "Bárbaro": { armor: "Armaduras médias", shield: true, melee: true, ranged: false },
-  "Clérigo": { armor: "Armaduras médias", shield: true, melee: true, ranged: false },
-  "Druida": { armor: "Armaduras leves", shield: true, melee: true, ranged: false, magicalFocus: true },
-  "Feiticeiro": { armor: null, shield: false, melee: false, ranged: true, magicalFocus: true },
-  "Guerreiro": { armor: "Armaduras pesadas", shield: true, melee: true, ranged: true },
-  "Ladino": { armor: "Armaduras leves", shield: false, melee: true, ranged: true },
-  "Mago": { armor: null, shield: false, melee: false, ranged: true, magicalFocus: true },
-  "Monge": { armor: null, shield: false, melee: true, ranged: false },
-  "Paladino": { armor: "Armaduras pesadas", shield: true, melee: true, ranged: false },
-  "Patrulheiro": { armor: "Armaduras médias", shield: false, melee: true, ranged: true }
-};
+const getClassProfile = (classe) => state.classProfiles?.[classe] || {};
 const armorBaseAc = {
   "Acolchoada": 11, "Couro": 11, "Couro batido": 12,
   "Camisa de malha": 13, "Cota de escamas": 14, "Gibão de peles": 12, "Meia armadura": 15, "Peitoral": 14,
@@ -216,14 +175,18 @@ function getInventoryCategory(data, rootKey, category){return (data?.[rootKey]?.
 function getLevelRange(){const minInput = Number(document.getElementById("levelMinInput").value || 1); const maxInput = Number(document.getElementById("levelMaxInput").value || 20); const low = Math.max(1, Math.min(minInput, maxInput)); const high = Math.min(20, Math.max(minInput, maxInput)); return {low,high};}
 function buildProficiencias(classe, level){
   const tier = getLevelTier(level);
-  const base = classProficiencyMap[classe] || [];
-  const affinity = (classSkillAffinity[classe] || []).flatMap((k)=>skillBuckets[k] || []);
+  const base = getClassProfile(classe).generalProficiencies || [];
+  const affinity = (getClassProfile(classe).skillBuckets || []).flatMap((k)=>skillBuckets[k] || []);
+  const accuracy = Number(document.getElementById("classAccurateRange")?.value || 50) / 100;
+  const favoredCount = Math.round(accuracy * tier.skillMax);
   const preferred = [...new Set([...affinity, ...dndSkills])];
   const skillCount = Math.floor(Math.random() * (tier.skillMax - tier.skillMin + 1)) + tier.skillMin;
-  return { gerais: base, skills: randomSample(preferred, skillCount) };
+  const favoredSkills = randomSample(preferred, Math.min(favoredCount, skillCount));
+  const remainder = randomSample(dndSkills.filter((s)=>!favoredSkills.includes(s)), Math.max(0, skillCount - favoredSkills.length));
+  return { gerais: base, skills: [...favoredSkills, ...remainder] };
 }
 function buildLoadout(classe, inventoryData){
-  const pref = classEquipPreferences[classe] || { armor: null, shield: false, melee: true, ranged: true };
+  const pref = getClassProfile(classe).equipPreference || { armor: null, shield: false, melee: true, ranged: true };
   const armorPool = pref.armor ? getInventoryCategory(inventoryData, "Equipamentos", pref.armor) : [];
   const shieldPool = getInventoryCategory(inventoryData, "Equipamentos", "Escudos");
   const meleePool = getInventoryCategory(inventoryData, "Equipamentos", "Armas corpo a corpo");
@@ -286,13 +249,15 @@ state.npc.background = buildBackground(state.npc);
 renderNpc(state.npc);
 }
 
-async function init(){const [baseRes,charRes,cidades,locations,backgroundRes,equipmentRes,itemRes]=await Promise.all([fetch("./npc-data.json"),fetch("./npc-characteristics.json"),loadCityVillageLocations(),loadLocations(),fetch("./data/backgrounds.json"),fetch("./data/inventory/equipment.json"),fetch("./data/inventory/itens.json")]); state.data=await baseRes.json(); state.characteristicData=await charRes.json(); state.locations=locations.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.backgrounds=(await backgroundRes.json()).templates.map((t)=>String(t.text||"")).filter(Boolean); state.cidades=cidades.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.cidadeMap=new Map(state.cidades.map((e)=>[e.nome,e])); state.equipmentData=await equipmentRes.json(); state.equipmentPool=flattenPool(state.equipmentData, "Equipamentos"); state.itemPool=flattenPool(await itemRes.json(), "Itens");
+async function init(){const [baseRes,charRes,cidades,locations,backgroundRes,equipmentRes,itemRes,classProfilesRes]=await Promise.all([fetch("./npc-data.json"),fetch("./npc-characteristics.json"),loadCityVillageLocations(),loadLocations(),fetch("./data/backgrounds.json"),fetch("./data/inventory/equipment.json"),fetch("./data/inventory/itens.json"),fetch("./data/class-profiles.json")]); state.data=await baseRes.json(); state.characteristicData=await charRes.json(); state.locations=locations.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.backgrounds=(await backgroundRes.json()).templates.map((t)=>String(t.text||"")).filter(Boolean); state.cidades=cidades.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.cidadeMap=new Map(state.cidades.map((e)=>[e.nome,e])); state.equipmentData=await equipmentRes.json(); state.itemPool=flattenPool(await itemRes.json(), "Itens"); state.equipmentPool=flattenPool(state.equipmentData, "Equipamentos"); state.classProfiles=await classProfilesRes.json();
 populateSelect("rangeCenterSelect",state.cidades.map((c)=>c.nome).sort((a,b)=>a.localeCompare(b, "pt-BR")));
 buildCheckList("profissaoChecks",state.data.profissoes); buildCheckList("antepassadoChecks",state.data.antepassados); buildCheckList("classeChecks",state.data.classes); buildCheckList("temperamentoChecks",state.data.temperamentos); buildCheckList("lealdadeChecks",state.data.lealdades); buildCheckList("sexoChecks", ["homens","mulheres","androgenos"]);
 refreshHometownChecks();
 const updateRange=()=>{document.getElementById("distanceValue").textContent=document.getElementById("distanceRange").value; refreshHometownChecks();};
 document.getElementById("distanceRange").addEventListener("input",updateRange); document.getElementById("rangeCenterSelect").addEventListener("change",updateRange);
 const align=document.getElementById("alignmentRange"); const alignLabel=document.getElementById("alignmentLabel");
+const classAccurate=document.getElementById("classAccurateRange"); const classAccurateValue=document.getElementById("classAccurateValue");
+classAccurate.addEventListener("input",()=>{classAccurateValue.textContent=classAccurate.value;});
 const levelMinRange=document.getElementById("levelMinInput");
 const levelMaxRange=document.getElementById("levelMaxInput");
 const levelMinValue=document.getElementById("levelMinValue");

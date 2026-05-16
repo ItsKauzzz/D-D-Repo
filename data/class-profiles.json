@@ -1,0 +1,62 @@
+{
+  "Bardo": {
+    "skillBuckets": ["sociais", "magicas"],
+    "generalProficiencies": ["Armaduras leves", "Armas simples", "Besta de mão", "Espada curta", "Espada longa", "Florete", "3 instrumentos musicais"],
+    "equipPreference": { "armor": "Armaduras leves", "shield": false, "melee": true, "ranged": true, "magicalFocus": true }
+  },
+  "Bruxo": {
+    "skillBuckets": ["magicas", "sociais"],
+    "generalProficiencies": ["Armaduras leves", "Armas simples"],
+    "equipPreference": { "armor": "Armaduras leves", "shield": false, "melee": false, "ranged": true, "magicalFocus": true }
+  },
+  "Bárbaro": {
+    "skillBuckets": ["marciais"],
+    "generalProficiencies": ["Armaduras leves", "Armaduras médias", "Escudos", "Armas simples", "Armas marciais"],
+    "equipPreference": { "armor": "Armaduras médias", "shield": true, "melee": true, "ranged": false, "magicalFocus": false }
+  },
+  "Clérigo": {
+    "skillBuckets": ["magicas", "sociais"],
+    "generalProficiencies": ["Armaduras leves", "Armaduras médias", "Escudos", "Armas simples"],
+    "equipPreference": { "armor": "Armaduras médias", "shield": true, "melee": true, "ranged": false, "magicalFocus": false }
+  },
+  "Druida": {
+    "skillBuckets": ["magicas", "marciais"],
+    "generalProficiencies": ["Armaduras leves", "Armaduras médias", "Escudos", "Clavas", "Adagas", "Azagaias", "Bordões", "Cimitarras", "Funda", "Lanças", "Machadinhas", "Manguais", "Dardos"],
+    "equipPreference": { "armor": "Armaduras leves", "shield": true, "melee": true, "ranged": false, "magicalFocus": true }
+  },
+  "Feiticeiro": {
+    "skillBuckets": ["magicas", "sociais"],
+    "generalProficiencies": ["Adagas", "Dardos", "Fundas", "Bordões", "Bestas leves"],
+    "equipPreference": { "armor": null, "shield": false, "melee": false, "ranged": true, "magicalFocus": true }
+  },
+  "Guerreiro": {
+    "skillBuckets": ["marciais"],
+    "generalProficiencies": ["Todas as armaduras", "Escudos", "Armas simples", "Armas marciais"],
+    "equipPreference": { "armor": "Armaduras pesadas", "shield": true, "melee": true, "ranged": true, "magicalFocus": false }
+  },
+  "Ladino": {
+    "skillBuckets": ["furtivas", "sociais"],
+    "generalProficiencies": ["Armaduras leves", "Armas simples", "Bestas de mão", "Espadas longas", "Rapieiras", "Espadas curtas", "Ferramentas de ladrão"],
+    "equipPreference": { "armor": "Armaduras leves", "shield": false, "melee": true, "ranged": true, "magicalFocus": false }
+  },
+  "Mago": {
+    "skillBuckets": ["magicas"],
+    "generalProficiencies": ["Adagas", "Dardos", "Fundas", "Bordões", "Bestas leves"],
+    "equipPreference": { "armor": null, "shield": false, "melee": false, "ranged": true, "magicalFocus": true }
+  },
+  "Monge": {
+    "skillBuckets": ["marciais", "furtivas"],
+    "generalProficiencies": ["Armas simples", "Espadas curtas"],
+    "equipPreference": { "armor": null, "shield": false, "melee": true, "ranged": false, "magicalFocus": false }
+  },
+  "Paladino": {
+    "skillBuckets": ["marciais", "sociais"],
+    "generalProficiencies": ["Todas as armaduras", "Escudos", "Armas simples", "Armas marciais"],
+    "equipPreference": { "armor": "Armaduras pesadas", "shield": true, "melee": true, "ranged": false, "magicalFocus": false }
+  },
+  "Patrulheiro": {
+    "skillBuckets": ["marciais", "furtivas"],
+    "generalProficiencies": ["Armaduras leves", "Armaduras médias", "Escudos", "Armas simples", "Armas marciais"],
+    "equipPreference": { "armor": "Armaduras médias", "shield": false, "melee": true, "ranged": true, "magicalFocus": false }
+  }
+}
