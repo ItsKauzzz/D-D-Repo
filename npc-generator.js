@@ -174,19 +174,19 @@ const skillBuckets = {
   furtivas: ["Furtividade","Prestidigitação","Investigação"]
 };
 const classSignatureSkills = {
-  "Bardo": ["Enganação","Persuasão","Atuação"],
-  "Bruxo": ["Arcanismo","Enganação","Intimidação"],
-  "Bárbaro": ["Atletismo","Intimidação","Sobrevivência"],
-  "Clérigo": ["Religião","Intuição","Medicina"],
-  "Druida": ["Natureza","Lidar com Animais","Sobrevivência"],
-  "Feiticeiro": ["Arcanismo","Persuasão","Enganação"],
-  "Guerreiro": ["Atletismo","Intimidação","Acrobacia"],
-  "Ladino": ["Furtividade","Prestidigitação","Investigação"],
-  "Mago": ["Arcanismo","História","Investigação"],
-  "Monge": ["Acrobacia","Intuição","Atletismo"],
-  "Paladino": ["Persuasão","Intimidação","Religião"],
-  "Patrulheiro": ["Sobrevivência","Natureza","Lidar com Animais"],
-  "Artífice": ["Arcanismo","Investigação","Prestidigitação"]
+  "Bárbaro": ["Atletismo","Sobrevivência","Intimidação","Percepção"],
+  "Bardo": ["Atuação","Persuasão","Enganação","Intuição"],
+  "Bruxo": ["Enganação","Arcanismo","Intimidação","Investigação"],
+  "Clérigo": ["Religião","Intuição","Medicina","História"],
+  "Druida": ["Natureza","Lidar com Animais","Sobrevivência","Medicina"],
+  "Feiticeiro": ["Arcanismo","Persuasão","Enganação","Intimidação"],
+  "Guerreiro": ["Atletismo","Intimidação","Sobrevivência","Percepção"],
+  "Ladino": ["Furtividade","Prestidigitação","Enganação","Investigação"],
+  "Mago": ["Arcanismo","História","Investigação","Intuição"],
+  "Monge": ["Acrobacia","Furtividade","Intuição","Atletismo"],
+  "Paladino": ["Persuasão","Atletismo","Religião","Intimidação"],
+  "Patrulheiro": ["Sobrevivência","Natureza","Percepção","Furtividade"],
+  "Artífice": ["Arcanismo","Investigação","História","Prestidigitação"]
 };
 const getClassProfile = (classe) => state.classProfiles?.[classe] || {};
 const armorBaseAc = {
