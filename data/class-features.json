@@ -1,64 +1,286 @@
 {
   "Bardo": {
     "1": [
-      { "nome": "Inspiração de Bardo", "descricao": "Concede um dado de inspiração a um aliado para adicionar em testes, ataques ou salvaguardas." },
-      { "nome": "Conjuração", "descricao": "Você aprende e conjura magias de bardo, usando Carisma como atributo de conjuração." }
+      {
+        "nome": "Inspiração de Bardo",
+        "descricao": "Concede um dado de inspiração a um aliado para adicionar em testes, ataques ou salvaguardas."
+      },
+      {
+        "nome": "Conjuração",
+        "descricao": "Você aprende e conjura magias de bardo, usando Carisma como atributo de conjuração."
+      }
     ],
     "2": [
-      { "nome": "Jack of All Trades", "descricao": "Adiciona metade do bônus de proficiência em testes sem proficiência plena." },
-      { "nome": "Canção de Descanso", "descricao": "Durante descanso curto, aliados recuperam PV adicionais ao gastar dados de vida." }
+      {
+        "nome": "Jack of All Trades",
+        "descricao": "Adiciona metade do bônus de proficiência em testes sem proficiência plena."
+      },
+      {
+        "nome": "Canção de Descanso",
+        "descricao": "Durante descanso curto, aliados recuperam PV adicionais ao gastar dados de vida."
+      }
     ],
     "3": [
-      { "nome": "Especialização", "descricao": "Escolha perícias para dobrar o bônus de proficiência." },
-      { "nome": "Colégio de Bardo", "descricao": "Você escolhe uma subclasse que define estilo e poderes adicionais." }
+      {
+        "nome": "Especialização",
+        "descricao": "Escolha perícias para dobrar o bônus de proficiência."
+      },
+      {
+        "nome": "Colégio de Bardo",
+        "descricao": "Você escolhe uma subclasse que define estilo e poderes adicionais."
+      }
     ],
     "5": [
-      { "nome": "Fonte de Inspiração", "descricao": "Recupera usos de Inspiração de Bardo também em descanso curto." }
+      {
+        "nome": "Fonte de Inspiração",
+        "descricao": "Recupera usos de Inspiração de Bardo também em descanso curto."
+      }
     ],
     "10": [
-      { "nome": "Segredos Mágicos", "descricao": "Aprende magias de outras listas, ampliando muito a versatilidade." }
+      {
+        "nome": "Segredos Mágicos",
+        "descricao": "Aprende magias de outras listas, ampliando muito a versatilidade."
+      }
     ],
     "20": [
-      { "nome": "Inspiração Superior", "descricao": "Se ficar sem usos de inspiração, recupera um uso no início do combate." }
+      {
+        "nome": "Inspiração Superior",
+        "descricao": "Se ficar sem usos de inspiração, recupera um uso no início do combate."
+      }
     ]
   },
   "Bárbaro": {
-    "1": ["Fúria", "Defesa sem Armadura"],
-    "2": ["Ataque Descuidado", "Sentido de Perigo"],
-    "5": ["Ataque Extra", "Movimento Aprimorado"],
-    "7": ["Instinto Feral"],
-    "9": ["Crítico Brutal"],
-    "11": ["Fúria Implacável"],
-    "15": ["Fúria Persistente"],
-    "20": ["Força e Constituição aumentadas"]
+    "1": [
+      {
+        "nome": "Fúria",
+        "descricao": "Entra em estado de fúria para causar mais dano e resistir a dano físico."
+      },
+      {
+        "nome": "Defesa sem Armadura",
+        "descricao": "CA baseada em Constituição e Destreza quando sem armadura pesada."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Ataque Descuidado",
+        "descricao": "Ganha vantagem em ataques corpo a corpo usando Força, mas ataques contra você também têm vantagem."
+      },
+      {
+        "nome": "Sentido de Perigo",
+        "descricao": "Vantagem em testes de Destreza contra efeitos visíveis."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Ataque Extra",
+        "descricao": "Pode atacar duas vezes ao usar a ação Atacar."
+      },
+      {
+        "nome": "Movimento Aprimorado",
+        "descricao": "Aumento de deslocamento enquanto não usa armadura pesada."
+      }
+    ],
+    "7": [
+      {
+        "nome": "Instinto Feral",
+        "descricao": "Vantagem em iniciativa e age normalmente mesmo surpreendido em certas condições."
+      }
+    ],
+    "9": [
+      {
+        "nome": "Crítico Brutal",
+        "descricao": "Acrescenta dados extras de dano ao acertar crítico com ataques corpo a corpo."
+      }
+    ],
+    "11": [
+      {
+        "nome": "Fúria Implacável",
+        "descricao": "Pode evitar cair a 0 PV ao passar em teste de Constituição."
+      }
+    ],
+    "15": [
+      {
+        "nome": "Fúria Persistente",
+        "descricao": "Sua fúria só termina cedo em situações muito específicas."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Força e Constituição aumentadas",
+        "descricao": "Aumenta os limites e valores máximos de Força e Constituição."
+      }
+    ]
   },
   "Guerreiro": {
-    "1": ["Estilo de Luta", "Segundo Fôlego"],
-    "2": ["Surto de Ação"],
-    "5": ["Ataque Extra"],
-    "9": ["Indomável"],
-    "11": ["Ataque Extra Aprimorado (3 ataques)"],
-    "20": ["Ataque Extra Supremo (4 ataques)"]
+    "1": [
+      {
+        "nome": "Estilo de Luta",
+        "descricao": "Escolhe um estilo que concede bônus passivo em combate."
+      },
+      {
+        "nome": "Segundo Fôlego",
+        "descricao": "Recupera PV como ação bônus uma vez por descanso."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Surto de Ação",
+        "descricao": "Ganha uma ação adicional no turno, 1 vez por descanso curto."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Ataque Extra",
+        "descricao": "Pode atacar duas vezes ao usar a ação Atacar."
+      }
+    ],
+    "9": [
+      {
+        "nome": "Indomável",
+        "descricao": "Pode repetir um teste de resistência que falhou."
+      }
+    ],
+    "11": [
+      {
+        "nome": "Ataque Extra Aprimorado (3 ataques)",
+        "descricao": "Agora realiza três ataques com a ação Atacar."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Ataque Extra Supremo (4 ataques)",
+        "descricao": "Agora realiza quatro ataques com a ação Atacar."
+      }
+    ]
   },
   "Ladino": {
-    "1": ["Ataque Furtivo", "Especialização", "Linguagem de Ladrões"],
-    "2": ["Ação Ardilosa"],
-    "5": ["Esquiva Sobrenatural"],
-    "7": ["Evasão"],
-    "11": ["Talento Confiável"],
-    "14": ["Sentido às Cegas"],
-    "18": ["Elusivo"],
-    "20": ["Golpe da Sorte"]
+    "1": [
+      {
+        "nome": "Ataque Furtivo",
+        "descricao": "Causa dano adicional quando atende condições de furtividade/vantagem."
+      },
+      {
+        "nome": "Especialização",
+        "descricao": "Dobra bônus de proficiência em perícias escolhidas."
+      },
+      {
+        "nome": "Linguagem de Ladrões",
+        "descricao": "Conhece códigos secretos e sinais do submundo."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Ação Ardilosa",
+        "descricao": "Pode Correr, Desengajar ou Esconder como ação bônus."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Esquiva Sobrenatural",
+        "descricao": "Usa reação para reduzir pela metade dano de um ataque que acertou."
+      }
+    ],
+    "7": [
+      {
+        "nome": "Evasão",
+        "descricao": "Em testes de Destreza, sofre menos ou nenhum dano em efeitos de área."
+      }
+    ],
+    "11": [
+      {
+        "nome": "Talento Confiável",
+        "descricao": "Resultados baixos em perícias proficientes contam como mínimo 10."
+      }
+    ],
+    "14": [
+      {
+        "nome": "Sentido às Cegas",
+        "descricao": "Percebe criaturas próximas mesmo sem enxergar claramente."
+      }
+    ],
+    "18": [
+      {
+        "nome": "Elusivo",
+        "descricao": "Inimigos têm dificuldade extrema para obter vantagem contra você."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Golpe da Sorte",
+        "descricao": "Pode transformar falha em acerto/sucesso em momentos críticos."
+      }
+    ]
   },
   "Monge": {
-    "1": ["Defesa sem Armadura", "Artes Marciais"],
-    "2": ["Ki", "Movimento sem Armadura"],
-    "3": ["Desviar Projéteis"],
-    "5": ["Ataque Extra", "Golpe Atordoante"],
-    "7": ["Evasão", "Mente Serena"],
-    "10": ["Pureza Corporal"],
-    "14": ["Alma de Diamante"],
-    "18": ["Corpo Vazio"],
-    "20": ["Perfeição Interior"]
+    "1": [
+      {
+        "nome": "Defesa sem Armadura",
+        "descricao": "CA calculada sem armadura usando Destreza e Sabedoria."
+      },
+      {
+        "nome": "Artes Marciais",
+        "descricao": "Ataques desarmados melhorados e uso de Destreza para ataques de monge."
+      }
+    ],
+    "2": [
+      {
+        "nome": "Ki",
+        "descricao": "Gasta pontos de Ki para técnicas especiais (rajada, esquiva, deslocamento)."
+      },
+      {
+        "nome": "Movimento sem Armadura",
+        "descricao": "Aumento de deslocamento enquanto sem armadura/escudo."
+      }
+    ],
+    "3": [
+      {
+        "nome": "Desviar Projéteis",
+        "descricao": "Reduz dano de ataques à distância e pode arremessar de volta."
+      }
+    ],
+    "5": [
+      {
+        "nome": "Ataque Extra",
+        "descricao": "Pode atacar duas vezes com a ação Atacar."
+      },
+      {
+        "nome": "Golpe Atordoante",
+        "descricao": "Pode tentar atordoar alvo após acertar ataque corpo a corpo."
+      }
+    ],
+    "7": [
+      {
+        "nome": "Evasão",
+        "descricao": "Reduz ou anula dano em efeitos de Destreza."
+      },
+      {
+        "nome": "Mente Serena",
+        "descricao": "Ação para encerrar efeitos de medo ou enfeitiçamento em si."
+      }
+    ],
+    "10": [
+      {
+        "nome": "Pureza Corporal",
+        "descricao": "Imunidade a doenças e venenos."
+      }
+    ],
+    "14": [
+      {
+        "nome": "Alma de Diamante",
+        "descricao": "Proficiência em todos os testes de resistência e possibilidade de repetir falha."
+      }
+    ],
+    "18": [
+      {
+        "nome": "Corpo Vazio",
+        "descricao": "Pode ficar invisível e ganhar resistência a quase todo dano."
+      }
+    ],
+    "20": [
+      {
+        "nome": "Perfeição Interior",
+        "descricao": "Recupera Ki ao iniciar combate com reserva muito baixa."
+      }
+    ]
   }
 }

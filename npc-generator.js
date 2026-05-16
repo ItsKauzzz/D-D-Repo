@@ -84,6 +84,15 @@ function rerollSingleCharacteristic(key,pack){return generateCharacteristics(pac
 
 function renderCharacteristicsList(c){const el=document.getElementById("caracteristicasValue");el.innerHTML="";[["cabelo","cabelo"],["olhos","olhos"],["rosto","rosto"],["feição","feicao"],["peso","peso"],["cor da pele","pele"],["estrutura corporal","estruturaCorporal"],["características extras","extras"]].forEach(([label,key])=>{const li=document.createElement("li");li.innerHTML=`<button class='reroll-char' type='button' data-char-key='${key}'>🎲</button> <strong>${label}:</strong> <span class='char-value'>${c[key]}</span>`;el.appendChild(li);});}
 function renderSimpleList(id, items){const el=document.getElementById(id); if(!el) return; el.innerHTML=""; (items||[]).forEach((item)=>{const li=document.createElement("li"); li.textContent=item; el.appendChild(li);});}
+function renderFeatureList(id, items){
+  const el=document.getElementById(id); if(!el) return; el.innerHTML="";
+  (items||[]).forEach((item)=>{
+    const li=document.createElement("li");
+    if(typeof item === "string"){ li.textContent=item; }
+    else { li.innerHTML = `<strong>${item.titulo}</strong><span class="feature-desc">${item.descricao}</span>`; }
+    el.appendChild(li);
+  });
+}
 const skillToAttr = {
   "Acrobacia": "destreza",
   "Arcanismo": "inteligencia",
@@ -130,7 +139,7 @@ renderSimpleList("proficienciasGeraisValue", npc.proficienciasGerais);
 renderSimpleList("equipamentosValue", npc.equipamentos);
 renderSimpleList("itensValue", npc.itens);
 renderSimpleList("magiasValue", npc.magias);
-renderSimpleList("habilidadesClasseValue", npc.habilidadesClasse);
+renderFeatureList("habilidadesClasseValue", npc.habilidadesClasse);
 renderSheet(npc.ficha);
 document.getElementById("cidadeNatalLink").href=`mapa.html?focus=${encodeURIComponent(npc.cidadeFile)}`;
 const bgEl = document.getElementById("backgroundValue");
@@ -271,8 +280,8 @@ function buildClassFeatures(classe, level){
   const out = [];
   unlocked.forEach((lv)=>{
     (table[String(lv)]||[]).forEach((entry)=>{
-      if(typeof entry === "string") out.push(`${lv}º: ${entry}`);
-      else out.push(`${lv}º: ${entry.nome} — ${entry.descricao}`);
+      if(typeof entry === "string") out.push({ titulo: `${lv}º: ${entry}`, descricao: "" });
+      else out.push({ titulo: `${lv}º: ${entry.nome}`, descricao: entry.descricao || "" });
     });
   });
   return out;
