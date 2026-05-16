@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de NPC</title>
+  <link rel="stylesheet" href="npc-generator.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="floating-menu">
+      <h2 class="menu-title">Gerador de NPC</h2>
+
+      <div class="menu-group"><label for="nomeSelect">Nome</label><select id="nomeSelect"></select></div>
+      <div class="menu-group"><label for="profissaoSelect">Profissão</label><select id="profissaoSelect"></select></div>
+      <div class="menu-group"><label for="cidadeSelect">Cidade Natal</label><select id="cidadeSelect"></select></div>
+      <div class="menu-group"><label for="antepassadoSelect">Antepassado</label><select id="antepassadoSelect"></select></div>
+      <div class="menu-group"><label for="classeSelect">Classe</label><select id="classeSelect"></select></div>
+      <div class="menu-group"><label for="idadeInput">Idade</label><input id="idadeInput" type="number" min="1" max="150" value="26"></div>
+      <div class="menu-group"><label for="temperamentoSelect">Temperamento</label><select id="temperamentoSelect"></select></div>
+      <div class="menu-group"><label for="lealdadeSelect">Lealdade</label><select id="lealdadeSelect"></select></div>
+
+      <button id="applyButton" type="button">Aplicar seleções</button>
+      <div style="height: 8px;"></div>
+      <button id="randomizeButton" type="button">Gerar aleatório</button>
+    </aside>
+
+    <main class="content">
+      <section class="card">
+        <h1>Ficha do NPC</h1>
+        <ul class="npc-list">
+          <li><strong>Nome:</strong> <span id="nomeValue"></span></li>
+          <li><strong>Profissão:</strong> <span id="profissaoValue"></span></li>
+          <li><strong>Cidade Natal:</strong> <span id="cidadeNatalValue"></span></li>
+          <li><strong>Antepassado:</strong> <span id="antepassadoValue"></span></li>
+          <li><strong>Classe:</strong> <span id="classeValue"></span></li>
+          <li><strong>Idade:</strong> <span id="idadeValue"></span></li>
+          <li><strong>Características:</strong> <span id="caracteristicasValue"></span></li>
+          <li><strong>Temperamento:</strong> <span id="temperamentoValue"></span></li>
+          <li><strong>Lealdade:</strong> <span id="lealdadeValue"></span></li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <script src="npc-generator.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "nomes": [
+    "Aldren",
+    "Mirella",
+    "Torvak",
+    "Selene",
+    "Branor",
+    "Ilyana",
+    "Darian",
+    "Kaelis"
+  ],
+  "profissoes": [
+    "Ferreiro",
+    "Curandeira",
+    "Mercador",
+    "Caçador",
+    "Escriba",
+    "Alquimista",
+    "Batedor",
+    "Carpinteira"
+  ],
+  "cidadesNatais": [
+    "Clarencourt",
+    "Serenia",
+    "Porto de Desembarque",
+    "Elmanther",
+    "Vila Bruma",
+    "Galanta",
+    "Velistra",
+    "Nyonk"
+  ]
+}
