@@ -103,7 +103,7 @@ function renderSkillList(id, skills, profBonus, sheet){
     const attrMod = toModifier(sheet?.[attrKey] || 10);
     const total = attrMod + Number(profBonus || 2);
     const li=document.createElement("li");
-    li.textContent = `${skill} (${attrKey.toUpperCase()} ${attrMod >= 0 ? "+" : ""}${attrMod} + PROF ${profBonus >= 0 ? "+" : ""}${profBonus} = ${total >= 0 ? "+" : ""}${total})`;
+    li.innerHTML = `${skill} (${attrKey.toUpperCase()} ${attrMod >= 0 ? "+" : ""}${attrMod} + PROF ${profBonus >= 0 ? "+" : ""}${profBonus} = <span class="skill-total-mod">${total >= 0 ? "+" : ""}${total}</span>)`;
     el.appendChild(li);
   });
 }
@@ -192,15 +192,15 @@ const classProficiencyMap = {
   "Patrulheiro": ["Armaduras leves", "Armaduras médias", "Escudos", "Armas simples", "Armas marciais"]
 };
 const classEquipPreferences = {
-  "Bardo": { armor: "Armaduras leves", shield: false, melee: true, ranged: true },
-  "Bruxo": { armor: "Armaduras leves", shield: false, melee: false, ranged: true },
+  "Bardo": { armor: "Armaduras leves", shield: false, melee: true, ranged: true, magicalFocus: true },
+  "Bruxo": { armor: "Armaduras leves", shield: false, melee: false, ranged: true, magicalFocus: true },
   "Bárbaro": { armor: "Armaduras médias", shield: true, melee: true, ranged: false },
   "Clérigo": { armor: "Armaduras médias", shield: true, melee: true, ranged: false },
-  "Druida": { armor: "Armaduras leves", shield: true, melee: true, ranged: false },
-  "Feiticeiro": { armor: null, shield: false, melee: false, ranged: true },
+  "Druida": { armor: "Armaduras leves", shield: true, melee: true, ranged: false, magicalFocus: true },
+  "Feiticeiro": { armor: null, shield: false, melee: false, ranged: true, magicalFocus: true },
   "Guerreiro": { armor: "Armaduras pesadas", shield: true, melee: true, ranged: true },
   "Ladino": { armor: "Armaduras leves", shield: false, melee: true, ranged: true },
-  "Mago": { armor: null, shield: false, melee: false, ranged: true },
+  "Mago": { armor: null, shield: false, melee: false, ranged: true, magicalFocus: true },
   "Monge": { armor: null, shield: false, melee: true, ranged: false },
   "Paladino": { armor: "Armaduras pesadas", shield: true, melee: true, ranged: false },
   "Patrulheiro": { armor: "Armaduras médias", shield: false, melee: true, ranged: true }
@@ -222,16 +222,13 @@ function buildProficiencias(classe, level){
   const skillCount = Math.floor(Math.random() * (tier.skillMax - tier.skillMin + 1)) + tier.skillMin;
   return { gerais: base, skills: randomSample(preferred, skillCount) };
 }
-function buildSpecialTraits(level){
-  const tier = getLevelTier(level);
-  return randomSample(tier.tags, Math.min(2, tier.tags.length));
-}
 function buildLoadout(classe, inventoryData){
   const pref = classEquipPreferences[classe] || { armor: null, shield: false, melee: true, ranged: true };
   const armorPool = pref.armor ? getInventoryCategory(inventoryData, "Equipamentos", pref.armor) : [];
   const shieldPool = getInventoryCategory(inventoryData, "Equipamentos", "Escudos");
   const meleePool = getInventoryCategory(inventoryData, "Equipamentos", "Armas corpo a corpo");
   const rangedPool = getInventoryCategory(inventoryData, "Equipamentos", "Armas a distância");
+  const focusPool = getInventoryCategory(inventoryData, "Equipamentos", "Focos mágicos");
   const equipped = [];
   const equippedArmor = armorPool.length && Math.random() < 0.85 ? randomFrom(armorPool) : null;
   const equippedShield = pref.shield && shieldPool.length && Math.random() < 0.6 ? randomFrom(shieldPool) : null;
@@ -241,6 +238,7 @@ function buildLoadout(classe, inventoryData){
   if (equippedShield) equipped.push(`Escudo: ${equippedShield}`);
   if (equippedMelee) equipped.push(`Melee: ${equippedMelee}`);
   if (equippedRanged) equipped.push(`Ranged: ${equippedRanged}`);
+  if (pref.magicalFocus && focusPool.length && Math.random() < 0.85) equipped.push(`Foco mágico: ${randomFrom(focusPool)}`);
   if (!equippedMelee && !equippedRanged) equipped.push("Melee: Adaga");
   return { equippedArmor, equippedShield: Boolean(equippedShield), equipped };
 }
@@ -266,7 +264,7 @@ const itemCount = tier.min >= 13 ? 8 : (tier.min >= 9 ? 7 : (tier.min >= 5 ? 6 :
 const profs = buildProficiencias(classe, level);
 const ficha = generateSheet(classe, level);
 const loadout = buildLoadout(classe, state.equipmentData || {});
-const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,level,idade,proficiencyBonus:tier.profBonus,ca:calculateAc(ficha, loadout),caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha,proficienciasGerais:profs.gerais,proficienciasSkills:profs.skills,equipamentos:loadout.equipped,itens:[...randomSample(state.itemPool, itemCount), ...buildSpecialTraits(level)]};
+const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,level,idade,proficiencyBonus:tier.profBonus,ca:calculateAc(ficha, loadout),caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha,proficienciasGerais:profs.gerais,proficienciasSkills:profs.skills,equipamentos:loadout.equipped,itens:randomSample(state.itemPool, itemCount)};
 npc.background = buildBackground(npc);
 return npc;}
 
@@ -278,7 +276,7 @@ if(field==="sexo") { state.npc.sexo=sexo; state.npc.nome=(document.getElementByI
 if(field==="antepassado"){state.npc.antepassado=pickFromChecks("antepassadoChecks",state.data.antepassados); state.npc.idade=generateAgeForRace(state.npc.antepassado);}
 if(field==="classe") { state.npc.classe=pickFromChecks("classeChecks",state.data.classes); state.npc.ficha=generateSheet(state.npc.classe, state.npc.level); const p=buildProficiencias(state.npc.classe, state.npc.level); state.npc.proficienciasGerais=p.gerais; state.npc.proficienciasSkills=p.skills; }
 if(field==="level"){const {low,high} = getLevelRange(); state.npc.level = Math.floor(Math.random() * (high - low + 1)) + low; const tier=getLevelTier(state.npc.level); state.npc.proficiencyBonus=tier.profBonus; state.npc.ficha=generateSheet(state.npc.classe, state.npc.level); const p=buildProficiencias(state.npc.classe, state.npc.level); state.npc.proficienciasGerais=p.gerais; state.npc.proficienciasSkills=p.skills;}
-if(field==="profissao"){const tier=getLevelTier(state.npc.level); const itemCount = tier.min >= 13 ? 8 : (tier.min >= 9 ? 7 : (tier.min >= 5 ? 6 : 5)); const loadout = buildLoadout(state.npc.classe, state.equipmentData || {}); state.npc.equipamentos=loadout.equipped; state.npc.ca=calculateAc(state.npc.ficha, loadout); state.npc.itens=[...randomSample(state.itemPool, itemCount), ...buildSpecialTraits(state.npc.level)];}
+if(field==="profissao"){const tier=getLevelTier(state.npc.level); const itemCount = tier.min >= 13 ? 8 : (tier.min >= 9 ? 7 : (tier.min >= 5 ? 6 : 5)); const loadout = buildLoadout(state.npc.classe, state.equipmentData || {}); state.npc.equipamentos=loadout.equipped; state.npc.ca=calculateAc(state.npc.ficha, loadout); state.npc.itens=randomSample(state.itemPool, itemCount);}
 if(field==="classe"||field==="level"){const loadout = buildLoadout(state.npc.classe, state.equipmentData || {}); state.npc.equipamentos=loadout.equipped; state.npc.ca=calculateAc(state.npc.ficha, loadout);}
 if(field==="idade") state.npc.idade=generateAgeForRace(state.npc.antepassado);
 if(field==="temperamento") state.npc.temperamento=pickFromChecks("temperamentoChecks",state.data.temperamentos);
