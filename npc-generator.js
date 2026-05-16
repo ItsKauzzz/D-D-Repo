@@ -1,4 +1,4 @@
-const fieldIds = ["nome", "profissao", "cidadeNatal", "antepassado", "classe", "idade", "temperamento", "lealdade", "alinhamento"];
+const fieldIds = ["nome", "sobrenome", "profissao", "cidadeNatal", "antepassado", "classe", "idade", "temperamento", "lealdade", "alinhamento"];
 const state = { npc: null, data: null, characteristicData: null, cidades: [], cidadeMap: null };
 
 const attrs = ["forca", "destreza", "constituicao", "inteligencia", "sabedoria", "carisma"];
@@ -27,13 +27,13 @@ function calculateDistancePercent(a,b){return (Math.hypot(a.x-b.x,a.y-b.y)/Math.
 function getAllowedLocations(all){const selected=document.getElementById("rangeCenterSelect").value;const max=Number(document.getElementById("distanceRange").value||100);const center=all.find(e=>e.nome===selected)||all[0]; if(!center) return []; return all.filter(e=>calculateDistancePercent(center,e)<=max);}
 function refreshHometownChecks(){const allowed=getAllowedLocations(state.cidades); buildCheckList("cidadeChecks", allowed.map(e=>e.nome)); return allowed;}
 
-function buildNpcFromForm(){const allowed = getAllowedLocations(state.cidades); const cidadeNome=pickFromChecks("cidadeChecks", (allowed.length?allowed:state.cidades).map(c=>c.nome)); const cidade=state.cidadeMap.get(cidadeNome) || state.cidades[0]; const profile=pickFromChecks("sexoChecks", ["homens","mulheres","androgenos"]); const antepassado=pickFromChecks("antepassadoChecks",state.data.antepassados); const nomeManual=document.getElementById("nomeInput").value.trim(); const nome=nomeManual||randomFrom(state.data.nomes);
+function buildNpcFromForm(){const allowed = getAllowedLocations(state.cidades); const cidadeNome=pickFromChecks("cidadeChecks", (allowed.length?allowed:state.cidades).map(c=>c.nome)); const cidade=state.cidadeMap.get(cidadeNome) || state.cidades[0]; const profile=pickFromChecks("sexoChecks", ["homens","mulheres","androgenos"]); const antepassado=pickFromChecks("antepassadoChecks",state.data.antepassados); const nomeManual=document.getElementById("nomeInput").value.trim(); const nome=nomeManual||randomFrom(state.data.nomes); const sobrenome=randomFrom(state.data.sobrenomes);
  const idadeManual=document.getElementById("idadeInput").value.trim(); const idade=idadeManual||generateAgeForRace(antepassado);
  const alignVal = Number(document.getElementById("alignmentRange").value || 0);
- return {nome, profissao:pickFromChecks("profissaoChecks", state.data.profissoes), cidadeNatal:`${cidade.nome} (${cidade.tipo})`, cidadeFile:cidade.file, antepassado, classe:pickFromChecks("classeChecks",state.data.classes), idade, caracteristicas:generateCharacteristics(state.characteristicData[profile]), temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos), lealdade:pickFromChecks("lealdadeChecks",state.data.lealdades), alinhamento: `${labelAlignment(alignVal)} (${alignVal})`, ficha: generateSheet()};}
+ return {nome, sobrenome, profissao:pickFromChecks("profissaoChecks", state.data.profissoes), cidadeNatal:`${cidade.nome} (${cidade.tipo})`, cidadeFile:cidade.file, antepassado, classe:pickFromChecks("classeChecks",state.data.classes), idade, caracteristicas:generateCharacteristics(state.characteristicData[profile]), temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos), lealdade:pickFromChecks("lealdadeChecks",state.data.lealdades), alinhamento: `${labelAlignment(alignVal)} (${alignVal})`, ficha: generateSheet()};}
 
 function rerollField(field){if(!state.npc) return; const profile=pickFromChecks("sexoChecks", ["homens","mulheres","androgenos"]); const allowed=getAllowedLocations(state.cidades);
- if(field==="nome") state.npc.nome=(document.getElementById("nomeInput").value.trim()||randomFrom(state.data.nomes));
+ if(field==="nome"){ state.npc.nome=(document.getElementById("nomeInput").value.trim()||randomFrom(state.data.nomes)); state.npc.sobrenome=randomFrom(state.data.sobrenomes);}
  if(field==="profissao") state.npc.profissao=pickFromChecks("profissaoChecks", state.data.profissoes);
  if(field==="cidadeNatal"){const pool=(allowed.length?allowed:state.cidades).map(c=>c.nome); const c=state.cidadeMap.get(randomFrom(pool)); state.npc.cidadeNatal=`${c.nome} (${c.tipo})`; state.npc.cidadeFile=c.file;}
  if(field==="antepassado"){state.npc.antepassado=pickFromChecks("antepassadoChecks",state.data.antepassados); state.npc.idade=generateAgeForRace(state.npc.antepassado);}
