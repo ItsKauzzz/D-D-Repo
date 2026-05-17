@@ -1,0 +1,101 @@
+{
+  "Bardo": {
+    "truques": ["Amizade","Consertar","Globos de Luz","Ilusão Menor","Luz","Mensagem","Mãos Mágicas","Prestidigitação","Vicious Mockery","True Strike"],
+    "1": ["Compreender Idiomas","Curar Ferimentos","Detectar Magia","Destruição Sussurrante","Disfarçar-se","Enfeitiçar Pessoa","Falar com Animais","Identificar","Onda Trovejante","Palavra Curativa","Queda Suave","Riso Histérico de Tasha","Sono"],
+    "2": ["Acalmar Emoções","Detectar Pensamentos","Invisibilidade","Névoa Mental","Restauração Menor","Silêncio","Sugestão","Zona da Verdade"],
+    "3": ["Clarevidência","Contramágica","Dissipar Magia","Falar com Mortos","Hipnotizar","Imagem Maior","Leomund Tiny Hut","Medo"],
+    "4": ["Confusão","Invisibilidade Maior","Metamorfose","Porta Dimensional"],
+    "5": ["Animar Objetos","Dominar Pessoa","Restauração Maior","Sonho","Telecinese"],
+    "6": ["Dança Irresistível de Otto","Encontrar o Caminho","Ilusão Programada","Visão da Verdade"],
+    "7": ["Palavra Divina","Teletransporte","Projeto de Imagem"],
+    "8": ["Palavra de Poder Atordoar","Dominar Monstro","Labirinto"],
+    "9": ["Palavra de Poder Matar","Previsão","Metamorfose Verdadeira"]
+  },
+  "Bruxo": {
+    "truques": ["Eldritch Blast","Ilusão Menor","Mãos Mágicas","Prestidigitação","Rajada de Veneno","Toque Chocante","True Strike"],
+    "1": ["Armadura de Agathys","Braços de Hadar","Compreender Idiomas","Enfeitiçar Pessoa","Proteção contra o Bem e Mal","Raio de Bruxa","Servo Invisível"],
+    "2": ["Despedaçar","Escuridão","Invisibilidade","Raio Ardente","Sugestão","Segurar Pessoa"],
+    "3": ["Contramágica","Dissipar Magia","Fome de Hadar","Medo","Padrão Hipnótico"],
+    "4": ["Banimento","Blight","Invisibilidade Maior","Porta Dimensional"],
+    "5": ["Dominar Pessoa","Enervação","Segurar Monstro","Telecinese"],
+    "6": ["Círculo da Morte","Criar Mortos-Vivos","Visão da Verdade"],
+    "7": ["Dedo da Morte","Etéreo","Plano Etéreo"],
+    "8": ["Dominar Monstro","Palavra de Poder Atordoar"],
+    "9": ["Aprisionamento","Palavra de Poder Matar","Premonição"]
+  },
+  "Clérigo": {
+    "truques": ["Chama Sagrada","Guiar","Luz","Palavra Radiante","Resistência","Thaumaturgy"],
+    "1": ["Benção","Curar Ferimentos","Detectar Magia","Detectar o Bem e Mal","Escudo da Fé","Ferimentos Inflict","Palavra Curativa","Proteção contra o Bem e Mal","Purificar Alimentos e Bebidas","Santuário"],
+    "2": ["Arma Espiritual","Auxílio","Calma Emocional","Lesser Restoration","Oração de Cura","Silêncio","Zona da Verdade"],
+    "3": ["Animar Mortos","Clarividência","Dissipar Magia","Falar com Mortos","Guardians Espirituais","Revivificar"],
+    "4": ["Banimento","Guardião da Fé","Liberdade de Movimento","Proteção contra a Morte"],
+    "5": ["Coluna de Chamas","Comunhão","Curar Ferimentos em Massa","Restauração Maior","Reviver os Mortos"],
+    "6": ["Barreira de Lâminas","Cura Completa","Encontrar o Caminho","Palavra de Retorno"],
+    "7": ["Ressurreição","Símbolo","Tempestade de Fogo"],
+    "8": ["Aura Sagrada","Terremoto"],
+    "9": ["Cura em Massa","Portal","Ressurreição Verdadeira"]
+  },
+  "Druida": {
+    "truques": ["Chicote de Espinhos","Criar Chama","Druidcraft","Elementalismo","Guidance","Infestação","Produzir Chama","Rajada de Veneno","Resistência","Shillelagh"],
+    "1": ["Amizade Animal","Área Escorregadia","Bom Fruto","Curar Ferimentos","Detectar Magia","Emaranhar","Falar com Animais","Névoa Obscurecente","Onda Trovejante","Palavra Curativa"],
+    "2": ["Crescer Espinhos","Esfera Flamejante","Lesser Restoration","Localizar Animais ou Plantas","Pass without Trace","Pele de Árvore"],
+    "3": ["Convocar Animais","Crescimento de Plantas","Dissipar Magia","Forma Gasosa","Proteção contra Energia","Respirar na Água"],
+    "4": ["Conjurar Seres da Floresta","Dominar Besta","Muralha de Fogo","Tempestade de Gelo"],
+    "5": ["Comunhão com a Natureza","Conjurar Elemental","Curar Ferimentos em Massa","Reencarnação","Tree Stride"],
+    "6": ["Mover Terra","Muralha de Espinhos","Transport via Plants"],
+    "7": ["Forma Etérea","Tempestade de Fogo","Whirlwind"],
+    "8": ["Animal Shapes","Tsunami"],
+    "9": ["Foresight","Shapechange","Storm of Vengeance"]
+  },
+  "Feiticeiro": {
+    "truques": ["Fire Bolt","Luz","Mãos Mágicas","Prestidigitação","Raio de Gelo","Shocking Grasp","True Strike"],
+    "1": ["Armadura Arcana","Escudo","Magic Missile","Mísseis Mágicos","Onda Trovejante","Raio Cromático","Sono"],
+    "2": ["Blur","Detectar Pensamentos","Espelho Arcano","Invisibilidade","Scorching Ray","Sugestão"],
+    "3": ["Bola de Fogo","Contramágica","Dissipar Magia","Relâmpago","Voo"],
+    "4": ["Banimento","Invisibilidade Maior","Metamorfose","Porta Dimensional"],
+    "5": ["Cone de Frio","Dominar Pessoa","Telecinese","Wall of Stone"],
+    "6": ["Chain Lightning","Desintegrar","Globe of Invulnerability"],
+    "7": ["Finger of Death","Plane Shift","Teleport"],
+    "8": ["Dominar Monstro","Power Word Stun"],
+    "9": ["Meteor Swarm","Power Word Kill","Wish"]
+  },
+  "Mago": {
+    "truques": ["Fire Bolt","Luz","Mage Hand","Minor Illusion","Prestidigitação","Raio de Gelo","Shocking Grasp","True Strike"],
+    "1": ["Armadura Arcana","Compreender Idiomas","Detectar Magia","Disfarçar-se","Escudo","Identificar","Magic Missile","Sono"],
+    "2": ["Blur","Detectar Pensamentos","Espelho Arcano","Invisibilidade","Levitação","Misty Step","Scorching Ray"],
+    "3": ["Bola de Fogo","Contramágica","Dissipar Magia","Fly","Lightning Bolt","Tiny Hut"],
+    "4": ["Banimento","Greater Invisibility","Ice Storm","Polymorph"],
+    "5": ["Cone of Cold","Dominate Person","Telekinesis","Wall of Force"],
+    "6": ["Chain Lightning","Disintegrate","Globe of Invulnerability"],
+    "7": ["Finger of Death","Plane Shift","Teleport"],
+    "8": ["Dominate Monster","Maze","Power Word Stun"],
+    "9": ["Meteor Swarm","Power Word Kill","Time Stop","Wish"]
+  },
+  "Paladino": {
+    "truques": [],
+    "1": ["Benção","Comando","Curar Ferimentos","Escudo da Fé","Heroísmo","Proteção contra o Bem e Mal","Purificar Alimentos e Bebidas","Thunderous Smite","Wrathful Smite"],
+    "2": ["Aid","Branding Smite","Encontrar Montaria","Lesser Restoration","Magic Weapon","Zone of Truth"],
+    "3": ["Aura of Vitality","Blinding Smite","Crusader's Mantle","Dispel Magic","Revivify"],
+    "4": ["Aura of Life","Aura of Purity","Banishment","Staggering Smite"],
+    "5": ["Circle of Power","Destructive Wave","Dispel Evil and Good","Holy Weapon","Raise Dead"],
+    "6": [],"7": [],"8": [],"9": []
+  },
+  "Patrulheiro": {
+    "truques": [],
+    "1": ["Absorb Elements","Alarm","Animal Friendship","Cure Wounds","Detect Magic","Ensnaring Strike","Fog Cloud","Goodberry","Hunter's Mark","Speak with Animals"],
+    "2": ["Aid","Animal Messenger","Darkvision","Lesser Restoration","Pass without Trace","Spike Growth"],
+    "3": ["Conjure Animals","Daylight","Lightning Arrow","Plant Growth","Water Breathing"],
+    "4": ["Conjure Woodland Beings","Freedom of Movement","Grasping Vine","Stoneskin"],
+    "5": ["Commune with Nature","Conjure Volley","Swift Quiver","Tree Stride"],
+    "6": [],"7": [],"8": [],"9": []
+  },
+  "Artífice": {
+    "truques": ["Fire Bolt","Guidance","Light","Mage Hand","Mending","Prestidigitation","Shocking Grasp"],
+    "1": ["Absorb Elements","Alarm","Cure Wounds","Detect Magic","Disguise Self","Faerie Fire","Feather Fall","Grease","Identify","Tasha's Caustic Brew"],
+    "2": ["Aid","Arcane Lock","Blur","Darkvision","Enhance Ability","Heat Metal","Invisibility","Lesser Restoration","Levitate","Web"],
+    "3": ["Dispel Magic","Fly","Haste","Protection from Energy","Revivify","Water Breathing"],
+    "4": ["Arcane Eye","Fabricate","Freedom of Movement","Otiluke's Resilient Sphere","Stone Shape"],
+    "5": ["Animate Objects","Bigby's Hand","Creation","Greater Restoration","Wall of Stone"],
+    "6": [],"7": [],"8": [],"9": []
+  }
+}
