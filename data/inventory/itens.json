@@ -175,6 +175,31 @@
       "Pergaminho mágico",
       "Poção mágica",
       "Varinha mágica"
+    ],
+
+    "Itens Supérfluos": [
+      "Abotoaduras de prata",
+      "Ampola de perfume raro",
+      "Broche esmaltado",
+      "Caderneta de receitas",
+      "Caixa de charutos",
+      "Caneta-tinteiro ornamentada",
+      "Conjunto de taças de cristal",
+      "Dado viciado",
+      "Echarpe de seda",
+      "Estojo de maquiagem",
+      "Fita de campeão de corrida",
+      "Frasco de tinta dourada",
+      "Leque pintado à mão",
+      "Lenço bordado",
+      "Luneta de bronze",
+      "Miniatura de navio",
+      "Monóculo rachado",
+      "Pente de marfim",
+      "Relógio de bolso quebrado",
+      "Sinetes antigos",
+      "Taça de cobre gravada",
+      "Urso de pelúcia gasto"
     ]
   }
 }

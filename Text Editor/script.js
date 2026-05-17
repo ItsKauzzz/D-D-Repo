@@ -58,7 +58,7 @@ bootstrap();
 
 function bootstrap() {
   if (!state.pages.length) {
-    state.pages.push(createPage('Nova página'));
+    state.pages.push(createPage('Ancoras'));
     state.activePageId = state.pages[0].id;
   }
 
@@ -74,7 +74,7 @@ function bootstrap() {
 
 function bindEvents() {
   addPageBtn.addEventListener('click', () => {
-    const page = createPage(`Página ${state.pages.length + 1}`);
+    const page = createPage('Ancoras');
     state.pages.push(page);
     state.activePageId = page.id;
     saveState();
@@ -418,7 +418,19 @@ function replaceWordBeforeCaretWithLink(prefix, tag, pageId, anchorId) {
 
   const parent = node.parentNode;
   parent.replaceChild(fragment, node);
+  placeCaretAtEnd(link);
   editor.dispatchEvent(new Event('input'));
+}
+
+function placeCaretAtEnd(node) {
+  if (!node) return;
+  const selection = window.getSelection();
+  if (!selection) return;
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
 }
 
 function getCurrentTagPrefix() {
@@ -556,7 +568,7 @@ function createNewProject() {
   if (!shouldCreate) return;
 
   state = defaultState();
-  state.pages.push(createPage('Nova página'));
+  state.pages.push(createPage('Ancoras'));
   state.activePageId = state.pages[0].id;
   currentProjectHandle = null;
 
@@ -868,6 +880,7 @@ function createAnchorFromSelection() {
   const text = selectedText || tag;
 
   document.execCommand('insertHTML', false, `<span id="${anchorId}" class="anchor-tag">${escapeHtml(text)}</span>`);
+  placeCaretAtEnd(editor);
 
   updateActivePage((page) => {
     ensureAnchorTag(page, anchorId, tag);
