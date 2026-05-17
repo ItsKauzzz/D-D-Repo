@@ -145,8 +145,8 @@ function renderFamily(familia){
   if(!familia){ el.innerHTML = ""; return; }
   const filhos = (familia.filhos||[]).length ? familia.filhos.join(", ") : "Nenhum";
   el.innerHTML = `
-    <div class="family-compact-row"><strong>Mãe:</strong> <span>${familia.mae || "-"}</span></div>
-    <div class="family-compact-row"><strong>Pai:</strong> <span>${familia.pai || "-"}</span></div>
+    <div class="family-compact-row"><strong>Mãe:</strong> <span>${familia.mae || "-"} <em>(${familia.profissaoMae || "sem profissão"})</em></span></div>
+    <div class="family-compact-row"><strong>Pai:</strong> <span>${familia.pai || "-"} <em>(${familia.profissaoPai || "sem profissão"})</em></span></div>
     <div class="family-compact-row"><strong>Filhos:</strong> <span>${filhos}</span></div>
   `;
 }
@@ -173,23 +173,27 @@ state.npc=npc;
 }
 
 function generateFamily(npcSexo, antepassado){
-  const makeName = (sexo) => {
+  const makeName = (sexo, forcedLastName = '') => {
     const first = randomFrom(getNamePoolBySexo(sexo));
-    const last = randomFrom(state.data.sobrenomes || ["SemSobrenome"]);
+    const last = forcedLastName || randomFrom(state.data.sobrenomes || ["SemSobrenome"]);
     return `${first} ${last}`.trim();
   };
-  const mae = makeName("mulheres");
-  const pai = makeName("homens");
+  const familyLastName = randomFrom(state.data.sobrenomes || ["SemSobrenome"]);
+  const motherUsesDifferentLastName = Math.random() < 0.55;
+  const mae = motherUsesDifferentLastName ? makeName("mulheres") : makeName("mulheres", familyLastName);
+  const pai = makeName("homens", familyLastName);
   const raceAge = state.data.faixaEtariaPorAntepassado?.[antepassado] || { min: 18, max: 80 };
   const childCount = Math.floor(Math.random() * 4);
+  const profissaoMae = randomFrom(state.data.profissoes || ["Trabalhadora local"]);
+  const profissaoPai = randomFrom(state.data.profissoes || ["Trabalhador local"]);
   const filhos = Array.from({length: childCount}, () => {
     const sexo = randomFrom(["homens","mulheres","androgenos"]);
     const childAgeMax = Math.max(4, Math.floor((raceAge.max - raceAge.min) * 0.3));
     const idade = Math.floor(Math.random() * childAgeMax) + 1;
-    const nome = makeName(sexo);
+    const nome = makeName(sexo, familyLastName);
     return `${nome} (${idade})`;
   });
-  return { mae, pai, filhos };
+  return { mae, pai, filhos, profissaoMae, profissaoPai };
 }
 
 function exportNpcAsPdf(){

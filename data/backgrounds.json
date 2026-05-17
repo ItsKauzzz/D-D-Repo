@@ -223,6 +223,30 @@
     {
       "id": "origin_56",
       "text": "{NOME} mantém correspondência com contatos espalhados entre {CIDADE} e {POI}. Essa rede nasceu por necessidade, durante os anos turbulentos que se seguiram a {ACONTECIMENTO}."
+    },
+    {
+      "id": "origin_57",
+      "text": "{NOME} passou uma estação inteira em {POI} negociando suprimentos para {CIDADE_NATAL}. O trabalho parecia rotineiro até que sinais de {ACONTECIMENTO} transformaram cada viagem em risco real."
+    },
+    {
+      "id": "origin_58",
+      "text": "A disciplina de {NOME} foi moldada por anos de serviço como {PROFISSAO_ALEATORIA} em {CIDADE}. Depois de perder um aliado durante {ACONTECIMENTO}, escolheu atuar como {PROFISSAO} para evitar novas tragédias."
+    },
+    {
+      "id": "origin_59",
+      "text": "Entre os becos de {CIDADE_NATAL}, {NOME} aprendeu a identificar boatos úteis e perigos reais. Essa habilidade chamou atenção após os incidentes de {ACONTECIMENTO} e abriu portas para a vida de {PROFISSAO}."
+    },
+    {
+      "id": "origin_60",
+      "text": "{NOME} recebeu a primeira grande oportunidade ao escoltar viajantes até {POI}. No retorno, trouxe relatos sobre {ACONTECIMENTO} que ninguém quis acreditar — até os primeiros sinais chegarem em {CIDADE}."
+    },
+    {
+      "id": "origin_61",
+      "text": "Pouco antes de assumir o papel de {PROFISSAO}, {NOME} vivia de bicos como {PROFISSAO_ALEATORIA} em {CIDADE_NATAL}. Um encontro inesperado em {POI} mudou sua leitura do mundo e de si mesmo."
+    },
+    {
+      "id": "origin_62",
+      "text": "Quando as tensões de {ACONTECIMENTO} começaram, {NOME} já conhecia as rotas entre {CIDADE} e {CIDADE_NATAL} melhor do que muitos guardas. Essa vantagem foi decisiva para consolidar sua reputação como {PROFISSAO}."
     }
   ]
 }
