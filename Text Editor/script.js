@@ -246,6 +246,11 @@ function handleEditorClick(event) {
 
   if (target instanceof HTMLAnchorElement) {
     const href = target.getAttribute('href') || '';
+    if (target.classList.contains('location-link') && href.includes('mapa.html?focus=')) {
+      event.preventDefault();
+      window.open(href, '_blank', 'noopener,noreferrer');
+      return;
+    }
     if (!href.startsWith('notekeeper://')) return;
     event.preventDefault();
     openInternalLink(href);
