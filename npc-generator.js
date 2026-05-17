@@ -160,6 +160,51 @@ if (bgEl) bgEl.innerHTML = npc.background || "";
 state.npc=npc;
 }
 
+function exportNpcAsPdf(){
+  if(!state.npc){ alert("Gere um NPC antes de exportar."); return; }
+  window.print();
+}
+
+function exportNpcToNotekeeper(){
+  if(!state.npc){ alert("Gere um NPC antes de exportar."); return; }
+  const npc = state.npc;
+  const pageTitle = `${npc.nome} ${npc.sobrenome}`.trim();
+  const list = (items) => `<ul>${(items||[]).map((item)=>`<li>${item}</li>`).join("")}</ul>`;
+  const content = `
+    <h1>${pageTitle}</h1>
+    <p><strong>Classe:</strong> ${npc.classe} · <strong>Nível:</strong> ${npc.level} · <strong>Local:</strong> <a href="../mapa.html?focus=${encodeURIComponent(npc.cidadeFile)}" target="_blank" rel="noopener">${npc.cidadeNatal}</a></p>
+    <p><strong>Profissão:</strong> ${npc.profissao} · <strong>Sexo:</strong> ${npc.sexo} · <strong>Antepassado:</strong> ${npc.antepassado}</p>
+    <p><strong>Idade:</strong> ${npc.idade} · <strong>Temperamento:</strong> ${npc.temperamento} · <strong>Lealdade:</strong> ${npc.lealdade}</p>
+    <h2>Background</h2>
+    <p>${npc.background || ""}</p>
+    <h2>Equipamentos</h2>${list(npc.equipamentos)}
+    <h2>Itens</h2>${list(npc.itens)}
+    <h2>Magias</h2>${list(npc.magias)}
+  `;
+  const payload = {
+    app: 'NoteKeeper',
+    version: 5,
+    exportedAt: new Date().toISOString(),
+    page: {
+      id: crypto.randomUUID(),
+      title: pageTitle || 'NPC',
+      content,
+      plainText: `${pageTitle} ${npc.classe} ${npc.level}`.trim(),
+      anchors: [],
+      sectionId: null
+    }
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(pageTitle || 'npc').toLowerCase().replace(/\s+/g, '-')}-notekeeper.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 async function loadLocations(){const files=await (await fetch("data/locations/index.json")).json(); return Promise.all(files.map(async (f)=>{const d=await (await fetch(`data/locations/${f}`)).json(); return {file:String(f).replace(/\.json$/i,""),type:String(d.type||""),nome:String(d.name||""),x:Number(d.x||0),y:Number(d.y||0)};}));}
 async function loadCityVillageLocations(){const entries = await loadLocations(); return entries.filter((e)=>e.nome&&isCityOrVillage(e.type));}
 const calculateDistancePercent = (a,b) => (Math.hypot(a.x-b.x,a.y-b.y)/Math.hypot(8000,5000))*100;
@@ -366,6 +411,8 @@ syncLevelLabels();
 align.addEventListener("input",()=>{alignLabel.textContent=labelAlignment(Number(align.value)); if(state.npc){state.npc.lealdade=pickLealdadeByAlignment(Number(align.value) * -1); renderNpc(state.npc);}});
 document.getElementById("randomizeButton").addEventListener("click",()=>renderNpc(buildNpcFromForm()));
 document.getElementById("applyButton").addEventListener("click",()=>renderNpc(buildNpcFromForm()));
+document.getElementById("exportPdfButton").addEventListener("click", exportNpcAsPdf);
+document.getElementById("exportNotekeeperButton").addEventListener("click", exportNpcToNotekeeper);
 document.querySelector(".npc-list").addEventListener("click",(e)=>{const b=e.target.closest(".reroll-field"); if(b) rerollField(b.dataset.field);});
 document.getElementById("caracteristicasValue").addEventListener("click",(e)=>{const b=e.target.closest(".reroll-char"); if(!b||!state.npc) return; const sexo=pickFromChecks("sexoChecks", ["homens","mulheres","androgenos"]); state.npc.caracteristicas[b.dataset.charKey]=rerollSingleCharacteristic(b.dataset.charKey,state.characteristicData[sexo]); renderNpc(state.npc);});
 document.getElementById("proficienciasSkillsValue").addEventListener("click",(e)=>{const b=e.target.closest(".skill-roll-btn"); if(!b) return; const mod=Number(b.dataset.skillMod||0); const roll=Math.floor(Math.random()*20)+1; const total=roll+mod; const out=b.parentElement.querySelector(".skill-roll-result"); if(out) out.textContent=`${roll} ${mod>=0?'+':''}${mod} = ${total}`;});

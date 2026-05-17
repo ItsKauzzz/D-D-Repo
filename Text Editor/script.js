@@ -53,6 +53,7 @@ let isApplyingAutoLink = false;
 let selectedImage = null;
 let draggingItem = null;
 let hasShownStorageQuotaWarning = false;
+let poiIndex = [];
 
 bootstrap();
 
@@ -69,6 +70,7 @@ function bootstrap() {
   renderAnchorsList();
   loadActivePageToEditor();
   bindEvents();
+  loadPoiIndex();
   saveState();
 }
 
@@ -918,7 +920,8 @@ function insertInternalLink() {
 function applyAutoLinksOnActivePage() {
   if (!state.autolinkEnabled) return;
   const tags = getAllAnchors().filter((anchor) => anchor.tag.trim().length > 0);
-  if (!tags.length) return;
+  const pages = state.pages.filter((page) => page.title.trim().length > 0).map((page) => ({ title: page.title, pageId: page.id }));
+  if (!tags.length && !pages.length && !poiIndex.length) return;
 
   const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
   const textNodes = [];
@@ -931,9 +934,12 @@ function applyAutoLinksOnActivePage() {
   isApplyingAutoLink = true;
   let changed = false;
   const sortedTags = [...tags].sort((a, b) => b.tag.length - a.tag.length);
+  const sortedPages = [...pages].sort((a, b) => b.title.length - a.title.length);
+  const sortedPois = [...poiIndex].sort((a, b) => b.name.length - a.name.length);
+  const linkables = [...sortedTags.map((i) => i.tag), ...sortedPages.map((i) => i.title), ...sortedPois.map((i) => i.name)];
 
   textNodes.forEach((node) => {
-    const fragment = convertTextNodeToAutolinks(node.nodeValue, sortedTags);
+    const fragment = convertTextNodeToAutolinks(node.nodeValue, linkables, sortedTags, sortedPages, sortedPois);
     if (fragment) {
       changed = true;
       node.parentNode.replaceChild(fragment, node);
@@ -949,9 +955,9 @@ function applyAutoLinksOnActivePage() {
   }
 }
 
-function convertTextNodeToAutolinks(text, tags) {
+function convertTextNodeToAutolinks(text, linkables, tags, pages, pois) {
   if (!text) return null;
-  const escaped = tags.map((item) => escapeRegExp(item.tag));
+  const escaped = [...new Set(linkables.filter(Boolean).map((item) => escapeRegExp(item)))];
   if (!escaped.length) return null;
 
   const regex = new RegExp(`(^|[^\\p{L}\\p{N}_])(${escaped.join('|')})(?=$|[^\\p{L}\\p{N}_])`, 'giu');
@@ -969,11 +975,31 @@ function convertTextNodeToAutolinks(text, tags) {
 
     const matchedWord = match[2];
     const anchor = tags.find((item) => item.tag.toLowerCase() === matchedWord.toLowerCase());
-    if (anchor) {
+    const page = pages.find((item) => item.title.toLowerCase() === matchedWord.toLowerCase());
+    const poi = pois.find((item) => item.name.toLowerCase() === matchedWord.toLowerCase());
+
+    if (anchor || page || poi) {
+      const wrap = document.createElement('span');
+      wrap.className = 'inline-link-wrap';
       const link = document.createElement('a');
-      link.href = `notekeeper://page/${anchor.pageId}#${anchor.anchorId}`;
+      if (anchor) link.href = `notekeeper://page/${anchor.pageId}#${anchor.anchorId}`;
+      else if (page) link.href = `notekeeper://page/${page.pageId}`;
+      else link.href = poi.href;
       link.textContent = matchedWord;
-      fragment.appendChild(link);
+      wrap.appendChild(link);
+
+      if ((anchor || page) && poi) {
+        const mapIcon = document.createElement('a');
+        mapIcon.href = poi.href;
+        mapIcon.className = 'map-corner-link';
+        mapIcon.title = `Ver ${matchedWord} no mapa`;
+        mapIcon.textContent = '🗺';
+        mapIcon.target = '_blank';
+        mapIcon.rel = 'noopener';
+        wrap.appendChild(mapIcon);
+      }
+
+      fragment.appendChild(wrap);
     } else {
       fragment.appendChild(document.createTextNode(matchedWord));
     }
@@ -984,6 +1010,21 @@ function convertTextNodeToAutolinks(text, tags) {
   const after = text.slice(lastIndex);
   if (after) fragment.appendChild(document.createTextNode(after));
   return fragment;
+}
+
+async function loadPoiIndex() {
+  try {
+    const response = await fetch('../data/poi-config.json');
+    if (!response.ok) return;
+    const data = await response.json();
+    const pois = Array.isArray(data?.pois) ? data.pois : [];
+    poiIndex = pois
+      .filter((poi) => poi && typeof poi.name === 'string' && typeof poi.file === 'string')
+      .map((poi) => ({ name: poi.name.trim(), href: `../mapa.html?focus=${encodeURIComponent(poi.file)}` }))
+      .filter((poi) => poi.name.length > 0);
+  } catch (error) {
+    poiIndex = [];
+  }
 }
 
 function removeAnchorTag(pageId, anchorId, tag) {
