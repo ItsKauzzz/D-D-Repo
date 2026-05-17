@@ -420,7 +420,7 @@ function replaceWordBeforeCaretWithLink(prefix, tag, pageId, anchorId) {
 
   const parent = node.parentNode;
   parent.replaceChild(fragment, node);
-  placeCaretAtEnd(link);
+  placeCaretAfterNode(link);
   editor.dispatchEvent(new Event('input'));
 }
 
@@ -431,6 +431,17 @@ function placeCaretAtEnd(node) {
   const range = document.createRange();
   range.selectNodeContents(node);
   range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function placeCaretAfterNode(node) {
+  if (!node) return;
+  const selection = window.getSelection();
+  if (!selection) return;
+  const range = document.createRange();
+  range.setStartAfter(node);
+  range.collapse(true);
   selection.removeAllRanges();
   selection.addRange(range);
 }
