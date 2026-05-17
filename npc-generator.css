@@ -191,6 +191,25 @@ button {
   background: #22d3ee;
 }
 
+.family-compact {
+  display: grid;
+  gap: 4px;
+  font-size: 0.86rem;
+  color: var(--text);
+}
+
+.family-compact-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.family-compact-row strong {
+  color: var(--accent);
+  min-width: 56px;
+}
+
 
 .alignment-range {
   background: linear-gradient(90deg, #22c55e 0%, #eab308 50%, #ef4444 100%);

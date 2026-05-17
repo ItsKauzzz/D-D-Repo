@@ -139,6 +139,17 @@ function renderSkillList(id, skills, profBonus, sheet){
   });
 }
 function renderSheet(sheet){attrs.forEach((k)=>{document.getElementById(`${k}Value`).textContent = sheet[k]; const mod = toModifier(sheet[k]); document.getElementById(`${k}Mod`).textContent = `MOD ${mod >= 0 ? "+" : ""}${mod}`;});}
+function renderFamily(familia){
+  const el = document.getElementById("familiaValue");
+  if(!el) return;
+  if(!familia){ el.innerHTML = ""; return; }
+  const filhos = (familia.filhos||[]).length ? familia.filhos.join(", ") : "Nenhum";
+  el.innerHTML = `
+    <div class="family-compact-row"><strong>Mãe:</strong> <span>${familia.mae || "-"}</span></div>
+    <div class="family-compact-row"><strong>Pai:</strong> <span>${familia.pai || "-"}</span></div>
+    <div class="family-compact-row"><strong>Filhos:</strong> <span>${filhos}</span></div>
+  `;
+}
 function renderNpc(npc){
 fieldIds.forEach((id)=>{const el=document.getElementById(`${id}Value`); if(el) el.textContent=npc[id]||"";});
 document.getElementById("sheetClassValue").textContent = npc.classe || "";
@@ -153,11 +164,32 @@ renderSimpleList("equipamentosValue", npc.equipamentos);
 renderSimpleList("itensValue", npc.itens);
 renderSpellList("magiasValue", npc.magias);
 renderFeatureList("habilidadesClasseValue", npc.habilidadesClasse);
+renderFamily(npc.familia);
 renderSheet(npc.ficha);
 document.getElementById("cidadeNatalLink").href=`mapa.html?focus=${encodeURIComponent(npc.cidadeFile)}`;
 const bgEl = document.getElementById("backgroundValue");
 if (bgEl) bgEl.innerHTML = npc.background || "";
 state.npc=npc;
+}
+
+function generateFamily(npcSexo, antepassado){
+  const makeName = (sexo) => {
+    const first = randomFrom(getNamePoolBySexo(sexo));
+    const last = randomFrom(state.data.sobrenomes || ["SemSobrenome"]);
+    return `${first} ${last}`.trim();
+  };
+  const mae = makeName("mulheres");
+  const pai = makeName("homens");
+  const raceAge = state.data.faixaEtariaPorAntepassado?.[antepassado] || { min: 18, max: 80 };
+  const childCount = Math.floor(Math.random() * 4);
+  const filhos = Array.from({length: childCount}, () => {
+    const sexo = randomFrom(["homens","mulheres","androgenos"]);
+    const childAgeMax = Math.max(4, Math.floor((raceAge.max - raceAge.min) * 0.3));
+    const idade = Math.floor(Math.random() * childAgeMax) + 1;
+    const nome = makeName(sexo);
+    return `${nome} (${idade})`;
+  });
+  return { mae, pai, filhos };
 }
 
 function exportNpcAsPdf(){
@@ -369,7 +401,7 @@ const itemCount = tier.min >= 13 ? 8 : (tier.min >= 9 ? 7 : (tier.min >= 5 ? 6 :
 const profs = buildProficiencias(classe, level);
 const ficha = generateSheet(classe, level);
 const loadout = buildLoadout(classe, state.equipmentData || {});
-const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,level,idade,proficiencyBonus:tier.profBonus,ca:calculateAc(ficha, loadout),vida:calculateHp(classe, level, ficha),caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha,proficienciasGerais:profs.gerais,proficienciasSkills:profs.skills,equipamentos:loadout.equipped,itens:randomSample(state.itemPool, itemCount),magias:buildSpells(classe, level),habilidadesClasse:buildClassFeatures(classe, level)};
+const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,level,idade,proficiencyBonus:tier.profBonus,ca:calculateAc(ficha, loadout),vida:calculateHp(classe, level, ficha),caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha,proficienciasGerais:profs.gerais,proficienciasSkills:profs.skills,equipamentos:loadout.equipped,itens:randomSample(state.itemPool, itemCount),magias:buildSpells(classe, level),habilidadesClasse:buildClassFeatures(classe, level),familia:generateFamily(sexo, antepassado)};
 npc.background = buildBackground(npc);
 return npc;}
 
@@ -387,6 +419,7 @@ if(field==="idade") state.npc.idade=generateAgeForRace(state.npc.antepassado);
 if(field==="temperamento") state.npc.temperamento=pickFromChecks("temperamentoChecks",state.data.temperamentos);
 if(field==="lealdade") state.npc.lealdade=pickFromChecks("lealdadeChecks",state.data.lealdades);
 if(field==="alinhamento"){const v=Number(document.getElementById("alignmentRange").value||0) * -1; state.npc.lealdade=pickLealdadeByAlignment(v);}
+if(field==="nome"||field==="sexo"||field==="antepassado"){ state.npc.familia = generateFamily(state.npc.sexo, state.npc.antepassado); }
 state.npc.background = buildBackground(state.npc);
 renderNpc(state.npc);
 }

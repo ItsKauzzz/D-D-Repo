@@ -641,8 +641,8 @@ input, select, button { color: var(--text); font-family: inherit; }
 .editor a { color: var(--accent); text-decoration: underline; cursor: pointer; }
 .editor a.location-link { color: var(--poi-link); text-decoration-color: var(--poi-link-underline); font-weight: 600; }
 .anchor-tag { background: color-mix(in srgb, var(--accent-soft) 25%, transparent); border-radius: 4px; padding: 0 2px; }
-.inline-link-wrap { position: relative; display: inline-block; padding-right: 0.6rem; }
-.map-corner-link { position: absolute; top: -0.55rem; right: -0.25rem; font-size: 0.58rem; text-decoration: none; line-height: 1; }
+.inline-link-wrap { position: relative; display: inline; }
+.map-corner-link { position: relative; top: -0.45rem; margin-left: 0.12rem; font-size: 0.58rem; text-decoration: none; line-height: 1; vertical-align: super; }
 
 .right-sidebar h2 { margin: 0 0 1rem; font-size: 1rem; }
 .side-section { display: grid; gap: 0.45rem; padding: 0.65rem 0; border-top: var(--border-width) var(--border-style) var(--line); }
