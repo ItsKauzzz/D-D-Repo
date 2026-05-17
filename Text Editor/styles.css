@@ -637,6 +637,7 @@ input, select, button { color: var(--text); font-family: inherit; }
 .editor img { max-width: 100%; border-radius: var(--radius-sm); border: 1px dashed transparent; }
 .editor img:hover { border-color: var(--accent); }
 .editor a { color: var(--accent); text-decoration: underline; cursor: pointer; }
+.editor a.location-link { color: #67e8f9; text-decoration-color: #67e8f9; font-weight: 600; }
 .anchor-tag { background: color-mix(in srgb, var(--accent-soft) 25%, transparent); border-radius: 4px; padding: 0 2px; }
 .inline-link-wrap { position: relative; display: inline-block; padding-right: 0.6rem; }
 .map-corner-link { position: absolute; top: -0.55rem; right: -0.25rem; font-size: 0.58rem; text-decoration: none; line-height: 1; }

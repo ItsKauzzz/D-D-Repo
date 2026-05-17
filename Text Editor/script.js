@@ -12,6 +12,7 @@ const THEME_NAMES = [
 const PROJECT_JSON_NAME = 'project.json';
 const ASSETS_FOLDER = 'assets/';
 const ASSET_URL_PREFIX = 'notekeeper-asset://';
+const AUTO_LINK_IDLE_MS = 20000;
 
 const editor = document.getElementById('editor');
 const pagesList = document.getElementById('pages-list');
@@ -54,6 +55,7 @@ let selectedImage = null;
 let draggingItem = null;
 let hasShownStorageQuotaWarning = false;
 let poiIndex = [];
+let lastEditorInteractionAt = Date.now();
 
 bootstrap();
 
@@ -139,6 +141,9 @@ function bindEvents() {
   editor.addEventListener('input', handleEditorInput);
   editor.addEventListener('keyup', handleTagSuggest);
   editor.addEventListener('paste', handlePasteImage);
+  editor.addEventListener('click', trackEditorInteraction);
+  editor.addEventListener('keyup', trackEditorInteraction);
+  editor.addEventListener('paste', trackEditorInteraction);
 
   pageTitle.addEventListener('input', () => {
     updateActivePage((page) => {
@@ -463,6 +468,7 @@ function getCurrentTagPrefix() {
 
 function handleEditorInput() {
   if (isApplyingAutoLink) return;
+  trackEditorInteraction();
 
   normalizeImageSizing();
 
@@ -473,8 +479,22 @@ function handleEditorInput() {
 
   if (state.autolinkEnabled) {
     clearTimeout(autoLinkDebounce);
-    autoLinkDebounce = setTimeout(applyAutoLinksOnActivePage, 450);
+    autoLinkDebounce = setTimeout(scheduleAutolinkSweep, AUTO_LINK_IDLE_MS);
   }
+}
+
+function trackEditorInteraction() {
+  lastEditorInteractionAt = Date.now();
+}
+
+function scheduleAutolinkSweep() {
+  const elapsed = Date.now() - lastEditorInteractionAt;
+  if (elapsed >= AUTO_LINK_IDLE_MS) {
+    applyAutoLinksOnActivePage();
+    return;
+  }
+  clearTimeout(autoLinkDebounce);
+  autoLinkDebounce = setTimeout(scheduleAutolinkSweep, AUTO_LINK_IDLE_MS - elapsed);
 }
 
 function normalizeImageSizing() {
@@ -995,7 +1015,12 @@ function convertTextNodeToAutolinks(text, linkables, tags, pages, pois) {
       const link = document.createElement('a');
       if (anchor) link.href = `notekeeper://page/${anchor.pageId}#${anchor.anchorId}`;
       else if (page) link.href = `notekeeper://page/${page.pageId}`;
-      else link.href = poi.href;
+      else {
+        link.href = poi.href;
+        link.classList.add('location-link');
+        link.target = '_blank';
+        link.rel = 'noopener';
+      }
       link.textContent = matchedWord;
       wrap.appendChild(link);
 
@@ -1025,14 +1050,37 @@ function convertTextNodeToAutolinks(text, linkables, tags, pages, pois) {
 
 async function loadPoiIndex() {
   try {
+    const fromConfig = [];
     const response = await fetch('../data/poi-config.json');
-    if (!response.ok) return;
-    const data = await response.json();
-    const pois = Array.isArray(data?.pois) ? data.pois : [];
-    poiIndex = pois
-      .filter((poi) => poi && typeof poi.name === 'string' && typeof poi.file === 'string')
-      .map((poi) => ({ name: poi.name.trim(), href: `../mapa.html?focus=${encodeURIComponent(poi.file)}` }))
-      .filter((poi) => poi.name.length > 0);
+    if (response.ok) {
+      const data = await response.json();
+      const pois = Array.isArray(data?.pois) ? data.pois : [];
+      fromConfig.push(...pois
+        .filter((poi) => poi && typeof poi.name === 'string' && typeof poi.file === 'string')
+        .map((poi) => ({ name: poi.name.trim(), href: `../mapa.html?focus=${encodeURIComponent(poi.file)}` }))
+        .filter((poi) => poi.name.length > 0));
+    }
+
+    const fromLocations = [];
+    const locationsIndexRes = await fetch('../data/locations/index.json');
+    if (locationsIndexRes.ok) {
+      const files = await locationsIndexRes.json();
+      if (Array.isArray(files)) {
+        const entries = await Promise.all(files.map(async (file) => {
+          const locRes = await fetch(`../data/locations/${file}`);
+          if (!locRes.ok) return null;
+          const loc = await locRes.json();
+          const name = String(loc?.name || '').trim();
+          const focusFile = String(file).replace(/\.json$/i, '');
+          if (!name || !focusFile) return null;
+          return { name, href: `../mapa.html?focus=${encodeURIComponent(focusFile)}` };
+        }));
+        fromLocations.push(...entries.filter(Boolean));
+      }
+    }
+
+    const merged = [...fromConfig, ...fromLocations];
+    poiIndex = merged.filter((item, index, arr) => arr.findIndex((v) => v.name.toLowerCase() === item.name.toLowerCase()) === index);
   } catch (error) {
     poiIndex = [];
   }
