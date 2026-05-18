@@ -218,6 +218,7 @@
     let rulerPointSelectStage = 0;
     let rulerBreakpoints = [];
     let rulerCurrentPoint = null;
+    let rulerClickStage = 0;
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -1400,6 +1401,7 @@
       rulerMenu.classList.toggle('is-visible', rulerActive);
       rulerMenu.setAttribute('aria-hidden', String(!rulerActive));
       rulerPointSelectStage = 0;
+      rulerClickStage = 0;
     }
 
     mapCanvas.addEventListener('mousedown', (event) => {
@@ -1412,13 +1414,18 @@
         return;
       }
       if (rulerActive) {
+        const point = { ...getWorldPointFromClient(event.clientX, event.clientY) };
+
         if (rulerMode === 'points') {
-          const point = { ...getWorldPointFromClient(event.clientX, event.clientY) };
           if (rulerPointSelectStage === 0) {
             rulerStartPoint = point;
+            rulerCurrentPoint = point;
             rulerPointSelectStage = 1;
             rulerMeasuring = false;
-            updateRulerMeasurement(event.clientX, event.clientY);
+            rulerLines.innerHTML = '';
+            rulerBadge.style.left = `${event.clientX}px`;
+            rulerBadge.style.top = `${event.clientY}px`;
+            rulerBadge.textContent = 'Ponto inicial definido';
           } else {
             rulerMeasuring = true;
             updateRulerMeasurement(event.clientX, event.clientY);
@@ -1427,10 +1434,33 @@
           }
           return;
         }
-        rulerMeasuring = true;
-        rulerStartPoint = { ...getWorldPointFromClient(event.clientX, event.clientY) };
+
+        if (rulerClickStage === 0) {
+          rulerStartPoint = point;
+          rulerCurrentPoint = point;
+          rulerBreakpoints = [];
+          rulerLines.innerHTML = '';
+          rulerBadge.style.left = `${event.clientX}px`;
+          rulerBadge.style.top = `${event.clientY}px`;
+          rulerBadge.textContent = 'Ponto inicial definido';
+          rulerClickStage = 1;
+          return;
+        }
+
+        if (rulerClickStage === 1) {
+          rulerMeasuring = true;
+          updateRulerMeasurement(event.clientX, event.clientY);
+          rulerMeasuring = false;
+          rulerClickStage = 2;
+          return;
+        }
+
+        rulerStartPoint = null;
+        rulerCurrentPoint = null;
         rulerBreakpoints = [];
-        updateRulerMeasurement(event.clientX, event.clientY);
+        rulerLines.innerHTML = '';
+        rulerBadge.textContent = '';
+        rulerClickStage = 0;
         return;
       }
       dragging = true;
@@ -1546,7 +1576,7 @@
         return;
       }
       if (!rulerActive || event.code !== 'Space') return;
-      if (!rulerStartPoint || (!rulerMeasuring && rulerMode !== 'points')) return;
+      if (!rulerStartPoint || (!rulerMeasuring && rulerMode !== 'points' && rulerClickStage === 0)) return;
       event.preventDefault();
       const node = rulerCurrentPoint || rulerStartPoint;
       rulerBreakpoints.push({ x: node.x, y: node.y });
@@ -1591,12 +1621,14 @@
     rulerModeDrag.addEventListener('click', () => {
       rulerMode = 'drag';
       rulerPointSelectStage = 0;
+      rulerClickStage = 0;
       rulerModeDrag.classList.add('is-active');
       rulerModePoints.classList.remove('is-active');
     });
     rulerModePoints.addEventListener('click', () => {
       rulerMode = 'points';
       rulerPointSelectStage = 0;
+      rulerClickStage = 0;
       rulerModePoints.classList.add('is-active');
       rulerModeDrag.classList.remove('is-active');
     });
