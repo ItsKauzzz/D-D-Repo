@@ -42,7 +42,8 @@
         <input id="toggleNameBackdrop" type="checkbox" checked />
         <span aria-hidden="true">🕶️</span>
       </label>
-    </div>
+          </div>
+
 
     <div class="type-filters" aria-label="Filtro por tipo">
       <div id="typeFilters" class="type-filter-list"></div>
@@ -50,6 +51,14 @@
 
     <ul id="poiList" class="poi-list"></ul>
   </aside>
+
+  <div class="ruler-fab-wrap">
+    <button id="toggleRuler" class="icon-toggle icon-toggle-ruler" type="button" aria-pressed="false" title="Régua">📏</button>
+    <div id="rulerMenu" class="ruler-menu" aria-hidden="true">
+      <button id="rulerModeDrag" type="button" class="ruler-menu-btn is-active">Arrastar</button>
+      <button id="rulerModePoints" type="button" class="ruler-menu-btn">2 Pontos</button>
+    </div>
+  </div>
 
   <div class="zoom-control" aria-label="Controle de zoom">
     <span class="zoom-label" id="zoomValue">100%</span>
@@ -61,6 +70,10 @@
   <div id="mapCanvas" aria-label="Mapa-múndi em tela cheia">
     <div id="poiLayer" class="poi-layer" aria-hidden="true"></div>
     <div id="globeContainer" class="globe-container" aria-hidden="true"></div>
+    <div id="rulerOverlay" class="ruler-overlay" aria-hidden="true">
+      <div id="rulerLines" class="ruler-lines"></div>
+      <div id="rulerBadge" class="ruler-badge"></div>
+    </div>
   </div>
 
   <div id="poiModalBackdrop" class="poi-modal-backdrop" aria-hidden="true">
@@ -118,6 +131,13 @@
     const toggle3D = document.getElementById('toggle3D');
     const toggle3DNames = document.getElementById('toggle3DNames');
     const toggleNameBackdrop = document.getElementById('toggleNameBackdrop');
+    const toggleRuler = document.getElementById('toggleRuler');
+    const rulerMenu = document.getElementById('rulerMenu');
+    const rulerModeDrag = document.getElementById('rulerModeDrag');
+    const rulerModePoints = document.getElementById('rulerModePoints');
+    const rulerOverlay = document.getElementById('rulerOverlay');
+    const rulerLines = document.getElementById('rulerLines');
+    const rulerBadge = document.getElementById('rulerBadge');
     const typeFilters = document.getElementById('typeFilters');
     const poiSearch = document.getElementById('poiSearch');
     const globeContainer = document.getElementById('globeContainer');
@@ -189,6 +209,14 @@
     let globeDidDrag = false;
     let globeLastX = 0;
     let globeLastY = 0;
+
+    let rulerActive = false;
+    let rulerMeasuring = false;
+    let rulerStartPoint = null;
+    const HORSE_SPEED_MULTIPLIER = 2;
+    let rulerBreakpoints = [];
+    let rulerCurrentPoint = null;
+    let rulerClickStage = 0;
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -434,12 +462,14 @@
       }
       renderZoomThumb();
       renderPOI();
+      syncRulerOverlay();
     }
 
     function render() {
       if (is3DMode) return;
       mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
       renderPOI();
+      syncRulerOverlay();
       persistViewState();
     }
 
@@ -568,7 +598,10 @@
         element.classList.add('is-hidden');
       }
 
-      element.addEventListener('click', () => openPoiModal(location));
+      element.addEventListener('click', () => {
+        if (rulerActive) return;
+        openPoiModal(location);
+      });
       element.addEventListener('mouseenter', () => element.classList.add('is-hovered'));
       element.addEventListener('mouseleave', () => element.classList.remove('is-hovered'));
       applyMarkerAnchors(element);
@@ -1268,8 +1301,152 @@
       imageModalImage.removeAttribute('src');
     }
 
+
+    function getWorldPointFromClient(clientX, clientY) {
+      return {
+        x: (clientX - offsetX) / zoom,
+        y: (clientY - offsetY) / zoom
+      };
+    }
+
+    function getCalibratedPixelsPerDay() {
+      const velistra = locations.find((loc) => String(loc.id).replace(/\.json$/i, '') === 'velistra');
+      const carroca = locations.find((loc) => String(loc.id).replace(/\.json$/i, '') === 'serenia');
+      if (!velistra || !carroca) return null;
+      const dx = carroca.x - velistra.x;
+      const dy = carroca.y - velistra.y;
+      const distance = Math.hypot(dx, dy);
+      return distance > 0 ? distance : null;
+    }
+
+    function formatTravelTime(days) {
+      if (!Number.isFinite(days) || days <= 0) return '0h';
+      const totalHours = Math.round(days * 24);
+      const fullDays = Math.floor(totalHours / 24);
+      const hours = totalHours % 24;
+      if (fullDays <= 0) return `${hours}h`;
+      if (hours === 0) return `${fullDays} dia(s)`;
+      return `${fullDays} dia(s) e ${hours}h`;
+    }
+
+
+    function buildRulerPath(endPoint) {
+      const path = [];
+      if (!rulerStartPoint) return path;
+      path.push(rulerStartPoint, ...rulerBreakpoints);
+      if (endPoint) path.push(endPoint);
+      return path;
+    }
+
+    function getPathDistance(path) {
+      let total = 0;
+      for (let i = 1; i < path.length; i += 1) {
+        total += Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+      }
+      return total;
+    }
+
+    function renderRulerPath(path) {
+      rulerLines.innerHTML = '';
+      for (let i = 1; i < path.length; i += 1) {
+        const a = path[i - 1];
+        const b = path[i];
+        const startX = offsetX + a.x * zoom;
+        const startY = offsetY + a.y * zoom;
+        const endX = offsetX + b.x * zoom;
+        const endY = offsetY + b.y * zoom;
+        const dx = endX - startX;
+        const dy = endY - startY;
+        const seg = document.createElement('div');
+        seg.className = 'ruler-line';
+        seg.style.left = `${startX}px`;
+        seg.style.top = `${startY}px`;
+        seg.style.width = `${Math.hypot(dx, dy)}px`;
+        seg.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+        rulerLines.appendChild(seg);
+      }
+    }
+
+    function renderRulerFromWorldEndPoint(endPoint) {
+      if (!rulerStartPoint || !endPoint) return;
+      const path = buildRulerPath(endPoint);
+      const pixelDistance = getPathDistance(path);
+      const pixelsPerDay = getCalibratedPixelsPerDay();
+      const days = pixelsPerDay ? pixelDistance / pixelsPerDay : 0;
+      const walkTime = formatTravelTime(days);
+      const horseTime = formatTravelTime(days / HORSE_SPEED_MULTIPLIER);
+
+      renderRulerPath(path);
+      const screenEndX = offsetX + endPoint.x * zoom;
+      const screenEndY = offsetY + endPoint.y * zoom;
+      rulerBadge.style.left = `${screenEndX}px`;
+      rulerBadge.style.top = `${screenEndY}px`;
+      const distanceText = formatTravelTime(days);
+      rulerBadge.textContent = `Distância: ${distanceText} · A pé: ${walkTime} · Cavalo: ${horseTime}`;
+    }
+
+    function syncRulerOverlay() {
+      if (!rulerActive || !rulerStartPoint || !rulerCurrentPoint) return;
+      renderRulerFromWorldEndPoint(rulerCurrentPoint);
+    }
+
+    function updateRulerMeasurement(currentClientX, currentClientY) {
+      if (!rulerMeasuring || !rulerStartPoint) return;
+      const endPoint = getWorldPointFromClient(currentClientX, currentClientY);
+      rulerCurrentPoint = endPoint;
+      renderRulerFromWorldEndPoint(endPoint);
+    }
+
+    function toggleRulerMode() {
+      rulerActive = !rulerActive;
+      rulerMeasuring = false;
+      rulerStartPoint = null;
+      toggleRuler.setAttribute('aria-pressed', String(rulerActive));
+      mapCanvas.classList.toggle('ruler-active', rulerActive);
+      rulerOverlay.classList.toggle('is-visible', rulerActive);
+      rulerBadge.textContent = '';
+      rulerLines.innerHTML = '';
+      rulerBreakpoints = [];
+      rulerCurrentPoint = null;
+      rulerMenu.classList.toggle('is-visible', rulerActive);
+      rulerMenu.setAttribute('aria-hidden', String(!rulerActive));
+      rulerClickStage = 0;
+    }
+
     mapCanvas.addEventListener('mousedown', (event) => {
       if (is3DMode) return;
+      if (rulerActive && event.button === 2) {
+        dragging = true;
+        mapCanvas.classList.add('dragging');
+        lastX = event.clientX;
+        lastY = event.clientY;
+        return;
+      }
+      if (rulerActive) {
+        const point = { ...getWorldPointFromClient(event.clientX, event.clientY) };
+
+        if (rulerClickStage === 0 || rulerClickStage === 2) {
+          rulerStartPoint = point;
+          rulerCurrentPoint = point;
+          rulerBreakpoints = [];
+          rulerMeasuring = true;
+          rulerLines.innerHTML = '';
+          rulerBadge.style.left = `${event.clientX}px`;
+          rulerBadge.style.top = `${event.clientY}px`;
+          rulerBadge.textContent = 'Ponto inicial definido';
+          rulerClickStage = 1;
+          return;
+        }
+
+        if (rulerClickStage === 1) {
+          updateRulerMeasurement(event.clientX, event.clientY);
+          rulerMeasuring = false;
+          rulerClickStage = 2;
+          return;
+        }
+
+        return;
+      }
       dragging = true;
       mapCanvas.classList.add('dragging');
       lastX = event.clientX;
@@ -1278,6 +1455,10 @@
 
     window.addEventListener('mousemove', (event) => {
       if (is3DMode) return;
+      if (rulerActive && rulerMeasuring) {
+        updateRulerMeasurement(event.clientX, event.clientY);
+        return;
+      }
       if (!dragging) return;
 
       const deltaX = event.clientX - lastX;
@@ -1295,6 +1476,10 @@
     window.addEventListener('mouseup', () => {
       dragging = false;
       mapCanvas.classList.remove('dragging');
+    });
+
+    mapCanvas.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
     });
 
     mapCanvas.addEventListener('wheel', (event) => {
@@ -1366,6 +1551,20 @@
       zoomDragging = false;
     }, { passive: true });
 
+
+    window.addEventListener('keydown', (event) => {
+      if (event.code === 'KeyR' && !event.repeat) {
+        event.preventDefault();
+        toggleRulerMode();
+        return;
+      }
+      if (!rulerActive || event.code !== 'Space') return;
+      if (!rulerStartPoint || rulerClickStage !== 1) return;
+      event.preventDefault();
+      const node = rulerCurrentPoint || rulerStartPoint;
+      rulerBreakpoints.push({ x: node.x, y: node.y });
+    });
+
     zoomTrack.addEventListener('keydown', (event) => {
       if (is3DMode) return;
       if (event.key === 'ArrowUp' || event.key === 'ArrowRight') {
@@ -1402,6 +1601,29 @@
       renderPOI();
     });
     toggle3D.addEventListener('change', () => setViewMode3D(toggle3D.checked));
+    rulerModeDrag.addEventListener('click', () => {
+      rulerClickStage = 0;
+      rulerMeasuring = false;
+      rulerStartPoint = null;
+      rulerCurrentPoint = null;
+      rulerBreakpoints = [];
+      rulerLines.innerHTML = '';
+      rulerBadge.textContent = '';
+      rulerModeDrag.classList.add('is-active');
+      rulerModePoints.classList.remove('is-active');
+    });
+    rulerModePoints.addEventListener('click', () => {
+      rulerClickStage = 0;
+      rulerMeasuring = false;
+      rulerStartPoint = null;
+      rulerCurrentPoint = null;
+      rulerBreakpoints = [];
+      rulerLines.innerHTML = '';
+      rulerBadge.textContent = '';
+      rulerModePoints.classList.add('is-active');
+      rulerModeDrag.classList.remove('is-active');
+    });
+    toggleRuler.addEventListener('click', toggleRulerMode);
     poiModalClose.addEventListener('click', closePoiModal);
     imageModalClose.addEventListener('click', closeImageModal);
     poiModalBackdrop.addEventListener('click', (event) => {
