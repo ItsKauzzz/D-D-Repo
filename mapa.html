@@ -42,12 +42,9 @@
         <input id="toggleNameBackdrop" type="checkbox" checked />
         <span aria-hidden="true">🕶️</span>
       </label>
+      <button id="toggleRuler" class="icon-toggle icon-toggle-ruler" type="button" aria-pressed="false" title="Régua">📏</button>
     </div>
 
-    <div class="map-ruler-tools" aria-label="Ferramenta de régua">
-      <button id="toggleRuler" class="ruler-toggle" type="button" aria-pressed="false">📏 Régua</button>
-      <p id="rulerInfo" class="ruler-info">Ative para medir distância.</p>
-    </div>
 
     <div class="type-filters" aria-label="Filtro por tipo">
       <div id="typeFilters" class="type-filter-list"></div>
@@ -128,7 +125,6 @@
     const toggle3DNames = document.getElementById('toggle3DNames');
     const toggleNameBackdrop = document.getElementById('toggleNameBackdrop');
     const toggleRuler = document.getElementById('toggleRuler');
-    const rulerInfo = document.getElementById('rulerInfo');
     const rulerOverlay = document.getElementById('rulerOverlay');
     const rulerLine = document.getElementById('rulerLine');
     const rulerBadge = document.getElementById('rulerBadge');
@@ -1339,7 +1335,6 @@
       rulerBadge.style.left = `${screenEndX}px`;
       rulerBadge.style.top = `${screenEndY}px`;
       rulerBadge.textContent = `Distância: ${days.toFixed(2)} dia(s) · A pé: ${walkTime} · Cavalo: ${horseTime}`;
-      rulerInfo.textContent = `A pé: ${walkTime} · Cavalo: ${horseTime}`;
     }
 
     function toggleRulerMode() {
@@ -1351,9 +1346,6 @@
       rulerOverlay.classList.toggle('is-visible', rulerActive);
       rulerBadge.textContent = '';
       rulerLine.style.width = '0px';
-      rulerInfo.textContent = rulerActive
-        ? 'Clique e segure para medir (referência: carroça explodida ↔ Velistra = 1 dia).'
-        : 'Ative para medir distância.';
     }
 
     mapCanvas.addEventListener('mousedown', (event) => {
