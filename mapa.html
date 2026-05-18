@@ -1307,7 +1307,7 @@
 
     function getCalibratedPixelsPerDay() {
       const velistra = locations.find((loc) => String(loc.id).replace(/\.json$/i, '') === 'velistra');
-      const carroca = locations.find((loc) => String(loc.id).replace(/\.json$/i, '') === 'caravana_perdida');
+      const carroca = locations.find((loc) => String(loc.id).replace(/\.json$/i, '') === 'serenia');
       if (!velistra || !carroca) return null;
       const dx = carroca.x - velistra.x;
       const dy = carroca.y - velistra.y;
