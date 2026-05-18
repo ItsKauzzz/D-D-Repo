@@ -597,7 +597,10 @@
         element.classList.add('is-hidden');
       }
 
-      element.addEventListener('click', () => openPoiModal(location));
+      element.addEventListener('click', () => {
+        if (rulerActive) return;
+        openPoiModal(location);
+      });
       element.addEventListener('mouseenter', () => element.classList.add('is-hovered'));
       element.addEventListener('mouseleave', () => element.classList.remove('is-hovered'));
       applyMarkerAnchors(element);
@@ -1396,6 +1399,13 @@
 
     mapCanvas.addEventListener('mousedown', (event) => {
       if (is3DMode) return;
+      if (rulerActive && event.button === 2) {
+        dragging = true;
+        mapCanvas.classList.add('dragging');
+        lastX = event.clientX;
+        lastY = event.clientY;
+        return;
+      }
       if (rulerActive) {
         if (rulerMode === 'points') {
           const point = { ...getWorldPointFromClient(event.clientX, event.clientY) };
@@ -1448,6 +1458,11 @@
       if (rulerMeasuring) rulerMeasuring = false;
       dragging = false;
       mapCanvas.classList.remove('dragging');
+    });
+
+    mapCanvas.addEventListener('contextmenu', (event) => {
+      if (!rulerActive) return;
+      event.preventDefault();
     });
 
     mapCanvas.addEventListener('wheel', (event) => {
@@ -1521,6 +1536,11 @@
 
 
     window.addEventListener('keydown', (event) => {
+      if (event.code === 'KeyR' && !event.repeat) {
+        event.preventDefault();
+        toggleRulerMode();
+        return;
+      }
       if (!rulerActive || event.code !== 'Space') return;
       if (!rulerStartPoint || (!rulerMeasuring && rulerMode !== 'points')) return;
       event.preventDefault();

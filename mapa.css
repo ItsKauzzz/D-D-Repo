@@ -186,7 +186,7 @@ body .poi-sidebar {
 .ruler-fab-wrap {
   position: fixed;
   top: 78px;
-  left: calc(min(290px, 30vw) + 34px);
+  left: calc(12px + min(290px, 30vw) + 5px);
   z-index: 40;
 }
 
