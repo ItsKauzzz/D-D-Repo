@@ -1,0 +1,12 @@
+{
+  "x": 6698,
+  "y": 3522,
+  "name": "Nardthe",
+  "type": "Cidade",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/cidade_icon_1.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}

@@ -1,0 +1,12 @@
+{
+  "x": 6987,
+  "y": 3941,
+  "name": "Nare",
+  "type": "Vila",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/vila_icon_3.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}

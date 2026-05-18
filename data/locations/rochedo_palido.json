@@ -1,0 +1,12 @@
+{
+  "x": 6081,
+  "y": 4205,
+  "name": "Rochedo Pálido",
+  "type": "Cidade",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/cidade_icon_1.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}

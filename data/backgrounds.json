@@ -6,7 +6,7 @@
     },
     {
       "id": "origin_02",
-      "text": "Durante anos, {NOME} viveu em {CIDADE_NATAL}, trabalhando como {PROFISSAO_ALEATORIA}, até que os eventos de {ACONTECIMENTO} mudaram completamente seus planos."
+      "text": "Durante anos, {NOME} viveu em {CIDADE_NATAL}, trabalhando como {PROFISSAO_ALEATORIA}, até que mudanças graves na região mudaram completamente seus planos."
     },
     {
       "id": "origin_03",
@@ -18,7 +18,7 @@
     },
     {
       "id": "origin_05",
-      "text": "Depois dos acontecimentos em {ACONTECIMENTO}, {NOME} decidiu abandonar {CIDADE_NATAL} e viajar em busca de um novo propósito."
+      "text": "Depois dos acontecimentos em uma crise regional, {NOME} decidiu abandonar {CIDADE_NATAL} e viajar em busca de um novo propósito."
     },
     {
       "id": "origin_06",
@@ -30,7 +30,7 @@
     },
     {
       "id": "origin_08",
-      "text": "Rumores envolvendo {ACONTECIMENTO} fizeram {NOME} repensar suas escolhas e se mudar para {CIDADE}."
+      "text": "Rumores envolvendo uma crise regional fizeram {NOME} repensar suas escolhas e se mudar para {CIDADE}."
     },
     {
       "id": "origin_09",
@@ -46,7 +46,7 @@
     },
     {
       "id": "origin_12",
-      "text": "{NOME} viajou entre diversas cidades após os rumores sobre {ACONTECIMENTO}, acumulando experiências e histórias difíceis de confirmar."
+      "text": "{NOME} viajou entre diversas cidades após rumores perigosos, acumulando experiências e histórias difíceis de confirmar."
     },
     {
       "id": "origin_13",
@@ -58,7 +58,7 @@
     },
     {
       "id": "origin_15",
-      "text": "Alguns dizem que {NOME} começou sua carreira após sobreviver aos eventos de {ACONTECIMENTO}, embora os detalhes nunca sejam totalmente claros."
+      "text": "Alguns dizem que {NOME} começou sua carreira após sobreviver aos eventos de uma crise regional, embora os detalhes nunca sejam totalmente claros."
     },
     {
       "id": "origin_16",
@@ -66,63 +66,63 @@
     },
     {
       "id": "origin_17",
-      "text": "A trajetória de {NOME} começou de forma simples em {CIDADE_NATAL}, mas os rumores sobre {ACONTECIMENTO} trouxeram medo e ambição na mesma medida. Entre perdas e alianças improváveis, deixou para trás a antiga rotina de {PROFISSAO_ALEATORIA} e passou a atuar como {PROFISSAO}, sempre em busca de respostas."
+      "text": "A trajetória de {NOME} começou de forma simples em {CIDADE_NATAL}, mas rumores perigosos trouxeram medo e ambição na mesma medida. Entre perdas e alianças improváveis, deixou para trás a antiga rotina de {PROFISSAO_ALEATORIA} e passou a atuar como {PROFISSAO}, sempre em busca de respostas."
     },
     {
       "id": "origin_18",
-      "text": "Pouco antes de se tornar {PROFISSAO}, {NOME} percorreu estradas ligando {CIDADE} a {POI}, vivendo de pequenos trabalhos como {PROFISSAO_ALEATORIA}. Durante essas viagens, testemunhou sinais ligados a {ACONTECIMENTO}; sinais que, até hoje, surgem em seus relatos com precisão desconfortável."
+      "text": "Pouco antes de se tornar {PROFISSAO}, {NOME} percorreu estradas ligando {CIDADE} a {POI}, vivendo de pequenos trabalhos como {PROFISSAO_ALEATORIA}. Durante essas viagens, testemunhou sinais ligados a uma crise regional; sinais que, até hoje, surgem em seus relatos com precisão desconfortável."
     },
     {
       "id": "origin_19",
-      "text": "Em {CIDADE_NATAL}, {NOME} era visto como alguém discreto, dedicado ao ofício de {PROFISSAO_ALEATORIA}. Após o ocorrido em {ACONTECIMENTO}, porém, passou a investigar velhos registros e histórias locais. Essa busca o levou até {POI}, onde tomou a decisão definitiva de seguir como {PROFISSAO}."
+      "text": "Em {CIDADE_NATAL}, {NOME} era visto como alguém discreto, dedicado ao ofício de {PROFISSAO_ALEATORIA}. Após o ocorrido em uma crise regional, porém, passou a investigar velhos registros e histórias locais. Essa busca o levou até {POI}, onde tomou a decisão definitiva de seguir como {PROFISSAO}."
     },
     {
       "id": "origin_20",
-      "text": "{NOME} cresceu ouvindo que ninguém retorna igual depois de cruzar as redondezas de {POI}. Anos depois, trabalhando como {PROFISSAO_ALEATORIA}, confirmou essa lenda ao sobreviver a uma crise ligada a {ACONTECIMENTO}. Desde então, deixou {CIDADE_NATAL} e assumiu a identidade profissional de {PROFISSAO}."
+      "text": "{NOME} cresceu ouvindo que ninguém retorna igual depois de cruzar as redondezas de {POI}. Anos depois, trabalhando como {PROFISSAO_ALEATORIA}, confirmou essa lenda ao sobreviver a uma crise ligada a uma crise regional. Desde então, deixou {CIDADE_NATAL} e assumiu a identidade profissional de {PROFISSAO}."
     },
     {
       "id": "origin_21",
-      "text": "A história de {NOME} é marcada por duas fases: a vida comum em {CIDADE_NATAL}, atuando como {PROFISSAO_ALEATORIA}, e o período posterior aos eventos de {ACONTECIMENTO}. Entre uma fase e outra, existe uma passagem por {CIDADE} que quase nunca é explicada, mas que moldou seu comportamento atual como {PROFISSAO}."
+      "text": "A história de {NOME} é marcada por duas fases: a vida comum em {CIDADE_NATAL}, atuando como {PROFISSAO_ALEATORIA}, e o período posterior aos eventos de uma crise regional. Entre uma fase e outra, existe uma passagem por {CIDADE} que quase nunca é explicada, mas que moldou seu comportamento atual como {PROFISSAO}."
     },
     {
       "id": "origin_22",
-      "text": "Depois de anos servindo como {PROFISSAO_ALEATORIA}, {NOME} foi enviado para tratar de assuntos em {POI}. O trabalho parecia simples, até os acontecimentos em {ACONTECIMENTO} tornarem tudo instável. Sem confiança nas antigas autoridades de {CIDADE_NATAL}, escolheu trilhar seu próprio caminho como {PROFISSAO}."
+      "text": "Depois de anos servindo como {PROFISSAO_ALEATORIA}, {NOME} foi enviado para tratar de assuntos em {POI}. O trabalho parecia simples, até os acontecimentos em uma crise regional tornarem tudo instável. Sem confiança nas antigas autoridades de {CIDADE_NATAL}, escolheu trilhar seu próprio caminho como {PROFISSAO}."
     },
     {
       "id": "origin_23",
-      "text": "As primeiras memórias de {NOME} envolvem ruas estreitas de {CIDADE_NATAL}, histórias de viajantes e promessas de fortuna distante. Já adulto, atuando como {PROFISSAO_ALEATORIA}, encontrou em {POI} pistas sobre uma rede de conflitos ligada a {ACONTECIMENTO}. A partir dali, abraçou a carreira de {PROFISSAO} para enfrentar ameaças que antes ignorava."
+      "text": "As primeiras memórias de {NOME} envolvem ruas estreitas de {CIDADE_NATAL}, histórias de viajantes e promessas de fortuna distante. Já adulto, atuando como {PROFISSAO_ALEATORIA}, encontrou em {POI} pistas sobre uma rede de conflitos ligada a uma crise regional. A partir dali, abraçou a carreira de {PROFISSAO} para enfrentar ameaças que antes ignorava."
     },
     {
       "id": "origin_24",
-      "text": "Para a maioria das pessoas, {NOME} apenas mudou de profissão. A verdade é que a transição de {PROFISSAO_ALEATORIA} para {PROFISSAO} começou após uma missão em {CIDADE} e terminou com uma fuga apressada de {POI}. O gatilho final foi {ACONTECIMENTO}, que destruiu as poucas certezas que ainda restavam."
+      "text": "Para a maioria das pessoas, {NOME} apenas mudou de profissão. A verdade é que a transição de {PROFISSAO_ALEATORIA} para {PROFISSAO} começou após uma missão em {CIDADE} e terminou com uma fuga apressada de {POI}. O gatilho final foi uma crise regional, que destruiu as poucas certezas que ainda restavam."
     },
     {
       "id": "origin_25",
-      "text": "Nem todos acreditam quando {NOME} descreve o que viu em {ACONTECIMENTO}, mas o impacto é inegável. Antes desse episódio, levava uma vida previsível em {CIDADE_NATAL}, com trabalhos ligados a {PROFISSAO_ALEATORIA}. Depois, passou a estudar rotas, alianças e segredos de {POI}, consolidando-se como {PROFISSAO}."
+      "text": "Nem todos acreditam quando {NOME} descreve o que viu em uma crise regional, mas o impacto é inegável. Antes desse episódio, levava uma vida previsível em {CIDADE_NATAL}, com trabalhos ligados a {PROFISSAO_ALEATORIA}. Depois, passou a estudar rotas, alianças e segredos de {POI}, consolidando-se como {PROFISSAO}."
     },
     {
       "id": "origin_26",
-      "text": "{NOME} aprendeu cedo que sobreviver exige adaptação. Em {CIDADE_NATAL}, começou como {PROFISSAO_ALEATORIA}, desenvolvendo disciplina e contatos valiosos. Quando os conflitos de {ACONTECIMENTO} alcançaram a região de {CIDADE}, foi forçado a escolher entre fugir ou agir. A decisão o levou a {POI} e selou seu destino como {PROFISSAO}."
+      "text": "{NOME} aprendeu cedo que sobreviver exige adaptação. Em {CIDADE_NATAL}, começou como {PROFISSAO_ALEATORIA}, desenvolvendo disciplina e contatos valiosos. Quando os conflitos de uma crise regional alcançaram a região de {CIDADE}, foi forçado a escolher entre fugir ou agir. A decisão o levou a {POI} e selou seu destino como {PROFISSAO}."
     },
     {
       "id": "origin_27",
-      "text": "{NOME} passou anos entre os mercados de {CIDADE_NATAL}, vendendo serviços de {PROFISSAO_ALEATORIA}. Quando um incidente em {POI} revelou ligações com {ACONTECIMENTO}, abandonou os negócios locais e assumiu o papel de {PROFISSAO}."
+      "text": "{NOME} passou anos entre os mercados de {CIDADE_NATAL}, vendendo serviços de {PROFISSAO_ALEATORIA}. Quando um incidente em {POI} revelou ligações com uma crise regional, abandonou os negócios locais e assumiu o papel de {PROFISSAO}."
     },
     {
       "id": "origin_28",
-      "text": "Antes de ser {PROFISSAO}, {NOME} era conhecido em {CIDADE} por trabalhos discretos de {PROFISSAO_ALEATORIA}. Uma caravana destruída perto de {POI} e os rumores sobre {ACONTECIMENTO} mudaram sua rota para sempre."
+      "text": "Antes de ser {PROFISSAO}, {NOME} era conhecido em {CIDADE} por trabalhos discretos de {PROFISSAO_ALEATORIA}. Uma caravana destruída perto de {POI} e rumores perigosos mudaram sua rota para sempre."
     },
     {
       "id": "origin_29",
-      "text": "Em {CIDADE_NATAL}, {NOME} aprendeu a negociar, observar e desaparecer quando necessário. Esse talento, refinado em tarefas de {PROFISSAO_ALEATORIA}, tornou-se essencial após os eventos de {ACONTECIMENTO}, levando-o à vida de {PROFISSAO}."
+      "text": "Em {CIDADE_NATAL}, {NOME} aprendeu a negociar, observar e desaparecer quando necessário. Esse talento, refinado em tarefas de {PROFISSAO_ALEATORIA}, tornou-se essencial após mudanças graves na região, levando-o à vida de {PROFISSAO}."
     },
     {
       "id": "origin_30",
-      "text": "A primeira grande viagem de {NOME} foi para {POI}, onde deveria apenas entregar suprimentos. Em vez disso, encontrou sinais de {ACONTECIMENTO} e retornou a {CIDADE_NATAL} decidido a se tornar {PROFISSAO}."
+      "text": "A primeira grande viagem de {NOME} foi para {POI}, onde deveria apenas entregar suprimentos. Em vez disso, encontrou sinais de uma crise regional e retornou a {CIDADE_NATAL} decidido a se tornar {PROFISSAO}."
     },
     {
       "id": "origin_31",
-      "text": "{NOME} costumava evitar conflitos, preferindo a rotina de {PROFISSAO_ALEATORIA} em {CIDADE}. Tudo mudou depois de uma noite turbulenta em {POI}, quando as consequências de {ACONTECIMENTO} chegaram à sua porta."
+      "text": "{NOME} costumava evitar conflitos, preferindo a rotina de {PROFISSAO_ALEATORIA} em {CIDADE}. Tudo mudou depois de uma noite turbulenta em {POI}, quando as consequências de uma crise regional chegaram à sua porta."
     },
     {
       "id": "origin_32",
@@ -130,7 +130,7 @@
     },
     {
       "id": "origin_33",
-      "text": "Após perder aliados em {ACONTECIMENTO}, {NOME} jurou nunca mais depender da sorte. Desde então, usa a experiência adquirida em {PROFISSAO_ALEATORIA} para agir como {PROFISSAO} com precisão quase obsessiva."
+      "text": "Após perder aliados em uma crise regional, {NOME} jurou nunca mais depender da sorte. Desde então, usa a experiência adquirida em {PROFISSAO_ALEATORIA} para agir como {PROFISSAO} com precisão quase obsessiva."
     },
     {
       "id": "origin_34",
@@ -138,15 +138,15 @@
     },
     {
       "id": "origin_35",
-      "text": "Em {CIDADE_NATAL}, {NOME} era visto como alguém comum até desaparecer por meses após {ACONTECIMENTO}. Quando retornou, trouxe novas cicatrizes, novos contatos e uma reputação ligada ao trabalho de {PROFISSAO}."
+      "text": "Em {CIDADE_NATAL}, {NOME} era visto como alguém comum até desaparecer por meses após uma crise local. Quando retornou, trouxe novas cicatrizes, novos contatos e uma reputação ligada ao trabalho de {PROFISSAO}."
     },
     {
       "id": "origin_36",
-      "text": "A antiga rotina de {PROFISSAO_ALEATORIA} em {CIDADE} foi interrompida quando {NOME} testemunhou atividades suspeitas perto de {POI}. Investigar esse rastro o colocou no centro de {ACONTECIMENTO}."
+      "text": "A antiga rotina de {PROFISSAO_ALEATORIA} em {CIDADE} foi interrompida quando {NOME} testemunhou atividades suspeitas perto de {POI}. Investigar esse rastro o colocou no centro de uma crise regional."
     },
     {
       "id": "origin_37",
-      "text": "{NOME} começou a carreira ajudando viajantes entre {CIDADE_NATAL} e regiões vizinhas. O convívio com mercadores, guardas e foragidos moldou seu estilo atual como {PROFISSAO}, especialmente após os incidentes de {ACONTECIMENTO}."
+      "text": "{NOME} começou a carreira ajudando viajantes entre {CIDADE_NATAL} e regiões vizinhas. O convívio com mercadores, guardas e foragidos moldou seu estilo atual como {PROFISSAO}, especialmente após os incidentes de uma crise regional."
     },
     {
       "id": "origin_38",
@@ -154,7 +154,7 @@
     },
     {
       "id": "origin_39",
-      "text": "{NOME} sempre carregou um caderno de notas sobre pessoas e lugares. O hábito, iniciado em {CIDADE_NATAL}, foi crucial para sobreviver aos desdobramentos de {ACONTECIMENTO} e construir sua rede como {PROFISSAO}."
+      "text": "{NOME} sempre carregou um caderno de notas sobre pessoas e lugares. O hábito, iniciado em {CIDADE_NATAL}, foi crucial para sobreviver aos desdobramentos de uma crise regional e construir sua rede como {PROFISSAO}."
     },
     {
       "id": "origin_40",
@@ -162,11 +162,11 @@
     },
     {
       "id": "origin_41",
-      "text": "Uma dívida antiga em {CIDADE} forçou {NOME} a aceitar uma proposta perigosa envolvendo {POI}. O serviço terminou em meio a {ACONTECIMENTO}, marcando o início de sua vida como {PROFISSAO}."
+      "text": "Uma dívida antiga em {CIDADE} forçou {NOME} a aceitar uma proposta perigosa envolvendo {POI}. O serviço terminou em meio a uma crise regional, marcando o início de sua vida como {PROFISSAO}."
     },
     {
       "id": "origin_42",
-      "text": "A reputação de {NOME} cresceu quando conseguiu evacuar civis durante {ACONTECIMENTO}. Até então, era apenas mais um {PROFISSAO_ALEATORIA} de {CIDADE_NATAL}; depois, tornou-se {PROFISSAO} por necessidade."
+      "text": "A reputação de {NOME} cresceu quando conseguiu evacuar civis durante uma crise regional. Até então, era apenas mais um {PROFISSAO_ALEATORIA} de {CIDADE_NATAL}; depois, tornou-se {PROFISSAO} por necessidade."
     },
     {
       "id": "origin_43",
@@ -174,11 +174,11 @@
     },
     {
       "id": "origin_44",
-      "text": "Em uma inspeção de rotina em {POI}, {NOME} encontrou provas de um esquema ligado a {ACONTECIMENTO}. Ao denunciar o caso, perdeu proteção política e precisou reinventar-se como {PROFISSAO}."
+      "text": "Em uma inspeção de rotina em {POI}, {NOME} encontrou provas de um esquema ligado a uma crise regional. Ao denunciar o caso, perdeu proteção política e precisou reinventar-se como {PROFISSAO}."
     },
     {
       "id": "origin_45",
-      "text": "A mudança para {CIDADE} parecia temporária, mas {NOME} acabou ficando após conseguir trabalho como {PROFISSAO_ALEATORIA}. Anos depois, o impacto de {ACONTECIMENTO} transformou esse improviso em destino."
+      "text": "A mudança para {CIDADE} parecia temporária, mas {NOME} acabou ficando após conseguir trabalho como {PROFISSAO_ALEATORIA}. Anos depois, o impacto de uma crise regional transformou esse improviso em destino."
     },
     {
       "id": "origin_46",
@@ -186,11 +186,11 @@
     },
     {
       "id": "origin_47",
-      "text": "A ligação de {NOME} com {POI} começou por curiosidade e terminou em perseguição. O episódio, associado a {ACONTECIMENTO}, deixou marcas permanentes em sua forma de agir."
+      "text": "A ligação de {NOME} com {POI} começou por curiosidade e terminou em perseguição. O episódio, associado a uma crise regional, deixou marcas permanentes em sua forma de agir."
     },
     {
       "id": "origin_48",
-      "text": "Quando {ACONTECIMENTO} atingiu {CIDADE}, {NOME} foi um dos primeiros a organizar rotas de fuga. A experiência consolidou habilidades táticas que superavam seu antigo trabalho de {PROFISSAO_ALEATORIA}."
+      "text": "Quando uma crise regional atingiu {CIDADE}, {NOME} foi um dos primeiros a organizar rotas de fuga. A experiência consolidou habilidades táticas que superavam seu antigo trabalho de {PROFISSAO_ALEATORIA}."
     },
     {
       "id": "origin_49",
@@ -198,11 +198,11 @@
     },
     {
       "id": "origin_50",
-      "text": "O talento de {NOME} para analisar padrões surgiu enquanto catalogava mercadorias como {PROFISSAO_ALEATORIA}. Hoje, usa o mesmo raciocínio para rastrear ameaças ligadas a {ACONTECIMENTO}."
+      "text": "O talento de {NOME} para analisar padrões surgiu enquanto catalogava mercadorias como {PROFISSAO_ALEATORIA}. Hoje, usa o mesmo raciocínio para rastrear ameaças ligadas a uma crise regional."
     },
     {
       "id": "origin_51",
-      "text": "Em {CIDADE}, {NOME} ganhou fama por resolver disputas sem derramamento de sangue. Só abandonou essa postura após ser diretamente afetado por {ACONTECIMENTO}."
+      "text": "Em {CIDADE}, {NOME} ganhou fama por resolver disputas sem derramamento de sangue. Só abandonou essa postura após ser diretamente afetado por uma crise regional."
     },
     {
       "id": "origin_52",
@@ -214,7 +214,7 @@
     },
     {
       "id": "origin_54",
-      "text": "A jornada de {NOME} inclui um período de exílio voluntário após os fatos de {ACONTECIMENTO}. Ao retornar para {CIDADE}, trouxe técnicas novas e uma disciplina incomum."
+      "text": "A jornada de {NOME} inclui um período de exílio voluntário após os fatos de uma crise regional. Ao retornar para {CIDADE}, trouxe técnicas novas e uma disciplina incomum."
     },
     {
       "id": "origin_55",
@@ -222,7 +222,71 @@
     },
     {
       "id": "origin_56",
-      "text": "{NOME} mantém correspondência com contatos espalhados entre {CIDADE} e {POI}. Essa rede nasceu por necessidade, durante os anos turbulentos que se seguiram a {ACONTECIMENTO}."
+      "text": "{NOME} mantém correspondência com contatos espalhados entre {CIDADE} e {POI}. Essa rede nasceu por necessidade, durante os anos turbulentos que se seguiram a uma crise regional."
+    },
+    {
+      "id": "origin_57",
+      "text": "{NOME} passou uma estação inteira em {POI} negociando suprimentos para {CIDADE_NATAL}. O trabalho parecia rotineiro até que sinais de uma crise regional transformaram cada viagem em risco real."
+    },
+    {
+      "id": "origin_58",
+      "text": "A disciplina de {NOME} foi moldada por anos de serviço como {PROFISSAO_ALEATORIA} em {CIDADE}. Depois de perder um aliado durante uma crise regional, escolheu atuar como {PROFISSAO} para evitar novas tragédias."
+    },
+    {
+      "id": "origin_59",
+      "text": "Entre os becos de {CIDADE_NATAL}, {NOME} aprendeu a identificar boatos úteis e perigos reais. Essa habilidade chamou atenção após os incidentes de uma crise regional e abriu portas para a vida de {PROFISSAO}."
+    },
+    {
+      "id": "origin_60",
+      "text": "{NOME} recebeu a primeira grande oportunidade ao escoltar viajantes até {POI}. No retorno, trouxe relatos sobre conflitos distantes que ninguém quis acreditar — até os primeiros sinais chegarem em {CIDADE}."
+    },
+    {
+      "id": "origin_61",
+      "text": "Pouco antes de assumir o papel de {PROFISSAO}, {NOME} vivia de bicos como {PROFISSAO_ALEATORIA} em {CIDADE_NATAL}. Um encontro inesperado em {POI} mudou sua leitura do mundo e de si mesmo."
+    },
+    {
+      "id": "origin_62",
+      "text": "Quando as tensões de uma crise regional começaram, {NOME} já conhecia as rotas entre {CIDADE} e {CIDADE_NATAL} melhor do que muitos guardas. Essa vantagem foi decisiva para consolidar sua reputação como {PROFISSAO}."
+    },
+    {
+      "id": "origin_63",
+      "text": "{NOME}, de {CIDADE_NATAL}, é {PROFISSAO} por necessidade e {PROFISSAO_ALEATORIA} por formação familiar. A mãe mantinha contatos em {CIDADE}, enquanto o pai trabalhava em rotas próximas de {POI}; essa rede obrigou {NOME} a aprender negociação, leitura de pessoas e disciplina antes mesmo de escolher a vida de aventura."
+    },
+    {
+      "id": "origin_64",
+      "text": "Criado entre {CIDADE_NATAL} e temporadas em {CIDADE}, {NOME} cresceu observando conflitos comerciais ligados a {POI}. A família sobrevivia de trabalhos de {PROFISSAO_ALEATORIA}, mas {NOME} encontrou vocação como {PROFISSAO} ao perceber que proteger pessoas exigia mais do que apenas talento técnico."
+    },
+    {
+      "id": "origin_65",
+      "text": "A trajetória de {NOME} começou em {CIDADE_NATAL}, onde parentes dividiam funções entre ofícios de {PROFISSAO_ALEATORIA} e serviços locais. Após uma viagem difícil até {POI}, decidiu aprofundar estudos e assumir a identidade de {PROFISSAO}, mantendo laços ativos com aliados em {CIDADE}."
+    },
+    {
+      "id": "origin_66",
+      "text": "Em {CIDADE_NATAL}, {NOME} era conhecido por ajudar no negócio da família ligado a {PROFISSAO_ALEATORIA}. O contato com viajantes de {CIDADE} e histórias de {POI} ampliou seus horizontes; com o tempo, transformou experiência prática em carreira de {PROFISSAO}."
+    },
+    {
+      "id": "origin_67",
+      "text": "{NOME} aprendeu cedo a equilibrar dever e ambição: em casa, a família exigia estabilidade por meio de {PROFISSAO_ALEATORIA}; nas ruas de {CIDADE_NATAL}, surgiam oportunidades arriscadas ligadas a {POI}. Essa tensão moldou seu perfil atual de {PROFISSAO}, metódico e resiliente."
+    },
+    {
+      "id": "origin_68",
+      "text": "A família de {NOME} tinha reputação modesta em {CIDADE_NATAL}, mas forte presença em caravanas para {CIDADE}. Trabalhando como {PROFISSAO_ALEATORIA}, reuniu contatos e recursos até decidir que sua classe e talentos seriam melhor aplicados como {PROFISSAO}, especialmente após testemunhar abusos perto de {POI}."
+    },
+    {
+      "id": "origin_69",
+      "text": "Ainda jovem, {NOME} dividia o tempo entre estudos de classe e tarefas de {PROFISSAO_ALEATORIA} da família. O trânsito constante entre {CIDADE_NATAL}, {CIDADE} e {POI} ensinou logística, estratégia e diplomacia, competências que hoje definem seu trabalho como {PROFISSAO}."
+    },
+    {
+      "id": "origin_70",
+      "text": "A casa de {NOME} em {CIDADE_NATAL} era ponto de encontro de artesãos, mercadores e guardas. Entre relatos de {POI} e demandas de {PROFISSAO_ALEATORIA}, desenvolveu senso crítico e liderança; quando escolheu ser {PROFISSAO}, já dominava redes de apoio em {CIDADE}."
+    },
+    {
+      "id": "origin_71",
+      "text": "{NOME} herdou da família um código de honra rigoroso: proteger os seus, pagar dívidas e jamais abandonar companheiros. Esse código nasceu em {CIDADE_NATAL}, foi testado em missões para {POI} e refinado por anos de prática em {PROFISSAO_ALEATORIA}, antes de consolidar sua identidade como {PROFISSAO}."
+    },
+    {
+      "id": "origin_72",
+      "text": "Os parentes de {NOME} discordavam sobre seu futuro: alguns defendiam carreira segura em {PROFISSAO_ALEATORIA}, outros viam potencial de classe para algo maior. A convivência entre {CIDADE_NATAL}, {CIDADE} e as fronteiras de {POI} levou {NOME} a unir os dois mundos e atuar como {PROFISSAO} com visão ampla."
     }
   ]
 }

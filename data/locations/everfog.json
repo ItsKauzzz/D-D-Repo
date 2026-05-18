@@ -1,0 +1,12 @@
+{
+  "x": 6064,
+  "y": 3868,
+  "name": "Everfog",
+  "type": "Vila Grande",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/vila_grande_icon_5.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}

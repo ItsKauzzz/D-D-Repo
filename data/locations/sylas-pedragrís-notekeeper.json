@@ -1,0 +1,13 @@
+{
+  "app": "NoteKeeper",
+  "version": 5,
+  "exportedAt": "2026-05-17T15:49:56.460Z",
+  "page": {
+    "id": "0d40ccac-6e9f-409f-8931-264d419cd2d6",
+    "title": "Sylas Pedragrís",
+    "content": "\n    <h1>Sylas Pedragrís</h1>\n    <p><strong>Classe:</strong> Bruxo · <strong>Nível:</strong> 8 · <strong>Local:</strong> <a href=\"../mapa.html?focus=velistra\" target=\"_blank\" rel=\"noopener\">Velistra (Cidade)</a></p>\n    <p><strong>Profissão:</strong> Caçador · <strong>Sexo:</strong> homens · <strong>Antepassado:</strong> Halfling</p>\n    <p><strong>Idade:</strong> 71 · <strong>Temperamento:</strong> Cruel · <strong>Lealdade:</strong> Trai com facilidade quando pressionado</p>\n    <h2>Background</h2>\n    <p>Ainda jovem, Sylas Pedragrís deixou <a href=\"mapa.html?focus=velistra\" target=\"_blank\" rel=\"noopener\">Velistra (Cidade)</a> para trabalhar com Caçador de Recompensas, mas acabou encontrando outro destino como Caçador.</p>\n    <h2>Equipamentos</h2><ul><li>Armadura: Acolchoada</li><li>Foco mágico: Totem druídico</li><li>Melee: Adaga</li></ul>\n    <h2>Itens</h2><ul><li>Camelo</li><li>Lenço bordado</li><li>Broche esmaltado</li><li>Kit de escalada</li><li>Sinetes antigos</li><li>Tinta</li></ul>\n    <h2>Magias</h2><ul><li>Truque: True Strike</li><li>Truque: Rajada de Veneno</li><li>Truque: Prestidigitação</li><li>1º: Proteção contra o Bem e Mal</li><li>1º: Compreender Idiomas</li><li>2º: Sugestão</li><li>2º: Raio Ardente</li><li>3º: Dissipar Magia</li><li>4º: Blight</li></ul>\n  ",
+    "plainText": "Sylas Pedragrís Bruxo 8",
+    "anchors": [],
+    "sectionId": null
+  }
+}
