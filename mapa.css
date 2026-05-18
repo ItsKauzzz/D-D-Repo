@@ -183,14 +183,49 @@ body .poi-sidebar {
 }
 
 
+.ruler-fab-wrap {
+  position: fixed;
+  top: 86px;
+  left: calc(min(290px, 30vw) + 24px);
+  z-index: 40;
+}
+
 .icon-toggle-ruler {
-  margin-left: auto;
   font-size: 16px;
   line-height: 1;
   color: #fff;
 }
 
 .icon-toggle-ruler[aria-pressed='true'] {
+  background: rgba(44, 123, 229, 0.45);
+  border-color: rgba(147, 199, 255, 0.95);
+}
+
+.ruler-menu {
+  position: absolute;
+  top: 0;
+  left: 42px;
+  display: none;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(0,0,0,.65);
+}
+
+.ruler-menu.is-visible { display: inline-flex; }
+
+.ruler-menu-btn {
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ruler-menu-btn.is-active {
   background: rgba(44, 123, 229, 0.45);
   border-color: rgba(147, 199, 255, 0.95);
 }

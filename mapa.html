@@ -42,8 +42,7 @@
         <input id="toggleNameBackdrop" type="checkbox" checked />
         <span aria-hidden="true">🕶️</span>
       </label>
-      <button id="toggleRuler" class="icon-toggle icon-toggle-ruler" type="button" aria-pressed="false" title="Régua">📏</button>
-    </div>
+          </div>
 
 
     <div class="type-filters" aria-label="Filtro por tipo">
@@ -52,6 +51,14 @@
 
     <ul id="poiList" class="poi-list"></ul>
   </aside>
+
+  <div class="ruler-fab-wrap">
+    <button id="toggleRuler" class="icon-toggle icon-toggle-ruler" type="button" aria-pressed="false" title="Régua">📏</button>
+    <div id="rulerMenu" class="ruler-menu" aria-hidden="true">
+      <button id="rulerModeDrag" type="button" class="ruler-menu-btn is-active">Arrastar</button>
+      <button id="rulerModePoints" type="button" class="ruler-menu-btn">2 Pontos</button>
+    </div>
+  </div>
 
   <div class="zoom-control" aria-label="Controle de zoom">
     <span class="zoom-label" id="zoomValue">100%</span>
@@ -125,6 +132,9 @@
     const toggle3DNames = document.getElementById('toggle3DNames');
     const toggleNameBackdrop = document.getElementById('toggleNameBackdrop');
     const toggleRuler = document.getElementById('toggleRuler');
+    const rulerMenu = document.getElementById('rulerMenu');
+    const rulerModeDrag = document.getElementById('rulerModeDrag');
+    const rulerModePoints = document.getElementById('rulerModePoints');
     const rulerOverlay = document.getElementById('rulerOverlay');
     const rulerLine = document.getElementById('rulerLine');
     const rulerBadge = document.getElementById('rulerBadge');
@@ -204,6 +214,8 @@
     let rulerMeasuring = false;
     let rulerStartPoint = null;
     const HORSE_SPEED_MULTIPLIER = 2;
+    let rulerMode = 'drag';
+    let rulerPointSelectStage = 0;
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -1310,16 +1322,16 @@
     function updateRulerMeasurement(currentClientX, currentClientY) {
       if (!rulerMeasuring || !rulerStartPoint) return;
       const endPoint = getWorldPointFromClient(currentClientX, currentClientY);
-      const dx = endPoint.x - rulerStartPoint.worldX;
-      const dy = endPoint.y - rulerStartPoint.worldY;
+      const dx = endPoint.x - rulerStartPoint.x;
+      const dy = endPoint.y - rulerStartPoint.y;
       const pixelDistance = Math.hypot(dx, dy);
       const pixelsPerDay = getCalibratedPixelsPerDay();
       const days = pixelsPerDay ? pixelDistance / pixelsPerDay : 0;
       const walkTime = formatTravelTime(days);
       const horseTime = formatTravelTime(days / HORSE_SPEED_MULTIPLIER);
 
-      const screenStartX = offsetX + rulerStartPoint.worldX * zoom;
-      const screenStartY = offsetY + rulerStartPoint.worldY * zoom;
+      const screenStartX = offsetX + rulerStartPoint.x * zoom;
+      const screenStartY = offsetY + rulerStartPoint.y * zoom;
       const screenEndX = currentClientX;
       const screenEndY = currentClientY;
       const lineDx = screenEndX - screenStartX;
@@ -1346,11 +1358,29 @@
       rulerOverlay.classList.toggle('is-visible', rulerActive);
       rulerBadge.textContent = '';
       rulerLine.style.width = '0px';
+      rulerMenu.classList.toggle('is-visible', rulerActive);
+      rulerMenu.setAttribute('aria-hidden', String(!rulerActive));
+      rulerPointSelectStage = 0;
     }
 
     mapCanvas.addEventListener('mousedown', (event) => {
       if (is3DMode) return;
       if (rulerActive) {
+        if (rulerMode === 'points') {
+          const point = { ...getWorldPointFromClient(event.clientX, event.clientY) };
+          if (rulerPointSelectStage === 0) {
+            rulerStartPoint = point;
+            rulerPointSelectStage = 1;
+            rulerMeasuring = false;
+            updateRulerMeasurement(event.clientX, event.clientY);
+          } else {
+            rulerMeasuring = true;
+            updateRulerMeasurement(event.clientX, event.clientY);
+            rulerMeasuring = false;
+            rulerPointSelectStage = 0;
+          }
+          return;
+        }
         rulerMeasuring = true;
         rulerStartPoint = { ...getWorldPointFromClient(event.clientX, event.clientY) };
         updateRulerMeasurement(event.clientX, event.clientY);
@@ -1493,6 +1523,18 @@
       renderPOI();
     });
     toggle3D.addEventListener('change', () => setViewMode3D(toggle3D.checked));
+    rulerModeDrag.addEventListener('click', () => {
+      rulerMode = 'drag';
+      rulerPointSelectStage = 0;
+      rulerModeDrag.classList.add('is-active');
+      rulerModePoints.classList.remove('is-active');
+    });
+    rulerModePoints.addEventListener('click', () => {
+      rulerMode = 'points';
+      rulerPointSelectStage = 0;
+      rulerModePoints.classList.add('is-active');
+      rulerModeDrag.classList.remove('is-active');
+    });
     toggleRuler.addEventListener('click', toggleRulerMode);
     poiModalClose.addEventListener('click', closePoiModal);
     imageModalClose.addEventListener('click', closeImageModal);
