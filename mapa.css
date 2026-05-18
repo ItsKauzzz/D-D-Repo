@@ -97,7 +97,7 @@ body.is-3d-mode #mapCanvas .poi-layer {
 
 body .poi-sidebar {
   position: fixed;
-  top: 86px;
+  top: 78px;
   left: 12px !important;
   right: auto !important;
   transform: none !important;
@@ -185,8 +185,8 @@ body .poi-sidebar {
 
 .ruler-fab-wrap {
   position: fixed;
-  top: 86px;
-  left: calc(min(290px, 30vw) + 24px);
+  top: 78px;
+  left: calc(min(290px, 30vw) + 34px);
   z-index: 40;
 }
 
@@ -719,6 +719,11 @@ body.is-3d-mode .zoom-control {
 
 .ruler-overlay.is-visible {
   display: block;
+}
+
+.ruler-lines {
+  position: absolute;
+  inset: 0;
 }
 
 .ruler-line {

@@ -71,7 +71,7 @@
     <div id="poiLayer" class="poi-layer" aria-hidden="true"></div>
     <div id="globeContainer" class="globe-container" aria-hidden="true"></div>
     <div id="rulerOverlay" class="ruler-overlay" aria-hidden="true">
-      <div id="rulerLine" class="ruler-line"></div>
+      <div id="rulerLines" class="ruler-lines"></div>
       <div id="rulerBadge" class="ruler-badge"></div>
     </div>
   </div>
@@ -136,7 +136,7 @@
     const rulerModeDrag = document.getElementById('rulerModeDrag');
     const rulerModePoints = document.getElementById('rulerModePoints');
     const rulerOverlay = document.getElementById('rulerOverlay');
-    const rulerLine = document.getElementById('rulerLine');
+    const rulerLines = document.getElementById('rulerLines');
     const rulerBadge = document.getElementById('rulerBadge');
     const typeFilters = document.getElementById('typeFilters');
     const poiSearch = document.getElementById('poiSearch');
@@ -216,6 +216,8 @@
     const HORSE_SPEED_MULTIPLIER = 2;
     let rulerMode = 'drag';
     let rulerPointSelectStage = 0;
+    let rulerBreakpoints = [];
+    let rulerCurrentPoint = null;
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -1319,31 +1321,58 @@
       return `${Math.round(days * 24)}h`;
     }
 
+
+    function buildRulerPath(endPoint) {
+      const path = [];
+      if (!rulerStartPoint) return path;
+      path.push(rulerStartPoint, ...rulerBreakpoints);
+      if (endPoint) path.push(endPoint);
+      return path;
+    }
+
+    function getPathDistance(path) {
+      let total = 0;
+      for (let i = 1; i < path.length; i += 1) {
+        total += Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+      }
+      return total;
+    }
+
+    function renderRulerPath(path) {
+      rulerLines.innerHTML = '';
+      for (let i = 1; i < path.length; i += 1) {
+        const a = path[i - 1];
+        const b = path[i];
+        const startX = offsetX + a.x * zoom;
+        const startY = offsetY + a.y * zoom;
+        const endX = offsetX + b.x * zoom;
+        const endY = offsetY + b.y * zoom;
+        const dx = endX - startX;
+        const dy = endY - startY;
+        const seg = document.createElement('div');
+        seg.className = 'ruler-line';
+        seg.style.left = `${startX}px`;
+        seg.style.top = `${startY}px`;
+        seg.style.width = `${Math.hypot(dx, dy)}px`;
+        seg.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+        rulerLines.appendChild(seg);
+      }
+    }
+
     function updateRulerMeasurement(currentClientX, currentClientY) {
       if (!rulerMeasuring || !rulerStartPoint) return;
       const endPoint = getWorldPointFromClient(currentClientX, currentClientY);
-      const dx = endPoint.x - rulerStartPoint.x;
-      const dy = endPoint.y - rulerStartPoint.y;
-      const pixelDistance = Math.hypot(dx, dy);
+      rulerCurrentPoint = endPoint;
+      const path = buildRulerPath(endPoint);
+      const pixelDistance = getPathDistance(path);
       const pixelsPerDay = getCalibratedPixelsPerDay();
       const days = pixelsPerDay ? pixelDistance / pixelsPerDay : 0;
       const walkTime = formatTravelTime(days);
       const horseTime = formatTravelTime(days / HORSE_SPEED_MULTIPLIER);
 
-      const screenStartX = offsetX + rulerStartPoint.x * zoom;
-      const screenStartY = offsetY + rulerStartPoint.y * zoom;
-      const screenEndX = currentClientX;
-      const screenEndY = currentClientY;
-      const lineDx = screenEndX - screenStartX;
-      const lineDy = screenEndY - screenStartY;
-      const lineLength = Math.hypot(lineDx, lineDy);
-      const angle = Math.atan2(lineDy, lineDx);
-
-      rulerLine.style.left = `${screenStartX}px`;
-      rulerLine.style.top = `${screenStartY}px`;
-      rulerLine.style.width = `${lineLength}px`;
-      rulerLine.style.transform = `rotate(${angle}rad)`;
-
+      renderRulerPath(path);
+      const screenEndX = offsetX + endPoint.x * zoom;
+      const screenEndY = offsetY + endPoint.y * zoom;
       rulerBadge.style.left = `${screenEndX}px`;
       rulerBadge.style.top = `${screenEndY}px`;
       rulerBadge.textContent = `Distância: ${days.toFixed(2)} dia(s) · A pé: ${walkTime} · Cavalo: ${horseTime}`;
@@ -1357,7 +1386,9 @@
       mapCanvas.classList.toggle('ruler-active', rulerActive);
       rulerOverlay.classList.toggle('is-visible', rulerActive);
       rulerBadge.textContent = '';
-      rulerLine.style.width = '0px';
+      rulerLines.innerHTML = '';
+      rulerBreakpoints = [];
+      rulerCurrentPoint = null;
       rulerMenu.classList.toggle('is-visible', rulerActive);
       rulerMenu.setAttribute('aria-hidden', String(!rulerActive));
       rulerPointSelectStage = 0;
@@ -1383,6 +1414,7 @@
         }
         rulerMeasuring = true;
         rulerStartPoint = { ...getWorldPointFromClient(event.clientX, event.clientY) };
+        rulerBreakpoints = [];
         updateRulerMeasurement(event.clientX, event.clientY);
         return;
       }
@@ -1486,6 +1518,15 @@
     window.addEventListener('touchend', () => {
       zoomDragging = false;
     }, { passive: true });
+
+
+    window.addEventListener('keydown', (event) => {
+      if (!rulerActive || event.code !== 'Space') return;
+      if (!rulerStartPoint || (!rulerMeasuring && rulerMode !== 'points')) return;
+      event.preventDefault();
+      const node = rulerCurrentPoint || rulerStartPoint;
+      rulerBreakpoints.push({ x: node.x, y: node.y });
+    });
 
     zoomTrack.addEventListener('keydown', (event) => {
       if (is3DMode) return;
