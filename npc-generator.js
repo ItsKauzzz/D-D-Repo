@@ -139,6 +139,17 @@ function renderSkillList(id, skills, profBonus, sheet){
   });
 }
 function renderSheet(sheet){attrs.forEach((k)=>{document.getElementById(`${k}Value`).textContent = sheet[k]; const mod = toModifier(sheet[k]); document.getElementById(`${k}Mod`).textContent = `MOD ${mod >= 0 ? "+" : ""}${mod}`;});}
+function renderFamily(familia){
+  const el = document.getElementById("familiaValue");
+  if(!el) return;
+  if(!familia){ el.innerHTML = ""; return; }
+  const filhos = (familia.filhos||[]).length ? familia.filhos.join(", ") : "Nenhum";
+  el.innerHTML = `
+    <div class="family-compact-row"><strong>Mãe:</strong> <span>${familia.mae || "-"} <em>(${familia.profissaoMae || "sem profissão"})</em></span></div>
+    <div class="family-compact-row"><strong>Pai:</strong> <span>${familia.pai || "-"} <em>(${familia.profissaoPai || "sem profissão"})</em></span></div>
+    <div class="family-compact-row"><strong>Filhos:</strong> <span>${filhos}</span></div>
+  `;
+}
 function renderNpc(npc){
 fieldIds.forEach((id)=>{const el=document.getElementById(`${id}Value`); if(el) el.textContent=npc[id]||"";});
 document.getElementById("sheetClassValue").textContent = npc.classe || "";
@@ -153,11 +164,81 @@ renderSimpleList("equipamentosValue", npc.equipamentos);
 renderSimpleList("itensValue", npc.itens);
 renderSpellList("magiasValue", npc.magias);
 renderFeatureList("habilidadesClasseValue", npc.habilidadesClasse);
+renderFamily(npc.familia);
 renderSheet(npc.ficha);
 document.getElementById("cidadeNatalLink").href=`mapa.html?focus=${encodeURIComponent(npc.cidadeFile)}`;
 const bgEl = document.getElementById("backgroundValue");
 if (bgEl) bgEl.innerHTML = npc.background || "";
 state.npc=npc;
+}
+
+function generateFamily(npcSexo, antepassado){
+  const makeName = (sexo, forcedLastName = '') => {
+    const first = randomFrom(getNamePoolBySexo(sexo));
+    const last = forcedLastName || randomFrom(state.data.sobrenomes || ["SemSobrenome"]);
+    return `${first} ${last}`.trim();
+  };
+  const familyLastName = randomFrom(state.data.sobrenomes || ["SemSobrenome"]);
+  const motherUsesDifferentLastName = Math.random() < 0.55;
+  const mae = motherUsesDifferentLastName ? makeName("mulheres") : makeName("mulheres", familyLastName);
+  const pai = makeName("homens", familyLastName);
+  const raceAge = state.data.faixaEtariaPorAntepassado?.[antepassado] || { min: 18, max: 80 };
+  const childCount = Math.floor(Math.random() * 4);
+  const profissaoMae = randomFrom(state.data.profissoes || ["Trabalhadora local"]);
+  const profissaoPai = randomFrom(state.data.profissoes || ["Trabalhador local"]);
+  const filhos = Array.from({length: childCount}, () => {
+    const sexo = randomFrom(["homens","mulheres","androgenos"]);
+    const childAgeMax = Math.max(4, Math.floor((raceAge.max - raceAge.min) * 0.3));
+    const idade = Math.floor(Math.random() * childAgeMax) + 1;
+    const nome = makeName(sexo, familyLastName);
+    return `${nome} (${idade})`;
+  });
+  return { mae, pai, filhos, profissaoMae, profissaoPai };
+}
+
+function exportNpcAsPdf(){
+  if(!state.npc){ alert("Gere um NPC antes de exportar."); return; }
+  window.print();
+}
+
+function exportNpcToNotekeeper(){
+  if(!state.npc){ alert("Gere um NPC antes de exportar."); return; }
+  const npc = state.npc;
+  const pageTitle = `${npc.nome} ${npc.sobrenome}`.trim();
+  const list = (items) => `<ul>${(items||[]).map((item)=>`<li>${item}</li>`).join("")}</ul>`;
+  const content = `
+    <h1>${pageTitle}</h1>
+    <p><strong>Classe:</strong> ${npc.classe} · <strong>Nível:</strong> ${npc.level} · <strong>Local:</strong> <a href="../mapa.html?focus=${encodeURIComponent(npc.cidadeFile)}" target="_blank" rel="noopener">${npc.cidadeNatal}</a></p>
+    <p><strong>Profissão:</strong> ${npc.profissao} · <strong>Sexo:</strong> ${npc.sexo} · <strong>Antepassado:</strong> ${npc.antepassado}</p>
+    <p><strong>Idade:</strong> ${npc.idade} · <strong>Temperamento:</strong> ${npc.temperamento} · <strong>Lealdade:</strong> ${npc.lealdade}</p>
+    <h2>Background</h2>
+    <p>${npc.background || ""}</p>
+    <h2>Equipamentos</h2>${list(npc.equipamentos)}
+    <h2>Itens</h2>${list(npc.itens)}
+    <h2>Magias</h2>${list(npc.magias)}
+  `;
+  const payload = {
+    app: 'NoteKeeper',
+    version: 5,
+    exportedAt: new Date().toISOString(),
+    page: {
+      id: crypto.randomUUID(),
+      title: pageTitle || 'NPC',
+      content,
+      plainText: `${pageTitle} ${npc.classe} ${npc.level}`.trim(),
+      anchors: [],
+      sectionId: null
+    }
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(pageTitle || 'npc').toLowerCase().replace(/\s+/g, '-')}-notekeeper.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 async function loadLocations(){const files=await (await fetch("data/locations/index.json")).json(); return Promise.all(files.map(async (f)=>{const d=await (await fetch(`data/locations/${f}`)).json(); return {file:String(f).replace(/\.json$/i,""),type:String(d.type||""),nome:String(d.name||""),x:Number(d.x||0),y:Number(d.y||0)};}));}
@@ -324,7 +405,7 @@ const itemCount = tier.min >= 13 ? 8 : (tier.min >= 9 ? 7 : (tier.min >= 5 ? 6 :
 const profs = buildProficiencias(classe, level);
 const ficha = generateSheet(classe, level);
 const loadout = buildLoadout(classe, state.equipmentData || {});
-const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,level,idade,proficiencyBonus:tier.profBonus,ca:calculateAc(ficha, loadout),vida:calculateHp(classe, level, ficha),caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha,proficienciasGerais:profs.gerais,proficienciasSkills:profs.skills,equipamentos:loadout.equipped,itens:randomSample(state.itemPool, itemCount),magias:buildSpells(classe, level),habilidadesClasse:buildClassFeatures(classe, level)};
+const npc = {nome,sobrenome,profissao:pickFromChecks("profissaoChecks",state.data.profissoes),cidadeNatal:`${cidade.nome} (${cidade.tipo})`,cidadeFile:cidade.file,sexo,antepassado,classe,level,idade,proficiencyBonus:tier.profBonus,ca:calculateAc(ficha, loadout),vida:calculateHp(classe, level, ficha),caracteristicas:generateCharacteristics(state.characteristicData[sexo]),temperamento:pickFromChecks("temperamentoChecks",state.data.temperamentos),lealdade:pickLealdadeByAlignment(alignVal),ficha,proficienciasGerais:profs.gerais,proficienciasSkills:profs.skills,equipamentos:loadout.equipped,itens:randomSample(state.itemPool, itemCount),magias:buildSpells(classe, level),habilidadesClasse:buildClassFeatures(classe, level),familia:generateFamily(sexo, antepassado)};
 npc.background = buildBackground(npc);
 return npc;}
 
@@ -342,6 +423,7 @@ if(field==="idade") state.npc.idade=generateAgeForRace(state.npc.antepassado);
 if(field==="temperamento") state.npc.temperamento=pickFromChecks("temperamentoChecks",state.data.temperamentos);
 if(field==="lealdade") state.npc.lealdade=pickFromChecks("lealdadeChecks",state.data.lealdades);
 if(field==="alinhamento"){const v=Number(document.getElementById("alignmentRange").value||0) * -1; state.npc.lealdade=pickLealdadeByAlignment(v);}
+if(field==="nome"||field==="sexo"||field==="antepassado"){ state.npc.familia = generateFamily(state.npc.sexo, state.npc.antepassado); }
 state.npc.background = buildBackground(state.npc);
 renderNpc(state.npc);
 }
@@ -366,6 +448,8 @@ syncLevelLabels();
 align.addEventListener("input",()=>{alignLabel.textContent=labelAlignment(Number(align.value)); if(state.npc){state.npc.lealdade=pickLealdadeByAlignment(Number(align.value) * -1); renderNpc(state.npc);}});
 document.getElementById("randomizeButton").addEventListener("click",()=>renderNpc(buildNpcFromForm()));
 document.getElementById("applyButton").addEventListener("click",()=>renderNpc(buildNpcFromForm()));
+document.getElementById("exportPdfButton").addEventListener("click", exportNpcAsPdf);
+document.getElementById("exportNotekeeperButton").addEventListener("click", exportNpcToNotekeeper);
 document.querySelector(".npc-list").addEventListener("click",(e)=>{const b=e.target.closest(".reroll-field"); if(b) rerollField(b.dataset.field);});
 document.getElementById("caracteristicasValue").addEventListener("click",(e)=>{const b=e.target.closest(".reroll-char"); if(!b||!state.npc) return; const sexo=pickFromChecks("sexoChecks", ["homens","mulheres","androgenos"]); state.npc.caracteristicas[b.dataset.charKey]=rerollSingleCharacteristic(b.dataset.charKey,state.characteristicData[sexo]); renderNpc(state.npc);});
 document.getElementById("proficienciasSkillsValue").addEventListener("click",(e)=>{const b=e.target.closest(".skill-roll-btn"); if(!b) return; const mod=Number(b.dataset.skillMod||0); const roll=Math.floor(Math.random()*20)+1; const total=roll+mod; const out=b.parentElement.querySelector(".skill-roll-result"); if(out) out.textContent=`${roll} ${mod>=0?'+':''}${mod} = ${total}`;});

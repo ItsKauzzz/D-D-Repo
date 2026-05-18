@@ -51,6 +51,12 @@
           <li><button class="reroll-field" data-field="classe">🎲</button> <strong>Classe:</strong> <span id="classeValue"></span></li>
           <li><button class="reroll-field" data-field="level">🎲</button> <strong>Level:</strong> <span id="levelValue"></span></li>
           <li><button class="reroll-field" data-field="idade">🎲</button> <strong>Idade:</strong> <span id="idadeValue"></span></li>
+          <li>
+            <details>
+              <summary>Família</summary>
+              <div id="familiaValue" class="family-compact"></div>
+            </details>
+          </li>
                     <li><strong>Características:</strong><ul id="caracteristicasValue" class="npc-char-list"></ul></li>
           <li><button class="reroll-field" data-field="temperamento">🎲</button> <strong>Temperamento:</strong> <span id="temperamentoValue"></span></li>
           <li><button class="reroll-field" data-field="lealdade">🎲</button> <strong>Lealdade:</strong> <span id="lealdadeValue"></span></li>
@@ -109,6 +115,8 @@
   </div>
   <div class="floating-generate">
     <button id="randomizeButton" type="button">Gerar aleatório</button>
+    <button id="exportPdfButton" type="button">Exportar PDF</button>
+    <button id="exportNotekeeperButton" type="button">Exportar para NoteKeeper</button>
   </div>
   <script src="npc-generator.js"></script>
 </body>

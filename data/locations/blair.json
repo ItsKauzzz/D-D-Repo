@@ -1,0 +1,12 @@
+{
+  "x": 5734,
+  "y": 4113,
+  "name": "Blair",
+  "type": "Vila",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/cidade_icon_1.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}

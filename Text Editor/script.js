@@ -12,6 +12,7 @@ const THEME_NAMES = [
 const PROJECT_JSON_NAME = 'project.json';
 const ASSETS_FOLDER = 'assets/';
 const ASSET_URL_PREFIX = 'notekeeper-asset://';
+const AUTO_LINK_IDLE_MS = 20000;
 
 const editor = document.getElementById('editor');
 const pagesList = document.getElementById('pages-list');
@@ -53,12 +54,14 @@ let isApplyingAutoLink = false;
 let selectedImage = null;
 let draggingItem = null;
 let hasShownStorageQuotaWarning = false;
+let poiIndex = [];
+let lastEditorInteractionAt = Date.now();
 
 bootstrap();
 
 function bootstrap() {
   if (!state.pages.length) {
-    state.pages.push(createPage('Nova página'));
+    state.pages.push(createPage('Ancoras'));
     state.activePageId = state.pages[0].id;
   }
 
@@ -69,12 +72,13 @@ function bootstrap() {
   renderAnchorsList();
   loadActivePageToEditor();
   bindEvents();
+  loadPoiIndex();
   saveState();
 }
 
 function bindEvents() {
   addPageBtn.addEventListener('click', () => {
-    const page = createPage(`Página ${state.pages.length + 1}`);
+    const page = createPage('Ancoras');
     state.pages.push(page);
     state.activePageId = page.id;
     saveState();
@@ -137,6 +141,9 @@ function bindEvents() {
   editor.addEventListener('input', handleEditorInput);
   editor.addEventListener('keyup', handleTagSuggest);
   editor.addEventListener('paste', handlePasteImage);
+  editor.addEventListener('click', trackEditorInteraction);
+  editor.addEventListener('keyup', trackEditorInteraction);
+  editor.addEventListener('paste', trackEditorInteraction);
 
   pageTitle.addEventListener('input', () => {
     updateActivePage((page) => {
@@ -239,6 +246,11 @@ function handleEditorClick(event) {
 
   if (target instanceof HTMLAnchorElement) {
     const href = target.getAttribute('href') || '';
+    if (target.classList.contains('location-link') && href.includes('mapa.html?focus=')) {
+      event.preventDefault();
+      window.open(href, '_blank', 'noopener,noreferrer');
+      return;
+    }
     if (!href.startsWith('notekeeper://')) return;
     event.preventDefault();
     openInternalLink(href);
@@ -418,7 +430,30 @@ function replaceWordBeforeCaretWithLink(prefix, tag, pageId, anchorId) {
 
   const parent = node.parentNode;
   parent.replaceChild(fragment, node);
+  placeCaretAfterNode(link);
   editor.dispatchEvent(new Event('input'));
+}
+
+function placeCaretAtEnd(node) {
+  if (!node) return;
+  const selection = window.getSelection();
+  if (!selection) return;
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function placeCaretAfterNode(node) {
+  if (!node) return;
+  const selection = window.getSelection();
+  if (!selection) return;
+  const range = document.createRange();
+  range.setStartAfter(node);
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
 }
 
 function getCurrentTagPrefix() {
@@ -438,6 +473,7 @@ function getCurrentTagPrefix() {
 
 function handleEditorInput() {
   if (isApplyingAutoLink) return;
+  trackEditorInteraction();
 
   normalizeImageSizing();
 
@@ -448,8 +484,22 @@ function handleEditorInput() {
 
   if (state.autolinkEnabled) {
     clearTimeout(autoLinkDebounce);
-    autoLinkDebounce = setTimeout(applyAutoLinksOnActivePage, 450);
+    autoLinkDebounce = setTimeout(scheduleAutolinkSweep, AUTO_LINK_IDLE_MS);
   }
+}
+
+function trackEditorInteraction() {
+  lastEditorInteractionAt = Date.now();
+}
+
+function scheduleAutolinkSweep() {
+  const elapsed = Date.now() - lastEditorInteractionAt;
+  if (elapsed >= AUTO_LINK_IDLE_MS) {
+    applyAutoLinksOnActivePage();
+    return;
+  }
+  clearTimeout(autoLinkDebounce);
+  autoLinkDebounce = setTimeout(scheduleAutolinkSweep, AUTO_LINK_IDLE_MS - elapsed);
 }
 
 function normalizeImageSizing() {
@@ -556,7 +606,7 @@ function createNewProject() {
   if (!shouldCreate) return;
 
   state = defaultState();
-  state.pages.push(createPage('Nova página'));
+  state.pages.push(createPage('Ancoras'));
   state.activePageId = state.pages[0].id;
   currentProjectHandle = null;
 
@@ -868,6 +918,7 @@ function createAnchorFromSelection() {
   const text = selectedText || tag;
 
   document.execCommand('insertHTML', false, `<span id="${anchorId}" class="anchor-tag">${escapeHtml(text)}</span>`);
+  placeCaretAtEnd(editor);
 
   updateActivePage((page) => {
     ensureAnchorTag(page, anchorId, tag);
@@ -905,7 +956,8 @@ function insertInternalLink() {
 function applyAutoLinksOnActivePage() {
   if (!state.autolinkEnabled) return;
   const tags = getAllAnchors().filter((anchor) => anchor.tag.trim().length > 0);
-  if (!tags.length) return;
+  const pages = state.pages.filter((page) => page.title.trim().length > 0).map((page) => ({ title: page.title, pageId: page.id }));
+  if (!tags.length && !pages.length && !poiIndex.length) return;
 
   const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
   const textNodes = [];
@@ -918,9 +970,12 @@ function applyAutoLinksOnActivePage() {
   isApplyingAutoLink = true;
   let changed = false;
   const sortedTags = [...tags].sort((a, b) => b.tag.length - a.tag.length);
+  const sortedPages = [...pages].sort((a, b) => b.title.length - a.title.length);
+  const sortedPois = [...poiIndex].sort((a, b) => b.name.length - a.name.length);
+  const linkables = [...sortedTags.map((i) => i.tag), ...sortedPages.map((i) => i.title), ...sortedPois.map((i) => i.name)];
 
   textNodes.forEach((node) => {
-    const fragment = convertTextNodeToAutolinks(node.nodeValue, sortedTags);
+    const fragment = convertTextNodeToAutolinks(node.nodeValue, linkables, sortedTags, sortedPages, sortedPois);
     if (fragment) {
       changed = true;
       node.parentNode.replaceChild(fragment, node);
@@ -936,9 +991,9 @@ function applyAutoLinksOnActivePage() {
   }
 }
 
-function convertTextNodeToAutolinks(text, tags) {
+function convertTextNodeToAutolinks(text, linkables, tags, pages, pois) {
   if (!text) return null;
-  const escaped = tags.map((item) => escapeRegExp(item.tag));
+  const escaped = [...new Set(linkables.filter(Boolean).map((item) => escapeRegExp(item)))];
   if (!escaped.length) return null;
 
   const regex = new RegExp(`(^|[^\\p{L}\\p{N}_])(${escaped.join('|')})(?=$|[^\\p{L}\\p{N}_])`, 'giu');
@@ -956,11 +1011,36 @@ function convertTextNodeToAutolinks(text, tags) {
 
     const matchedWord = match[2];
     const anchor = tags.find((item) => item.tag.toLowerCase() === matchedWord.toLowerCase());
-    if (anchor) {
+    const page = pages.find((item) => item.title.toLowerCase() === matchedWord.toLowerCase());
+    const poi = pois.find((item) => item.name.toLowerCase() === matchedWord.toLowerCase());
+
+    if (anchor || page || poi) {
+      const wrap = document.createElement('span');
+      wrap.className = 'inline-link-wrap';
       const link = document.createElement('a');
-      link.href = `notekeeper://page/${anchor.pageId}#${anchor.anchorId}`;
+      if (anchor) link.href = `notekeeper://page/${anchor.pageId}#${anchor.anchorId}`;
+      else if (page) link.href = `notekeeper://page/${page.pageId}`;
+      else {
+        link.href = poi.href;
+        link.classList.add('location-link');
+        link.target = '_blank';
+        link.rel = 'noopener';
+      }
       link.textContent = matchedWord;
-      fragment.appendChild(link);
+      wrap.appendChild(link);
+
+      if ((anchor || page) && poi) {
+        const mapIcon = document.createElement('a');
+        mapIcon.href = poi.href;
+        mapIcon.className = 'map-corner-link';
+        mapIcon.title = `Ver ${matchedWord} no mapa`;
+        mapIcon.textContent = '🗺';
+        mapIcon.target = '_blank';
+        mapIcon.rel = 'noopener';
+        wrap.appendChild(mapIcon);
+      }
+
+      fragment.appendChild(wrap);
     } else {
       fragment.appendChild(document.createTextNode(matchedWord));
     }
@@ -971,6 +1051,44 @@ function convertTextNodeToAutolinks(text, tags) {
   const after = text.slice(lastIndex);
   if (after) fragment.appendChild(document.createTextNode(after));
   return fragment;
+}
+
+async function loadPoiIndex() {
+  try {
+    const fromConfig = [];
+    const response = await fetch('../data/poi-config.json');
+    if (response.ok) {
+      const data = await response.json();
+      const pois = Array.isArray(data?.pois) ? data.pois : [];
+      fromConfig.push(...pois
+        .filter((poi) => poi && typeof poi.name === 'string' && typeof poi.file === 'string')
+        .map((poi) => ({ name: poi.name.trim(), href: `../mapa.html?focus=${encodeURIComponent(poi.file)}` }))
+        .filter((poi) => poi.name.length > 0));
+    }
+
+    const fromLocations = [];
+    const locationsIndexRes = await fetch('../data/locations/index.json');
+    if (locationsIndexRes.ok) {
+      const files = await locationsIndexRes.json();
+      if (Array.isArray(files)) {
+        const entries = await Promise.all(files.map(async (file) => {
+          const locRes = await fetch(`../data/locations/${file}`);
+          if (!locRes.ok) return null;
+          const loc = await locRes.json();
+          const name = String(loc?.name || '').trim();
+          const focusFile = String(file).replace(/\.json$/i, '');
+          if (!name || !focusFile) return null;
+          return { name, href: `../mapa.html?focus=${encodeURIComponent(focusFile)}` };
+        }));
+        fromLocations.push(...entries.filter(Boolean));
+      }
+    }
+
+    const merged = [...fromConfig, ...fromLocations];
+    poiIndex = merged.filter((item, index, arr) => arr.findIndex((v) => v.name.toLowerCase() === item.name.toLowerCase()) === index);
+  } catch (error) {
+    poiIndex = [];
+  }
 }
 
 function removeAnchorTag(pageId, anchorId, tag) {

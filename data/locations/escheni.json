@@ -1,0 +1,12 @@
+{
+  "x": 5381,
+  "y": 3188,
+  "name": "Escheni",
+  "type": "Cidade",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/cidade_icon_3.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}
