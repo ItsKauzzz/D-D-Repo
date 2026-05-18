@@ -464,12 +464,14 @@
       }
       renderZoomThumb();
       renderPOI();
+      syncRulerOverlay();
     }
 
     function render() {
       if (is3DMode) return;
       mapCanvas.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
       renderPOI();
+      syncRulerOverlay();
       persistViewState();
     }
 
@@ -1367,10 +1369,8 @@
       }
     }
 
-    function updateRulerMeasurement(currentClientX, currentClientY) {
-      if (!rulerMeasuring || !rulerStartPoint) return;
-      const endPoint = getWorldPointFromClient(currentClientX, currentClientY);
-      rulerCurrentPoint = endPoint;
+    function renderRulerFromWorldEndPoint(endPoint) {
+      if (!rulerStartPoint || !endPoint) return;
       const path = buildRulerPath(endPoint);
       const pixelDistance = getPathDistance(path);
       const pixelsPerDay = getCalibratedPixelsPerDay();
@@ -1385,6 +1385,18 @@
       rulerBadge.style.top = `${screenEndY}px`;
       const distanceText = formatTravelTime(days);
       rulerBadge.textContent = `Distância: ${distanceText} · A pé: ${walkTime} · Cavalo: ${horseTime}`;
+    }
+
+    function syncRulerOverlay() {
+      if (!rulerActive || !rulerStartPoint || !rulerCurrentPoint) return;
+      renderRulerFromWorldEndPoint(rulerCurrentPoint);
+    }
+
+    function updateRulerMeasurement(currentClientX, currentClientY) {
+      if (!rulerMeasuring || !rulerStartPoint) return;
+      const endPoint = getWorldPointFromClient(currentClientX, currentClientY);
+      rulerCurrentPoint = endPoint;
+      renderRulerFromWorldEndPoint(endPoint);
     }
 
     function toggleRulerMode() {
@@ -1421,13 +1433,13 @@
             rulerStartPoint = point;
             rulerCurrentPoint = point;
             rulerPointSelectStage = 1;
-            rulerMeasuring = false;
+            rulerMeasuring = true;
+            rulerBreakpoints = [];
             rulerLines.innerHTML = '';
             rulerBadge.style.left = `${event.clientX}px`;
             rulerBadge.style.top = `${event.clientY}px`;
             rulerBadge.textContent = 'Ponto inicial definido';
           } else {
-            rulerMeasuring = true;
             updateRulerMeasurement(event.clientX, event.clientY);
             rulerMeasuring = false;
             rulerPointSelectStage = 0;
@@ -1439,6 +1451,7 @@
           rulerStartPoint = point;
           rulerCurrentPoint = point;
           rulerBreakpoints = [];
+          rulerMeasuring = true;
           rulerLines.innerHTML = '';
           rulerBadge.style.left = `${event.clientX}px`;
           rulerBadge.style.top = `${event.clientY}px`;
@@ -1448,7 +1461,6 @@
         }
 
         if (rulerClickStage === 1) {
-          rulerMeasuring = true;
           updateRulerMeasurement(event.clientX, event.clientY);
           rulerMeasuring = false;
           rulerClickStage = 2;
