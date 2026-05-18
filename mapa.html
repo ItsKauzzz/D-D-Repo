@@ -44,6 +44,11 @@
       </label>
     </div>
 
+    <div class="map-ruler-tools" aria-label="Ferramenta de régua">
+      <button id="toggleRuler" class="ruler-toggle" type="button" aria-pressed="false">📏 Régua</button>
+      <p id="rulerInfo" class="ruler-info">Ative para medir distância.</p>
+    </div>
+
     <div class="type-filters" aria-label="Filtro por tipo">
       <div id="typeFilters" class="type-filter-list"></div>
     </div>
@@ -61,6 +66,10 @@
   <div id="mapCanvas" aria-label="Mapa-múndi em tela cheia">
     <div id="poiLayer" class="poi-layer" aria-hidden="true"></div>
     <div id="globeContainer" class="globe-container" aria-hidden="true"></div>
+    <div id="rulerOverlay" class="ruler-overlay" aria-hidden="true">
+      <div id="rulerLine" class="ruler-line"></div>
+      <div id="rulerBadge" class="ruler-badge"></div>
+    </div>
   </div>
 
   <div id="poiModalBackdrop" class="poi-modal-backdrop" aria-hidden="true">
@@ -118,6 +127,11 @@
     const toggle3D = document.getElementById('toggle3D');
     const toggle3DNames = document.getElementById('toggle3DNames');
     const toggleNameBackdrop = document.getElementById('toggleNameBackdrop');
+    const toggleRuler = document.getElementById('toggleRuler');
+    const rulerInfo = document.getElementById('rulerInfo');
+    const rulerOverlay = document.getElementById('rulerOverlay');
+    const rulerLine = document.getElementById('rulerLine');
+    const rulerBadge = document.getElementById('rulerBadge');
     const typeFilters = document.getElementById('typeFilters');
     const poiSearch = document.getElementById('poiSearch');
     const globeContainer = document.getElementById('globeContainer');
@@ -189,6 +203,11 @@
     let globeDidDrag = false;
     let globeLastX = 0;
     let globeLastY = 0;
+
+    let rulerActive = false;
+    let rulerMeasuring = false;
+    let rulerStartPoint = null;
+    const HORSE_SPEED_MULTIPLIER = 2;
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -1268,8 +1287,83 @@
       imageModalImage.removeAttribute('src');
     }
 
+
+    function getWorldPointFromClient(clientX, clientY) {
+      return {
+        x: (clientX - offsetX) / zoom,
+        y: (clientY - offsetY) / zoom
+      };
+    }
+
+    function getCalibratedPixelsPerDay() {
+      const velistra = locations.find((loc) => String(loc.id).replace(/\.json$/i, '') === 'velistra');
+      const carroca = locations.find((loc) => String(loc.id).replace(/\.json$/i, '') === 'caravana_perdida');
+      if (!velistra || !carroca) return null;
+      const dx = carroca.x - velistra.x;
+      const dy = carroca.y - velistra.y;
+      const distance = Math.hypot(dx, dy);
+      return distance > 0 ? distance : null;
+    }
+
+    function formatTravelTime(days) {
+      if (!Number.isFinite(days) || days <= 0) return '0h';
+      if (days >= 1) return `${days.toFixed(2)} dia(s)`;
+      return `${Math.round(days * 24)}h`;
+    }
+
+    function updateRulerMeasurement(currentClientX, currentClientY) {
+      if (!rulerMeasuring || !rulerStartPoint) return;
+      const endPoint = getWorldPointFromClient(currentClientX, currentClientY);
+      const dx = endPoint.x - rulerStartPoint.worldX;
+      const dy = endPoint.y - rulerStartPoint.worldY;
+      const pixelDistance = Math.hypot(dx, dy);
+      const pixelsPerDay = getCalibratedPixelsPerDay();
+      const days = pixelsPerDay ? pixelDistance / pixelsPerDay : 0;
+      const walkTime = formatTravelTime(days);
+      const horseTime = formatTravelTime(days / HORSE_SPEED_MULTIPLIER);
+
+      const screenStartX = offsetX + rulerStartPoint.worldX * zoom;
+      const screenStartY = offsetY + rulerStartPoint.worldY * zoom;
+      const screenEndX = currentClientX;
+      const screenEndY = currentClientY;
+      const lineDx = screenEndX - screenStartX;
+      const lineDy = screenEndY - screenStartY;
+      const lineLength = Math.hypot(lineDx, lineDy);
+      const angle = Math.atan2(lineDy, lineDx);
+
+      rulerLine.style.left = `${screenStartX}px`;
+      rulerLine.style.top = `${screenStartY}px`;
+      rulerLine.style.width = `${lineLength}px`;
+      rulerLine.style.transform = `rotate(${angle}rad)`;
+
+      rulerBadge.style.left = `${screenEndX}px`;
+      rulerBadge.style.top = `${screenEndY}px`;
+      rulerBadge.textContent = `Distância: ${days.toFixed(2)} dia(s) · A pé: ${walkTime} · Cavalo: ${horseTime}`;
+      rulerInfo.textContent = `A pé: ${walkTime} · Cavalo: ${horseTime}`;
+    }
+
+    function toggleRulerMode() {
+      rulerActive = !rulerActive;
+      rulerMeasuring = false;
+      rulerStartPoint = null;
+      toggleRuler.setAttribute('aria-pressed', String(rulerActive));
+      mapCanvas.classList.toggle('ruler-active', rulerActive);
+      rulerOverlay.classList.toggle('is-visible', rulerActive);
+      rulerBadge.textContent = '';
+      rulerLine.style.width = '0px';
+      rulerInfo.textContent = rulerActive
+        ? 'Clique e segure para medir (referência: carroça explodida ↔ Velistra = 1 dia).'
+        : 'Ative para medir distância.';
+    }
+
     mapCanvas.addEventListener('mousedown', (event) => {
       if (is3DMode) return;
+      if (rulerActive) {
+        rulerMeasuring = true;
+        rulerStartPoint = { ...getWorldPointFromClient(event.clientX, event.clientY) };
+        updateRulerMeasurement(event.clientX, event.clientY);
+        return;
+      }
       dragging = true;
       mapCanvas.classList.add('dragging');
       lastX = event.clientX;
@@ -1278,6 +1372,10 @@
 
     window.addEventListener('mousemove', (event) => {
       if (is3DMode) return;
+      if (rulerActive && rulerMeasuring) {
+        updateRulerMeasurement(event.clientX, event.clientY);
+        return;
+      }
       if (!dragging) return;
 
       const deltaX = event.clientX - lastX;
@@ -1293,6 +1391,7 @@
     });
 
     window.addEventListener('mouseup', () => {
+      if (rulerMeasuring) rulerMeasuring = false;
       dragging = false;
       mapCanvas.classList.remove('dragging');
     });
@@ -1402,6 +1501,7 @@
       renderPOI();
     });
     toggle3D.addEventListener('change', () => setViewMode3D(toggle3D.checked));
+    toggleRuler.addEventListener('click', toggleRulerMode);
     poiModalClose.addEventListener('click', closePoiModal);
     imageModalClose.addEventListener('click', closeImageModal);
     poiModalBackdrop.addEventListener('click', (event) => {
