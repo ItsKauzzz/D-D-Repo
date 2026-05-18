@@ -108,6 +108,10 @@ button {
   border-bottom: 1px solid #1e293b;
   font-size: 0.9rem;
 }
+.npc-list li.rare-item {
+  color: #c084fc;
+  font-weight: 700;
+}
 
 .npc-list strong {
   color: var(--accent);
