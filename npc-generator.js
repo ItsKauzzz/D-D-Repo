@@ -417,9 +417,19 @@ function buildNpcItems(level){
   const itemCount = tier.min >= 13 ? 8 : (tier.min >= 9 ? 7 : (tier.min >= 5 ? 6 : 5));
   const baseItems = randomSample(state.itemPool, itemCount);
   const fullItems = [`Moedas: ${rollCoinPurse(level)}`, ...baseItems];
-  const rareChance = tier.min >= 13 ? 0.3 : (tier.min >= 9 ? 0.2 : 0.08);
-  if(state.rareItemPool?.length && Math.random() < rareChance){
-    fullItems.push(`[RARO] ${randomFrom(state.rareItemPool)}`);
+  const magicByTier = {
+    comum: [{ key: "Comum", chance: 0.2 }],
+    treinado: [{ key: "Comum", chance: 0.3 }, { key: "Incomum", chance: 0.12 }],
+    elite: [{ key: "Incomum", chance: 0.28 }, { key: "Raro", chance: 0.14 }],
+    lendario: [{ key: "Raro", chance: 0.35 }, { key: "MuitoRaro", chance: 0.2 }, { key: "Lendario", chance: 0.08 }]
+  };
+  const pools = state.magicItemsByRarity || {};
+  const rolls = magicByTier[tier.tier] || [];
+  const picked = rolls.filter((entry)=>Math.random() < entry.chance).map((entry)=>entry.key);
+  if(picked.length){
+    const chosenRarity = randomFrom(picked);
+    const rarityPool = pools[chosenRarity] || [];
+    if(rarityPool.length) fullItems.push(`[RARO] ${chosenRarity}: ${randomFrom(rarityPool)}`);
   }
   return fullItems;
 }
@@ -456,7 +466,7 @@ state.npc.background = buildBackground(state.npc);
 renderNpc(state.npc);
 }
 
-async function init(){const [baseRes,charRes,cidades,locations,backgroundRes,equipmentRes,itemRes,classProfilesRes,classSpellsRes,classFeaturesRes,spellDescriptionsRes]=await Promise.all([fetch("./npc-data.json"),fetch("./npc-characteristics.json"),loadCityVillageLocations(),loadLocations(),fetch("./data/backgrounds.json"),fetch("./data/inventory/equipment.json"),fetch("./data/inventory/itens.json"),fetch("./data/class-profiles.json"),fetch("./data/class-spells.json"),fetch("./data/class-features.json"),fetch("./data/spell-descriptions.json")]); state.data=await baseRes.json(); state.characteristicData=await charRes.json(); state.locations=locations.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.backgrounds=(await backgroundRes.json()).templates.map((t)=>String(t.text||"")).filter(Boolean); state.cidades=cidades.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.cidadeMap=new Map(state.cidades.map((e)=>[e.nome,e])); state.equipmentData=await equipmentRes.json(); const itemData = await itemRes.json(); state.itemPool=flattenPool(itemData, "Itens"); state.rareItemPool=(itemData?.Itens?.["Itens Mágicos Raros"]||[]).filter(Boolean); state.equipmentPool=flattenPool(state.equipmentData, "Equipamentos"); state.classProfiles=await classProfilesRes.json(); state.classSpells=await classSpellsRes.json(); state.classFeatures=await classFeaturesRes.json(); state.spellDescriptions=(await spellDescriptionsRes.json()).spells || {};
+async function init(){const [baseRes,charRes,cidades,locations,backgroundRes,equipmentRes,itemRes,classProfilesRes,classSpellsRes,classFeaturesRes,spellDescriptionsRes]=await Promise.all([fetch("./npc-data.json"),fetch("./npc-characteristics.json"),loadCityVillageLocations(),loadLocations(),fetch("./data/backgrounds.json"),fetch("./data/inventory/equipment.json"),fetch("./data/inventory/itens.json"),fetch("./data/class-profiles.json"),fetch("./data/class-spells.json"),fetch("./data/class-features.json"),fetch("./data/spell-descriptions.json")]); state.data=await baseRes.json(); state.characteristicData=await charRes.json(); state.locations=locations.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.backgrounds=(await backgroundRes.json()).templates.map((t)=>String(t.text||"")).filter(Boolean); state.cidades=cidades.map((e)=>({nome:e.nome,tipo:e.type,file:e.file,x:e.x,y:e.y})); state.cidadeMap=new Map(state.cidades.map((e)=>[e.nome,e])); state.equipmentData=await equipmentRes.json(); const itemData = await itemRes.json(); state.itemPool=flattenPool(itemData, "Itens"); state.magicItemsByRarity=itemData?.ItensMagicosDND || {}; state.equipmentPool=flattenPool(state.equipmentData, "Equipamentos"); state.classProfiles=await classProfilesRes.json(); state.classSpells=await classSpellsRes.json(); state.classFeatures=await classFeaturesRes.json(); state.spellDescriptions=(await spellDescriptionsRes.json()).spells || {};
 populateSelect("rangeCenterSelect",state.cidades.map((c)=>c.nome).sort((a,b)=>a.localeCompare(b, "pt-BR")));
 buildCheckList("profissaoChecks",state.data.profissoes); buildCheckList("antepassadoChecks",state.data.antepassados); buildCheckList("classeChecks",state.data.classes); buildCheckList("temperamentoChecks",state.data.temperamentos); buildCheckList("lealdadeChecks",state.data.lealdades); buildCheckList("sexoChecks", ["homens","mulheres","androgenos"]);
 refreshHometownChecks();
