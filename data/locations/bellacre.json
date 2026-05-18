@@ -1,0 +1,12 @@
+{
+  "x": 5636,
+  "y": 3731,
+  "name": "Bellacre",
+  "type": "Vila",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/vila_icon_1.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}

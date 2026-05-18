@@ -1,0 +1,12 @@
+{
+  "x": 6512,
+  "y": 3730,
+  "name": "Valevento",
+  "type": "Vila Pequena",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/vila_pequena_icon_1.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}

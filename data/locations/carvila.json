@@ -1,0 +1,12 @@
+{
+  "x": 4631,
+  "y": 4277,
+  "name": "Carvila",
+  "type": "Vila",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/vila_icon_2.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}

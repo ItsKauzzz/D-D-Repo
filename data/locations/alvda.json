@@ -1,0 +1,12 @@
+{
+  "x": 6993,
+  "y": 3288,
+  "name": "Alvda",
+  "type": "Cidade",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/cidade_icon_2.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}

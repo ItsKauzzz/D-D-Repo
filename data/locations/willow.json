@@ -1,0 +1,12 @@
+{
+  "x": 5390,
+  "y": 3860,
+  "name": "Willow",
+  "type": "Vila",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/vila_icon_3.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}

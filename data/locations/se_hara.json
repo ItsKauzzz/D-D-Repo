@@ -1,0 +1,12 @@
+{
+  "x": 6692,
+  "y": 3231,
+  "name": "Se'Hara",
+  "type": "Vila Grande",
+  "description": "",
+  "image_prefix": "",
+  "icon_override": "data/locations/icons/vila_grande_icon_4.png",
+  "show_pin": true,
+  "show_icon": true,
+  "show_name": true
+}
