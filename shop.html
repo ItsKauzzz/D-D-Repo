@@ -32,6 +32,15 @@
             <h2 id="catalog-title">Todos os itens</h2>
           </div>
           <div class="catalog-actions">
+            <label class="sort-control" for="sort-select">
+              Ordenar por
+              <select id="sort-select">
+                <option value="name-asc">Nome A-Z</option>
+                <option value="name-desc">Nome Z-A</option>
+                <option value="price-asc">Preço menor</option>
+                <option value="price-desc">Preço maior</option>
+              </select>
+            </label>
             <span id="item-count" class="item-count">0 itens</span>
             <button id="view-toggle" class="view-toggle" type="button" aria-pressed="false">☰ Modo lista</button>
           </div>

@@ -4,6 +4,7 @@ const itemCount = document.getElementById('item-count');
 const catalogTitle = document.getElementById('catalog-title');
 const searchInput = document.getElementById('item-search');
 const viewToggle = document.getElementById('view-toggle');
+const sortSelect = document.getElementById('sort-select');
 
 const extraCategories = {
   'Poções e Preparados': ['Poção de cura', 'Poção de cura maior', 'Poção de cura superior', 'Poção de cura suprema', 'Poção mágica', 'Antídoto', 'Água benta', 'Óleo', 'Kit de herbalismo', 'Kit de venenos'],
@@ -66,7 +67,7 @@ const exactItemInfo = {
   'Poção de cura maior': { price: '150 po', details: 'Cura 4d4 + 4 PV ao beber.' },
   'Poção de cura superior': { price: '450 po', details: 'Cura 8d4 + 8 PV ao beber.' },
   'Poção de cura suprema': { price: '1.350 po', details: 'Cura 10d4 + 20 PV ao beber.' },
-  'Poção mágica': { price: 'Preço variável', details: 'Efeito definido pelo tipo de poção; use raridade e disponibilidade da campanha.' },
+  'Poção mágica': { price: '100 po', details: 'Efeito definido pelo tipo de poção; preço sugerido para poção incomum simples.' },
   'Antídoto': { price: '50 po', details: 'Concede vantagem em testes contra veneno por 1 hora.' },
   'Água benta': { price: '25 po', details: 'Pode causar 2d6 radiante contra mortos-vivos ou ínferos.' },
   'Kit de primeiros socorros': { price: '5 po', details: '10 usos; estabiliza criatura sem teste de Medicina.' },
@@ -94,10 +95,10 @@ const exactItemInfo = {
 const genericInfo = [
   [/ferramentas|kit de disfarce|kit de falsificação|kit de herbalismo|kit de venenos|utensílios/i, { price: '25 po', details: 'Permite testes com proficiência quando o personagem domina a ferramenta.' }],
   [/alaúde|corneta|flauta|gaita|harpa|lira|shawm|tambor|violino/i, { price: '30 po', details: 'Instrumento para apresentações, disfarces sociais e coleta de moedas em tavernas.' }],
-  [/anel|capa|botas|varinha|cajado|pergaminho|manto|gema|ioun|bastão|armadura de resistência|escudo \+2/i, { price: 'Preço variável', details: 'Item mágico; disponibilidade e custo dependem de raridade, campanha e aprovação do mestre.' }],
+  [/anel|capa|botas|varinha|cajado|pergaminho|manto|gema|ioun|bastão|armadura de resistência|escudo \+2/i, { price: '500 po', details: 'Item mágico comprado em loja arcana rara; ajuste para cima se for raro ou poderoso.' }],
   [/burro|mula/i, { price: '8 po', details: 'Montaria/carga comum; boa para trilhas e transporte de suprimentos.' }],
   [/cavalo|pônei|camelo|elefante|mastim|cão/i, { price: '75 po', details: 'Animal treinado; use para viagem, guarda ou carga conforme o tipo.' }],
-  [/barco|navio|carruagem|carroça|trenó/i, { price: 'Preço variável', details: 'Veículo para deslocamento e comércio; capacidade e velocidade dependem do modelo.' }],
+  [/barco|navio|carruagem|carroça|trenó/i, { price: '100 po', details: 'Veículo para deslocamento e comércio; ajuste por tamanho, tripulação e qualidade.' }],
   [/lâmpada|lanterna|tocha|vela|óleo/i, { price: '1 pp', details: 'Fonte de luz; essencial para masmorras, vigílias e exploração noturna.' }],
   [/corda|gancho|pitons|escada|kit de escalada/i, { price: '2 po', details: 'Ajuda em escaladas, travessias e resgates; combine com testes de Atletismo.' }],
   [/baú|barril|bolsa|caixa|cantil|frasco|garrafa|jarra|mochila|saco|cesto/i, { price: '5 pp', details: 'Contêiner para carregar, guardar ou ocultar suprimentos e tesouros.' }]
@@ -110,8 +111,8 @@ const defaultPricesByCategory = [
   [/Focos mágicos|Focos Mágicos/i, '10 po'],
   [/Pacotes|Kits/i, '10 po'],
   [/Itens Supérfluos/i, '2 po'],
-  [/Moradia/i, 'Preço variável'],
-  [/Serviços/i, 'Preço variável']
+  [/Moradia/i, '1.000 po'],
+  [/Serviços/i, '2 po']
 ];
 
 const descriptions = {
@@ -140,6 +141,7 @@ const categoryDescriptions = [
 let allItems = [];
 let activeCategory = 'Todos';
 let listMode = false;
+let sortMode = 'name-asc';
 
 function describeItem(name, category) {
   if (descriptions[name]) return descriptions[name];
@@ -154,7 +156,7 @@ function getItemInfo(name, category) {
   if (genericMatch) return genericMatch[1];
   const categoryPrice = defaultPricesByCategory.find(([pattern]) => pattern.test(category));
   return {
-    price: categoryPrice ? categoryPrice[1] : 'Preço variável',
+    price: categoryPrice ? categoryPrice[1] : '5 po',
     details: 'Uso narrativo e mecânico definido pelo mestre conforme a cena, perícia aplicável e disponibilidade local.'
   };
 }
@@ -170,6 +172,7 @@ function addItemsFromGroups(groups, sourceLabel, target) {
           category,
           source: sourceLabel,
           price: info.price,
+          priceValue: parsePriceValue(info.price),
           details: info.details,
           description: describeItem(name, category)
         });
@@ -191,7 +194,7 @@ async function loadCatalog() {
   addItemsFromGroups(itemsData.Itens, 'Mercado', merged);
   addItemsFromGroups(extraCategories, 'Mesa de jogo', merged);
 
-  allItems = [...merged.values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  allItems = [...merged.values()];
   renderCategories();
   renderCatalog();
 }
@@ -206,6 +209,24 @@ function escapeHtml(value) {
   }[char]));
 }
 
+function parsePriceValue(price) {
+  const normalized = String(price).replace(/\./g, '').replace(',', '.');
+  const amount = Number.parseFloat(normalized);
+  if (Number.isNaN(amount)) return 0;
+  if (/pc/i.test(price)) return amount / 100;
+  if (/pp/i.test(price)) return amount / 10;
+  return amount;
+}
+
+function sortItems(items) {
+  return [...items].sort((a, b) => {
+    if (sortMode === 'name-desc') return b.name.localeCompare(a.name, 'pt-BR');
+    if (sortMode === 'price-asc') return a.priceValue - b.priceValue || a.name.localeCompare(b.name, 'pt-BR');
+    if (sortMode === 'price-desc') return b.priceValue - a.priceValue || a.name.localeCompare(b.name, 'pt-BR');
+    return a.name.localeCompare(b.name, 'pt-BR');
+  });
+}
+
 function renderCategories() {
   const categories = ['Todos', ...new Set(allItems.map((item) => item.category))].sort((a, b) => a === 'Todos' ? -1 : b === 'Todos' ? 1 : a.localeCompare(b, 'pt-BR'));
   categoryList.innerHTML = categories.map((category) => `<button class="category-button${category === activeCategory ? ' active' : ''}" type="button" data-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join('');
@@ -213,12 +234,12 @@ function renderCategories() {
 
 function renderCatalog() {
   const query = searchInput.value.trim().toLocaleLowerCase('pt-BR');
-  const filtered = allItems.filter((item) => {
+  const filtered = sortItems(allItems.filter((item) => {
     const inCategory = activeCategory === 'Todos' || item.category === activeCategory;
     const searchableText = `${item.name} ${item.category} ${item.description} ${item.price} ${item.details}`;
     const inSearch = !query || searchableText.toLocaleLowerCase('pt-BR').includes(query);
     return inCategory && inSearch;
-  });
+  }));
 
   catalogTitle.textContent = activeCategory === 'Todos' ? 'Todos os itens' : activeCategory;
   itemCount.textContent = `${filtered.length} ${filtered.length === 1 ? 'item' : 'itens'}`;
@@ -256,6 +277,10 @@ categoryList.addEventListener('click', (event) => {
 });
 
 searchInput.addEventListener('input', renderCatalog);
+sortSelect.addEventListener('change', () => {
+  sortMode = sortSelect.value;
+  renderCatalog();
+});
 viewToggle.addEventListener('click', () => {
   listMode = !listMode;
   renderCatalog();

@@ -2,9 +2,8 @@ body {
   min-height: 100vh;
   font-family: Georgia, 'Times New Roman', serif;
   background:
-    radial-gradient(circle at top, rgba(209, 138, 46, 0.28), transparent 30rem),
-    linear-gradient(rgba(18, 10, 6, 0.78), rgba(18, 10, 6, 0.92)),
-    repeating-linear-gradient(90deg, #352014 0 26px, #2a180f 26px 52px);
+    radial-gradient(circle at top, rgba(209, 138, 46, 0.22), transparent 30rem),
+    linear-gradient(135deg, #352014 0%, #25150d 55%, #160d08 100%);
   color: #f7e3b2;
   text-align: center;
   margin: 0;
