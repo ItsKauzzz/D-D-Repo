@@ -7,9 +7,10 @@ const viewToggle = document.getElementById('view-toggle');
 const sortSelect = document.getElementById('sort-select');
 
 const extraCategories = {
-  'Poções e Preparados': ['Poção de cura', 'Poção de cura maior', 'Poção de cura superior', 'Poção de cura suprema', 'Poção mágica', 'Antídoto', 'Água benta', 'Óleo', 'Kit de herbalismo', 'Kit de venenos'],
+  'Poções e Preparados': ['Poção pequena de cura', 'Poção de cura', 'Poção média de cura', 'Poção de cura maior', 'Poção grande de cura', 'Poção de cura superior', 'Poção de cura suprema', 'Poção de vigor menor', 'Poção mágica', 'Antídoto', 'Água benta', 'Óleo', 'Kit de herbalismo', 'Kit de venenos'],
   'Moradia e Hospedagem': ['Quarto comum em estalagem', 'Quarto confortável em estalagem', 'Casa simples', 'Casa urbana', 'Mansão nobre', 'Torre de mago', 'Fortaleza pequena', 'Tenda de campanha', 'Estábulo para montaria'],
-  'Serviços de Contratação': ['Mensageiro', 'Guia local', 'Mercenário', 'Curandeiro', 'Escriba', 'Ferreiro sob encomenda', 'Caravana protegida']
+  'Serviços de Contratação': ['Mensageiro', 'Guia local', 'Mercenário', 'Curandeiro', 'Escriba', 'Ferreiro sob encomenda', 'Caravana protegida'],
+  'Itens comuns de D&D': ['Ácido', 'Fogo alquímico', 'Veneno básico', 'Bolsa de componentes', 'Componentes de magia', 'Foco arcano', 'Foco druídico', 'Símbolo sagrado simples', 'Ração diária', 'Cantoneira de mapas', 'Garrafa de vinho comum', 'Refeição simples', 'Caneca de cerveja', 'Pérola de identificação', 'Diamante pequeno', 'Pó de prata', 'Incenso ritual', 'Armadilha de caça', 'Tinta invisível', 'Giz de marcação']
 };
 
 const exactItemInfo = {
@@ -63,10 +64,34 @@ const exactItemInfo = {
   'Placas': { price: '1.500 po', details: 'CA 18; For 15; desvantagem em Furtividade.' },
   'Splint': { price: '200 po', details: 'CA 17; For 15; desvantagem em Furtividade.' },
   'Escudo': { price: '10 po', details: '+2 CA enquanto empunhado.' },
+  'Ácido': { price: '25 po', details: 'Frasco arremessável; em acerto causa 2d6 ácido.' },
+  'Fogo alquímico': { price: '50 po', details: 'Frasco arremessável; incendeia alvo e causa 1d4 fogo por rodada até apagar.' },
+  'Veneno básico': { price: '100 po', details: 'Aplica em arma ou munição; alvo deve resistir ou sofre 1d4 veneno extra.' },
+  'Bolsa de componentes': { price: '25 po', details: 'Contém componentes materiais comuns sem custo para conjuração.' },
+  'Componentes de magia': { price: '10 po', details: 'Reposição de componentes materiais comuns para magias sem custo específico.' },
+  'Foco arcano': { price: '10 po', details: 'Substitui componentes materiais sem custo para magias arcanas compatíveis.' },
+  'Foco druídico': { price: '10 po', details: 'Substitui componentes materiais sem custo para magias druídicas compatíveis.' },
+  'Símbolo sagrado simples': { price: '5 po', details: 'Substitui componentes materiais sem custo para magias divinas compatíveis.' },
+  'Ração diária': { price: '5 pp', details: 'Alimento seco suficiente para 1 dia de viagem.' },
+  'Cantoneira de mapas': { price: '1 po', details: 'Protege mapas e pergaminhos contra dobra, umidade leve e desgaste.' },
+  'Garrafa de vinho comum': { price: '2 pp', details: 'Bebida comum; útil em refeições, presentes simples ou cenas sociais.' },
+  'Refeição simples': { price: '3 pc', details: 'Comida básica de taverna; sustenta uma criatura por uma refeição.' },
+  'Caneca de cerveja': { price: '4 pc', details: 'Bebida simples de taverna; ajuda em socialização e descanso narrativo.' },
+  'Pérola de identificação': { price: '100 po', details: 'Componente consumível/necessário para magias como identificação conforme a mesa.' },
+  'Diamante pequeno': { price: '50 po', details: 'Componente valioso para magias de proteção, restauração ou revivificação menor.' },
+  'Pó de prata': { price: '25 po', details: 'Componente ritual usado em círculos, consagrações e proteções.' },
+  'Incenso ritual': { price: '10 po', details: 'Componente consumível para rituais, cerimônias e invocações religiosas/arcanas.' },
+  'Armadilha de caça': { price: '5 po', details: 'Armadilha mecânica; pode prender criatura e causar dano leve se acionada.' },
+  'Tinta invisível': { price: '10 po', details: 'Escrita oculta revelada por calor, reagente ou magia apropriada.' },
+  'Giz de marcação': { price: '1 pc', details: 'Marca paredes, chão e rotas; útil para navegação em masmorras.' },
+  'Poção pequena de cura': { price: '25 po', details: 'Cura 1d4 + 1 PV ao beber.' },
   'Poção de cura': { price: '50 po', details: 'Cura 2d4 + 2 PV ao beber.' },
+  'Poção média de cura': { price: '100 po', details: 'Cura 3d4 + 3 PV ao beber.' },
   'Poção de cura maior': { price: '150 po', details: 'Cura 4d4 + 4 PV ao beber.' },
+  'Poção grande de cura': { price: '300 po', details: 'Cura 6d4 + 6 PV ao beber.' },
   'Poção de cura superior': { price: '450 po', details: 'Cura 8d4 + 8 PV ao beber.' },
   'Poção de cura suprema': { price: '1.350 po', details: 'Cura 10d4 + 20 PV ao beber.' },
+  'Poção de vigor menor': { price: '75 po', details: 'Concede 1d6 PV temporários por 1 hora ao beber.' },
   'Poção mágica': { price: '100 po', details: 'Efeito definido pelo tipo de poção; preço sugerido para poção incomum simples.' },
   'Antídoto': { price: '50 po', details: 'Concede vantagem em testes contra veneno por 1 hora.' },
   'Água benta': { price: '25 po', details: 'Pode causar 2d6 radiante contra mortos-vivos ou ínferos.' },
@@ -240,11 +265,15 @@ function getItemEffect(name, category, details) {
   if (/Antídoto/i.test(name)) return 'Consumível: melhora resistência contra venenos; use antes ou durante cenas com toxinas, assassinos e monstros venenosos.';
   if (/Água benta/i.test(name)) return 'Consumível sagrado: pode ser arremessado contra mortos-vivos/ínferos ou usado em rituais, consagrações e cenas religiosas.';
   if (/Kit de primeiros socorros/i.test(name)) return 'Kit de suporte: estabiliza criatura a 0 PV sem teste; cada uso consome uma carga do kit.';
+  if (/Poção de vigor/i.test(name)) return 'Consumível defensivo: beber concede PV temporários que absorvem dano antes dos PV normais.';
+  if (/Ácido/i.test(name)) return 'Ataque improvisado: arremesse o frasco contra uma criatura ou objeto para causar dano ácido e corroer materiais frágeis.';
+  if (/Fogo alquímico/i.test(name)) return 'Ataque alquímico: incendeia o alvo, forçando ação para apagar as chamas ou sofrer dano contínuo.';
+  if (/Veneno básico/i.test(name)) return 'Preparação ofensiva: aplique em lâmina ou munição para adicionar dano de veneno em um acerto.';
   if (/Poção|Preparados/i.test(text)) return 'Consumível alquímico: efeito depende da fórmula; aplique ao beber, derramar, misturar ou usar conforme a cena.';
   if (/Flechas|Virotes|Balas de funda|Agulhas/i.test(name)) return 'Munição: necessária para armas à distância compatíveis; recuperável ou consumida conforme regra da mesa.';
   if (/ferramentas|kit de disfarce|kit de falsificação|kit de herbalismo|kit de venenos|utensílios/i.test(text)) return 'Ferramenta/perícia: se proficiente, some bônus de proficiência em testes apropriados de ofício, investigação, criação, reparo ou falsificação.';
   if (/alaúde|corneta|flauta|gaita|harpa|lira|shawm|tambor|violino|Instrumentos/i.test(text)) return 'Instrumento: permite apresentações; se proficiente, ajuda em Performance, distrações, renda em tavernas e contatos sociais.';
-  if (/foco|amuleto|bastão|cajado|cristal|orbe|símbolo sagrado|totem|varinha/i.test(text)) return 'Foco mágico: pode substituir componentes materiais sem custo em magias compatíveis com sua classe ou tradição.';
+  if (/bolsa de componentes|componentes de magia|foco|amuleto|bastão|cajado|cristal|orbe|símbolo sagrado|totem|varinha/i.test(text)) return 'Conjuração: substitui ou organiza componentes materiais sem custo, agilizando magias compatíveis.';
   if (/anel|capa|botas|manto|gema|ioun|pergaminho|mágic|magia|resistência|relâmpagos|evasão|potion|spell|wand|rod|staff|ring|cloak|boots|armor|weapon|ammunition/i.test(text)) return getCompatibleMagicEffect(name, category);
   if (/burro|mula|cavalo|pônei|camelo|elefante|mastim|cão|Montarias|Animais/i.test(text)) return 'Montaria/animal: aumenta deslocamento, carrega carga, pode vigiar acampamento ou auxiliar testes de Sobrevivência/Adestrar Animais.';
   if (/barco|navio|carruagem|carroça|trenó|veículo/i.test(text)) return 'Veículo: permite viagem, transporte de carga e cenas de perseguição; proficiência com veículos pode somar bônus em manobras.';
@@ -254,7 +283,10 @@ function getItemEffect(name, category, details) {
   if (/corda|gancho|pitons|escada|escalada|vara/i.test(text)) return 'Exploração: ajuda em escalada, travessia, resgate e improvisos; pode reduzir CD ou habilitar testes de Atletismo/Acrobacia.';
   if (/baú|barril|bolsa|caixa|cantil|frasco|garrafa|jarra|mochila|saco|cesto|contêiner/i.test(text)) return 'Armazenamento: carrega, oculta ou protege itens; útil para controlar carga, contrabando, água, tesouros e componentes.';
   if (/roupas|perfume|broche|taças|echarpe|maquiagem|leque|lenço|monóculo|pente|sinetes|supérfluos/i.test(text)) return 'Social/roleplay: pode conceder vantagem narrativa em etiqueta, disfarce, negociação, status ou entrada em locais adequados.';
-  if (/mapa|livro|papel|pergaminho|pena|tinta|lupa|ampulheta|sino|giz/i.test(text)) return 'Utilidade: apoia investigação, navegação, registro de pistas, comunicação ou preparação de planos.';
+  if (/armadilha de caça/i.test(text)) return 'Controle de área: pode prender alvos, proteger acampamentos e criar vantagem tática em emboscadas.';
+  if (/ração|refeição|cerveja|vinho/i.test(text)) return 'Sustento/social: mantém personagens alimentados ou facilita interação em tavernas e encontros sociais.';
+  if (/pérola|diamante|pó de prata|incenso/i.test(text)) return 'Componente valioso: habilita rituais e magias que exigem materiais específicos ou consumíveis.';
+  if (/mapa|livro|papel|pergaminho|pena|tinta|lupa|ampulheta|sino|giz|cantoneira/i.test(text)) return 'Utilidade: apoia investigação, navegação, registro de pistas, comunicação ou preparação de planos.';
   return 'Efeito geral: item utilitário; pode conceder vantagem narrativa, reduzir CD ou permitir uma ação específica quando usado criativamente.';
 }
 
