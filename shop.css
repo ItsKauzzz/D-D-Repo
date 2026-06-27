@@ -68,3 +68,31 @@ main { display: grid; grid-template-columns: 280px 1fr; gap: 22px; margin-top: 2
   .category-panel { position: static; }
   .catalog-heading { align-items: start; flex-direction: column; }
 }
+
+.catalog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; align-items: center; }
+.view-toggle {
+  border: 2px solid var(--wood);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: linear-gradient(#f7dfaa, #d8a93f);
+  color: var(--ink);
+  cursor: pointer;
+  font: 700 .95rem Georgia, 'Times New Roman', serif;
+}
+.item-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.price-tag {
+  border: 1px solid rgba(66,39,25,.35);
+  border-radius: 999px;
+  background: #fff3d6;
+  color: var(--wood);
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+.item-stats { display: grid; gap: 10px; margin: 14px 0 0; }
+.item-stats div { border-top: 1px solid rgba(66,39,25,.22); padding-top: 10px; }
+.item-stats dt { color: var(--wine); font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.item-stats dd { margin: 4px 0 0; line-height: 1.4; }
+.catalog-grid--list { grid-template-columns: 1fr; }
+.catalog-grid--list .item-card { min-height: 0; }
+.catalog-grid--list .item-card h3 { font-size: 1.45rem; }
+.catalog-grid--list .item-stats { grid-template-columns: minmax(130px, .3fr) 1fr; }
