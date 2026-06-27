@@ -104,6 +104,16 @@ const genericInfo = [
   [/baú|barril|bolsa|caixa|cantil|frasco|garrafa|jarra|mochila|saco|cesto/i, { price: '5 pp', details: 'Contêiner para carregar, guardar ou ocultar suprimentos e tesouros.' }]
 ];
 
+const magicRarityInfo = {
+  Comum: { price: '75 po', details: 'Item mágico comum; efeito menor, utilitário ou cosmético.' },
+  Incomum: { price: '500 po', details: 'Item mágico incomum; concede vantagem tática, mobilidade ou utilidade frequente.' },
+  Raro: { price: '5.000 po', details: 'Item mágico raro; efeito forte de combate, defesa, conjuração ou exploração.' },
+  MuitoRaro: { price: '25.000 po', details: 'Item mágico muito raro; poder alto, geralmente limitado por cargas ou sintonização.' },
+  Lendario: { price: '100.000 po', details: 'Item mágico lendário; altera encontros, campanhas ou economia de poder.' },
+  Artefato: { price: '250.000 po', details: 'Artefato único; poder extremo com consequências narrativas importantes.' },
+  Varia: { price: '1.000 po', details: 'Item mágico variante; preço base ajustado pelo bônus, raridade ou versão escolhida.' }
+};
+
 const defaultPricesByCategory = [
   [/Equipamentos de aventura|Aventura e Utilidade/i, '1 po'],
   [/Consumíveis|Poções/i, '50 po'],
@@ -151,16 +161,74 @@ function describeItem(name, category) {
 }
 
 function getItemInfo(name, category) {
+  if (magicRarityInfo[category]) return magicRarityInfo[category];
   if (exactItemInfo[name]) return exactItemInfo[name];
   const genericMatch = genericInfo.find(([pattern]) => pattern.test(name) || pattern.test(category));
   if (genericMatch) return genericMatch[1];
   const categoryPrice = defaultPricesByCategory.find(([pattern]) => pattern.test(category));
   return {
     price: categoryPrice ? categoryPrice[1] : '5 po',
-    details: 'Uso narrativo e mecânico definido pelo mestre conforme a cena, perícia aplicável e disponibilidade local.'
+    details: 'Uso narrativo e mecânico conforme a cena, perícia aplicável e disponibilidade local.'
   };
 }
 
+
+
+function getCompatibleMagicEffect(name, category) {
+  const text = `${name} ${category}`.toLowerCase();
+  const bonusMatch = name.match(/\+(\d)/);
+  const bonus = bonusMatch ? `+${bonusMatch[1]}` : '+1/+2/+3';
+
+  const rules = [
+    [/potion of (greater |superior |supreme )?healing|poção de cura/i, 'Poção de cura: recupera PV conforme a versão ao ser bebida ou administrada.'],
+    [/potion of giant strength/i, 'Poção de força gigante: define temporariamente a Força do usuário no valor do gigante correspondente.'],
+    [/spell scroll|pergaminho/i, 'Pergaminho mágico: permite conjurar a magia inscrita uma vez, consumindo o pergaminho.'],
+    [/armor \+|armor of resistance|armadura de resistência/i, `Armadura encantada: aumenta a CA ou concede resistência a um tipo de dano apropriado ao item.`],
+    [/shield \+|arrow-catching shield|animated shield|escudo/i, `Escudo encantado: aumenta a CA, intercepta ataques ou protege sem ocupar a mão conforme a versão.`],
+    [/weapon \+|moon-touched sword|dragon slayer|giant slayer|flame tongue|frost brand|holy avenger|defender|luck blade|dancing sword|dagger of venom|berserker axe|sun blade|sword|axe|hammer|mace|blade/i, `Arma encantada: concede bônus ${bonus} ou dano/efeito especial temático em ataques feitos com ela.`],
+    [/ammunition/i, `Munição encantada: concede bônus ${bonus} no ataque/dano de um disparo e geralmente é consumida ao acertar.`],
+    [/bag of holding|efficient quiver|handy haversack|portable hole/i, 'Armazenamento extradimensional: guarda muito mais carga do que aparenta e facilita transporte de itens.'],
+    [/boots of elvenkind|cloak of elvenkind|dust of disappearance|cloak of invisibility|ring of invisibility/i, 'Furtividade/ocultação: melhora testes de Furtividade, abafa passos ou torna o usuário invisível por duração limitada.'],
+    [/boots of striding|boots of speed|broom of flying|carpet of flying|winged boots|cape of the mountebank|boots of levitation/i, 'Mobilidade mágica: aumenta deslocamento, salto, voo, levitação ou teleporte curto conforme o item.'],
+    [/boots of the winterlands|ring of warmth|frost brand/i, 'Proteção contra frio: resiste a frio ambiental e pode reduzir dano de frio ou efeitos gelados.'],
+    [/cloak of protection|ring of protection|stone of good luck|luckstone|ioun stone: protection/i, 'Proteção/sorte: concede bônus defensivo ou melhora testes de resistência e perícias.'],
+    [/bracers of archery/i, 'Arquearia: concede proficiência/benefício com arcos e melhora dano de ataques feitos com arco.'],
+    [/bracers of defense/i, 'Defesa sem armadura: aumenta a CA quando o usuário não está usando armadura nem escudo.'],
+    [/gauntlets of ogre power|belt of giant strength|ioun stone: strength|hammer of thunderbolts/i, 'Força sobrenatural: aumenta ou define a Força do usuário, melhorando ataques, dano e Atletismo.'],
+    [/amulet of health|ioun stone: fortitude/i, 'Vigor: aumenta Constituição ou resistência física, melhorando PV e testes relacionados.'],
+    [/headband of intellect|ioun stone: intellect/i, 'Intelecto: aumenta Inteligência, ajudando Arcanismo, História, Investigação e magias baseadas nela.'],
+    [/ioun stone: agility/i, 'Agilidade: aumenta Destreza, melhorando iniciativa, CA leve, ataques à distância e Furtividade.'],
+    [/ioun stone: insight/i, 'Sabedoria ampliada: aumenta Sabedoria, ajudando Percepção, Sobrevivência, Intuição e magias baseadas nela.'],
+    [/ioun stone: leadership/i, 'Presença: aumenta Carisma, ajudando Persuasão, Enganação, Intimidação e magias baseadas nele.'],
+    [/ioun stone: mastery/i, 'Maestria: aumenta bônus de proficiência, fortalecendo perícias, ataques e CD de habilidades aplicáveis.'],
+    [/ioun stone: absorption|spell turning|brooch of shielding|mantle of spell resistance/i, 'Defesa contra magia: absorve, reduz, reflete ou concede vantagem contra magias.'],
+    [/wand of the war mage|rod of the pact keeper|staff of power|staff of striking|staff of thunder and lightning|wand/i, `Canalizador arcano: melhora ataques/CD de magia ou armazena efeitos conjuráveis por cargas.`],
+    [/instrument of the bards|instrument of illusions|instrument of scribing/i, 'Instrumento encantado: fortalece Performance/conjuração e cria ilusões, escrita mágica ou magias musicais.'],
+    [/eyes of charming|eyes of minute seeing|eyes of the eagle|gem of seeing|crystal ball/i, 'Visão sobrenatural: melhora percepção, investigação, clarividência, charme visual ou visão verdadeira conforme o item.'],
+    [/helm|hat|cap|circlet|crown/i, 'Item de cabeça encantado: concede magia temática, proteção mental, respiração especial ou poder social.'],
+    [/ring of regeneration/i, 'Regeneração: recupera PV ao longo do tempo e pode restaurar partes do corpo perdidas.'],
+    [/ring of three wishes/i, 'Desejos: armazena usos limitados de desejo, capaz de replicar magia ou alterar a realidade sob risco.'],
+    [/ring of djinni summoning|elemental command|bowl of commanding|brazier of commanding|censer of controlling|stone controlling earth elementals/i, 'Comando elemental: invoca, controla ou negocia com forças elementais ligadas ao item.'],
+    [/deck of illusions|deck of many things|tarokka/i, 'Baralho arcano: cria ilusões, destinos ou efeitos aleatórios poderosos ao sacar cartas.'],
+    [/figurine of wondrous power|bag of tricks|manual of golems|iron flask/i, 'Invocação/companheiro: transforma, convoca ou aprisiona criaturas para auxiliar o grupo.'],
+    [/decanter of endless water|alchemy jug|bead of nourishment|bead of refreshment|spice pouch/i, 'Suprimento mágico: produz água, alimento, temperos ou substâncias úteis repetidamente.'],
+    [/chime of opening|knock|lock of trickery|mystery key|infiltrator's key/i, 'Abertura/infiltração: destranca, dificulta arrombamento ou facilita entrada furtiva.'],
+    [/driftglobe|candle|lantern|gem of brightness|helm of brilliance/i, 'Luz mágica: emite luz, brilho intenso ou flashes que podem iluminar, cegar ou revelar áreas.'],
+    [/amulet of the planes|cubic gate|well of many worlds|plate armor of etherealness/i, 'Viagem planar: abre passagem, desloca ou permite transição para outros planos/estado etéreo.'],
+    [/orb of direction|orb of time|orb of dragonkind|scepter of savras/i, 'Orbe/divinação: orienta, revela tempo, influencia criaturas ou fornece visões proféticas.'],
+    [/book|tome|manual|grimoire|spellbook|libram/i, 'Conhecimento mágico: ensina magia, melhora atributo/skill mental ou registra conjurações raras.'],
+    [/cloak|cape|mantle/i, 'Manto encantado: concede defesa, deslocamento, disfarce, voo/planaridade ou ocultação conforme tema.'],
+    [/apparatus|instant fortress|mighty servant/i, 'Construção/engenho mágico: cria veículo, fortificação ou servo mecânico poderoso para exploração e combate.']
+  ];
+
+  const match = rules.find(([pattern]) => pattern.test(text));
+  if (match) return match[1];
+  if (/artefato|artifact/i.test(category)) return 'Artefato: concede poder único de alto impacto, ligado à história do item, com benefícios fortes e consequências narrativas.';
+  if (/lendario|legendary/i.test(category)) return 'Item lendário: concede poder persistente de alto nível, como bônus alto, magia rara, invocação ou defesa superior.';
+  if (/raro|rare|muitoraro/i.test(category)) return 'Item raro: concede bônus mecânico forte, resistência, mobilidade, conjuração, proteção ou utilidade especializada.';
+  if (/incomum|uncommon/i.test(category)) return 'Item incomum: concede benefício confiável de exploração, combate, defesa, magia menor ou perícia.';
+  return 'Item mágico comum: concede efeito menor compatível com o nome, geralmente cosmético, utilitário ou de conveniência em cena.';
+}
 
 function getItemEffect(name, category, details) {
   const text = `${name} ${category} ${details}`;
@@ -177,7 +245,7 @@ function getItemEffect(name, category, details) {
   if (/ferramentas|kit de disfarce|kit de falsificação|kit de herbalismo|kit de venenos|utensílios/i.test(text)) return 'Ferramenta/perícia: se proficiente, some bônus de proficiência em testes apropriados de ofício, investigação, criação, reparo ou falsificação.';
   if (/alaúde|corneta|flauta|gaita|harpa|lira|shawm|tambor|violino|Instrumentos/i.test(text)) return 'Instrumento: permite apresentações; se proficiente, ajuda em Performance, distrações, renda em tavernas e contatos sociais.';
   if (/foco|amuleto|bastão|cajado|cristal|orbe|símbolo sagrado|totem|varinha/i.test(text)) return 'Foco mágico: pode substituir componentes materiais sem custo em magias compatíveis com sua classe ou tradição.';
-  if (/anel|capa|botas|manto|gema|ioun|pergaminho|mágic|magia|resistência|relâmpagos|evasão/i.test(text)) return 'Item mágico: concede efeito sobrenatural narrativo/mecânico definido pelo mestre; pode exigir sintonização se for poderoso.';
+  if (/anel|capa|botas|manto|gema|ioun|pergaminho|mágic|magia|resistência|relâmpagos|evasão|potion|spell|wand|rod|staff|ring|cloak|boots|armor|weapon|ammunition/i.test(text)) return getCompatibleMagicEffect(name, category);
   if (/burro|mula|cavalo|pônei|camelo|elefante|mastim|cão|Montarias|Animais/i.test(text)) return 'Montaria/animal: aumenta deslocamento, carrega carga, pode vigiar acampamento ou auxiliar testes de Sobrevivência/Adestrar Animais.';
   if (/barco|navio|carruagem|carroça|trenó|veículo/i.test(text)) return 'Veículo: permite viagem, transporte de carga e cenas de perseguição; proficiência com veículos pode somar bônus em manobras.';
   if (/casa|mansão|torre|fortaleza|quarto|estalagem|estábulo|moradia|hospedagem/i.test(text)) return 'Base segura: fornece descanso, armazenamento e proteção narrativa; construções maiores podem gerar status, contatos e defesa.';
@@ -223,6 +291,7 @@ async function loadCatalog() {
 
   addItemsFromGroups(equipmentData.Equipamentos, 'Equipamento', merged);
   addItemsFromGroups(itemsData.Itens, 'Mercado', merged);
+  if (itemsData.ItensMagicosDND) addItemsFromGroups(itemsData.ItensMagicosDND, 'Itens mágicos', merged);
   addItemsFromGroups(extraCategories, 'Mesa de jogo', merged);
 
   allItems = [...merged.values()];
