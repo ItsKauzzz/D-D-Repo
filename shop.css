@@ -96,4 +96,4 @@ main { display: grid; grid-template-columns: 240px 1fr; gap: 22px; margin-top: 2
 .catalog-grid--list { grid-template-columns: 1fr; }
 .catalog-grid--list .item-card { min-height: 0; }
 .catalog-grid--list .item-card h3 { font-size: 1.12rem; }
-.catalog-grid--list .item-stats { grid-template-columns: minmax(130px, .3fr) 1fr; }
+.catalog-grid--list .item-stats { grid-template-columns: minmax(110px, .22fr) minmax(210px, .38fr) 1fr; }

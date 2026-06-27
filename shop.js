@@ -161,12 +161,42 @@ function getItemInfo(name, category) {
   };
 }
 
+
+function getItemEffect(name, category, details) {
+  const text = `${name} ${category} ${details}`;
+  if (/^Escudo$/.test(name)) return 'Equipado em uma mão: concede +2 CA enquanto estiver empunhado; ocupa a mão e combina com armaduras.';
+  if (/\bCA\b/i.test(details)) return `Equipado como armadura: ${details} Use essa CA enquanto vestir a peça; respeite limites de Destreza, Força e Furtividade.`;
+  if (/^Rede$/.test(name)) return 'Ataque especial à distância: em acerto, a criatura fica restringida até se libertar, destruir a rede ou receber ajuda.';
+  if (/^Dano|Dano /i.test(details)) return `Arma equipada: use em ataques com proficiência adequada. ${details} Role dano em acertos e aplique propriedades como alcance, leve, finesse ou duas mãos.`;
+  if (/^Cura/i.test(details)) return `Consumível de cura: beber ou administrar aplica o efeito ${details} Normalmente exige uma ação em combate.`;
+  if (/Antídoto/i.test(name)) return 'Consumível: melhora resistência contra venenos; use antes ou durante cenas com toxinas, assassinos e monstros venenosos.';
+  if (/Água benta/i.test(name)) return 'Consumível sagrado: pode ser arremessado contra mortos-vivos/ínferos ou usado em rituais, consagrações e cenas religiosas.';
+  if (/Kit de primeiros socorros/i.test(name)) return 'Kit de suporte: estabiliza criatura a 0 PV sem teste; cada uso consome uma carga do kit.';
+  if (/Poção|Preparados/i.test(text)) return 'Consumível alquímico: efeito depende da fórmula; aplique ao beber, derramar, misturar ou usar conforme a cena.';
+  if (/Flechas|Virotes|Balas de funda|Agulhas/i.test(name)) return 'Munição: necessária para armas à distância compatíveis; recuperável ou consumida conforme regra da mesa.';
+  if (/ferramentas|kit de disfarce|kit de falsificação|kit de herbalismo|kit de venenos|utensílios/i.test(text)) return 'Ferramenta/perícia: se proficiente, some bônus de proficiência em testes apropriados de ofício, investigação, criação, reparo ou falsificação.';
+  if (/alaúde|corneta|flauta|gaita|harpa|lira|shawm|tambor|violino|Instrumentos/i.test(text)) return 'Instrumento: permite apresentações; se proficiente, ajuda em Performance, distrações, renda em tavernas e contatos sociais.';
+  if (/foco|amuleto|bastão|cajado|cristal|orbe|símbolo sagrado|totem|varinha/i.test(text)) return 'Foco mágico: pode substituir componentes materiais sem custo em magias compatíveis com sua classe ou tradição.';
+  if (/anel|capa|botas|manto|gema|ioun|pergaminho|mágic|magia|resistência|relâmpagos|evasão/i.test(text)) return 'Item mágico: concede efeito sobrenatural narrativo/mecânico definido pelo mestre; pode exigir sintonização se for poderoso.';
+  if (/burro|mula|cavalo|pônei|camelo|elefante|mastim|cão|Montarias|Animais/i.test(text)) return 'Montaria/animal: aumenta deslocamento, carrega carga, pode vigiar acampamento ou auxiliar testes de Sobrevivência/Adestrar Animais.';
+  if (/barco|navio|carruagem|carroça|trenó|veículo/i.test(text)) return 'Veículo: permite viagem, transporte de carga e cenas de perseguição; proficiência com veículos pode somar bônus em manobras.';
+  if (/casa|mansão|torre|fortaleza|quarto|estalagem|estábulo|moradia|hospedagem/i.test(text)) return 'Base segura: fornece descanso, armazenamento e proteção narrativa; construções maiores podem gerar status, contatos e defesa.';
+  if (/mensageiro|guia|mercenário|curandeiro|escriba|ferreiro|caravana|serviço/i.test(text)) return 'Serviço contratado: cria um aliado temporário, vantagem narrativa ou acesso a perícia que o grupo não possui.';
+  if (/lâmpada|lanterna|tocha|vela|óleo|iluminação|fogo/i.test(text)) return 'Iluminação: remove escuridão em área próxima, permite exploração visual e pode interagir com fogo, óleo ou armadilhas.';
+  if (/corda|gancho|pitons|escada|escalada|vara/i.test(text)) return 'Exploração: ajuda em escalada, travessia, resgate e improvisos; pode reduzir CD ou habilitar testes de Atletismo/Acrobacia.';
+  if (/baú|barril|bolsa|caixa|cantil|frasco|garrafa|jarra|mochila|saco|cesto|contêiner/i.test(text)) return 'Armazenamento: carrega, oculta ou protege itens; útil para controlar carga, contrabando, água, tesouros e componentes.';
+  if (/roupas|perfume|broche|taças|echarpe|maquiagem|leque|lenço|monóculo|pente|sinetes|supérfluos/i.test(text)) return 'Social/roleplay: pode conceder vantagem narrativa em etiqueta, disfarce, negociação, status ou entrada em locais adequados.';
+  if (/mapa|livro|papel|pergaminho|pena|tinta|lupa|ampulheta|sino|giz/i.test(text)) return 'Utilidade: apoia investigação, navegação, registro de pistas, comunicação ou preparação de planos.';
+  return 'Efeito geral: item utilitário; pode conceder vantagem narrativa, reduzir CD ou permitir uma ação específica quando usado criativamente.';
+}
+
 function addItemsFromGroups(groups, sourceLabel, target) {
   Object.entries(groups).forEach(([category, items]) => {
     items.forEach((name) => {
       const key = name.toLocaleLowerCase('pt-BR');
       if (!target.has(key)) {
         const info = getItemInfo(name, category);
+        const effect = getItemEffect(name, category, info.details);
         target.set(key, {
           name,
           category,
@@ -174,6 +204,7 @@ function addItemsFromGroups(groups, sourceLabel, target) {
           price: info.price,
           priceValue: parsePriceValue(info.price),
           details: info.details,
+          effect,
           description: describeItem(name, category)
         });
       }
@@ -236,7 +267,7 @@ function renderCatalog() {
   const query = searchInput.value.trim().toLocaleLowerCase('pt-BR');
   const filtered = sortItems(allItems.filter((item) => {
     const inCategory = activeCategory === 'Todos' || item.category === activeCategory;
-    const searchableText = `${item.name} ${item.category} ${item.description} ${item.price} ${item.details}`;
+    const searchableText = `${item.name} ${item.category} ${item.description} ${item.price} ${item.details} ${item.effect}`;
     const inSearch = !query || searchableText.toLocaleLowerCase('pt-BR').includes(query);
     return inCategory && inSearch;
   }));
@@ -262,6 +293,10 @@ function renderCatalog() {
         <div>
           <dt>Uso / Regra</dt>
           <dd>${escapeHtml(item.details)}</dd>
+        </div>
+        <div>
+          <dt>Efeito</dt>
+          <dd>${escapeHtml(item.effect)}</dd>
         </div>
       </dl>
     </article>
