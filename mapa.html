@@ -213,7 +213,9 @@
     let rulerActive = false;
     let rulerMeasuring = false;
     let rulerStartPoint = null;
-    const HORSE_SPEED_MULTIPLIER = 2;
+    const WALK_KM_PER_HOUR = 5;
+    const HORSE_KM_PER_HOUR = 10;
+    const HORSE_SPEED_MULTIPLIER = HORSE_KM_PER_HOUR / WALK_KM_PER_HOUR;
     let rulerBreakpoints = [];
     let rulerCurrentPoint = null;
     let rulerClickStage = 0;
@@ -1329,6 +1331,12 @@
       return `${fullDays} dia(s) e ${hours}h`;
     }
 
+    function formatKilometers(kilometers) {
+      if (!Number.isFinite(kilometers) || kilometers <= 0) return '0 km';
+      if (kilometers < 10) return `${kilometers.toFixed(1).replace('.', ',')} km`;
+      return `${Math.round(kilometers).toLocaleString('pt-BR')} km`;
+    }
+
 
     function buildRulerPath(endPoint) {
       const path = [];
@@ -1375,13 +1383,15 @@
       const days = pixelsPerDay ? pixelDistance / pixelsPerDay : 0;
       const walkTime = formatTravelTime(days);
       const horseTime = formatTravelTime(days / HORSE_SPEED_MULTIPLIER);
+      const walkHours = days * 24;
+      const kilometers = walkHours * WALK_KM_PER_HOUR;
 
       renderRulerPath(path);
       const screenEndX = offsetX + endPoint.x * zoom;
       const screenEndY = offsetY + endPoint.y * zoom;
       rulerBadge.style.left = `${screenEndX}px`;
       rulerBadge.style.top = `${screenEndY}px`;
-      const distanceText = formatTravelTime(days);
+      const distanceText = formatKilometers(kilometers);
       rulerBadge.textContent = `Distância: ${distanceText} · A pé: ${walkTime} · Cavalo: ${horseTime}`;
     }
 
