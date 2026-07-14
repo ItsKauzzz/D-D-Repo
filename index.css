@@ -1,28 +1,67 @@
 body {
-  font-family: Arial, sans-serif;
-  background: #111;
-  color: #eee;
+  min-height: 100vh;
+  font-family: Georgia, 'Times New Roman', serif;
+  background:
+    radial-gradient(circle at top, rgba(209, 138, 46, 0.22), transparent 30rem),
+    linear-gradient(135deg, #352014 0%, #25150d 55%, #160d08 100%);
+  color: #f7e3b2;
   text-align: center;
-  margin-top: 100px;
+  margin: 0;
+  padding: 100px 20px 40px;
+}
+
+h1 {
+  margin: 0 0 10px;
+  font-size: clamp(2.4rem, 6vw, 5rem);
+  text-shadow: 0 4px 0 #2a180f, 0 0 24px rgba(209, 138, 46, .35);
+}
+
+.subtitle {
+  max-width: 620px;
+  margin: 0 auto 24px;
+  font-size: 1.2rem;
+  color: #ecd09a;
+}
+
+#result {
+  display: inline-block;
+  min-width: 240px;
+  margin: 0 0 18px;
+  padding: 14px 18px;
+  border: 2px solid #8a5a2b;
+  border-radius: 14px;
+  background: rgba(43, 26, 15, .78);
 }
 
 button,
 .map-link {
-  padding: 10px 20px;
+  padding: 12px 22px;
   font-size: 18px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
   cursor: pointer;
-  border: 0;
-  border-radius: 8px;
+  border: 2px solid #d7a84a;
+  border-radius: 999px;
   text-decoration: none;
   display: inline-block;
   margin: 6px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .28);
+}
+
+button {
+  background: linear-gradient(#f2d089, #c58a32);
+  color: #2a180f;
 }
 
 .map-link {
-  background: #2c7be5;
-  color: #fff;
+  background: linear-gradient(#6f4426, #3b2114);
+  color: #fff2cf;
 }
 
 .map-link-editor {
-  background: #d18a2e;
+  background: linear-gradient(#9b5f2b, #5d321b);
+}
+
+.map-link-market {
+  background: linear-gradient(#7c2f28, #461913);
 }
