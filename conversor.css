@@ -1,0 +1,115 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #f4efe2;
+  background:
+    radial-gradient(circle at top, rgba(255, 214, 128, 0.18), transparent 34rem),
+    linear-gradient(135deg, #1f160d 0%, #3a2a17 46%, #17100a 100%);
+}
+
+.converter-shell {
+  width: min(920px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 32px 0;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 18px;
+  color: #ffe6a8;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.converter-card {
+  border: 2px solid #8c6a35;
+  border-radius: 24px;
+  padding: clamp(22px, 5vw, 46px);
+  background: rgba(44, 32, 18, 0.86);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #d6b36b;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 8vw, 4rem);
+}
+
+.intro {
+  max-width: 680px;
+  color: #dfd1b6;
+  line-height: 1.6;
+}
+
+.converter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 28px 0 20px;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  color: #f7e4b7;
+  font-weight: 700;
+}
+
+input,
+select {
+  width: 100%;
+  border: 2px solid #8c6a35;
+  border-radius: 14px;
+  padding: 12px 14px;
+  color: #fff7e8;
+  background: rgba(0, 0, 0, 0.32);
+  font: inherit;
+}
+
+.conversion-result {
+  display: block;
+  border-radius: 18px;
+  padding: 18px;
+  color: #1f160d;
+  background: linear-gradient(135deg, #ffd66f, #f0a83a);
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  font-weight: 900;
+  text-align: center;
+}
+
+.coin-breakdown {
+  margin-top: 24px;
+  border-top: 1px solid rgba(255, 230, 168, 0.24);
+  padding-top: 18px;
+}
+
+.coin-breakdown h2 { margin: 0 0 10px; }
+
+.coin-breakdown ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coin-breakdown li {
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 720px) {
+  .converter-grid { grid-template-columns: 1fr; }
+}

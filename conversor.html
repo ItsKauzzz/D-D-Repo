@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conversor de Moedas • Salão Medieval</title>
+  <link rel="stylesheet" href="conversor.css" />
+</head>
+<body>
+  <main class="converter-shell">
+    <a class="back-link" href="index.html">← Voltar</a>
+    <section class="converter-card" aria-labelledby="converterTitle">
+      <p class="eyebrow">Economia de D&D</p>
+      <h1 id="converterTitle">Conversor de moedas</h1>
+      <p class="intro">Converta cobre, prata, electro, ouro e platina usando a escala padrão: 1 PO = 10 PP = 100 PC.</p>
+
+      <form id="coinConverter" class="converter-grid">
+        <label>
+          Quantidade
+          <input id="coinAmount" type="number" min="0" step="0.01" value="1" inputmode="decimal" />
+        </label>
+        <label>
+          De
+          <select id="fromCoin"></select>
+        </label>
+        <label>
+          Para
+          <select id="toCoin"></select>
+        </label>
+      </form>
+
+      <output id="conversionResult" class="conversion-result" aria-live="polite"></output>
+
+      <div class="coin-breakdown" aria-label="Referência de moedas">
+        <h2>Referência rápida</h2>
+        <ul id="coinReference"></ul>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const COINS = [
+      { id: 'pc', name: 'Peça de cobre', short: 'PC', copper: 1 },
+      { id: 'pp', name: 'Peça de prata', short: 'PP', copper: 10 },
+      { id: 'pe', name: 'Peça de electro', short: 'PE', copper: 50 },
+      { id: 'po', name: 'Peça de ouro', short: 'PO', copper: 100 },
+      { id: 'pl', name: 'Peça de platina', short: 'PL', copper: 1000 }
+    ];
+
+    const amountInput = document.getElementById('coinAmount');
+    const fromCoin = document.getElementById('fromCoin');
+    const toCoin = document.getElementById('toCoin');
+    const conversionResult = document.getElementById('conversionResult');
+    const coinReference = document.getElementById('coinReference');
+
+    function formatNumber(value) {
+      return Number(value.toFixed(4)).toLocaleString('pt-BR', { maximumFractionDigits: 4 });
+    }
+
+    function renderOptions() {
+      const options = COINS.map((coin) => `<option value="${coin.id}">${coin.name} (${coin.short})</option>`).join('');
+      fromCoin.innerHTML = options;
+      toCoin.innerHTML = options;
+      fromCoin.value = 'po';
+      toCoin.value = 'pc';
+      coinReference.innerHTML = COINS.map((coin) => `<li><strong>1 ${coin.short}</strong> = ${coin.copper} PC</li>`).join('');
+    }
+
+    function convertCoins() {
+      const amount = Number(amountInput.value);
+      const source = COINS.find((coin) => coin.id === fromCoin.value);
+      const target = COINS.find((coin) => coin.id === toCoin.value);
+      if (!Number.isFinite(amount) || amount < 0 || !source || !target) {
+        conversionResult.textContent = 'Informe uma quantidade válida.';
+        return;
+      }
+      const copperValue = amount * source.copper;
+      const converted = copperValue / target.copper;
+      conversionResult.textContent = `${formatNumber(amount)} ${source.short} = ${formatNumber(converted)} ${target.short}`;
+    }
+
+    renderOptions();
+    convertCoins();
+    [amountInput, fromCoin, toCoin].forEach((element) => element.addEventListener('input', convertCoins));
+  </script>
+</body>
+</html>

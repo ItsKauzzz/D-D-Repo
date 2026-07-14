@@ -908,6 +908,13 @@
       poiType.innerHTML = Object.keys(typeConfig).map((name) => `<option value="${name}">${name}</option>`).join('');
     }
 
+    function normalizeLocationFileName(rawFileName) {
+      const cleanPath = String(rawFileName || '').split('?')[0].split('#')[0].replace(/\\/g, '/');
+      const fileName = decodeURIComponent(cleanPath.split('/').filter(Boolean).pop() || '');
+      if (!fileName.endsWith('.json') || fileName === 'index.json') return '';
+      return fileName;
+    }
+
     async function discoverLocationFiles() {
       const discovered = new Set();
       try {
@@ -916,14 +923,17 @@
         const hrefMatches = html.match(/href\s*=\s*["']([^"']+)["']/gi) || [];
         hrefMatches.forEach((rawHref) => {
           const href = rawHref.replace(/href\s*=\s*["']|["']/gi, '');
-          const fileName = decodeURIComponent(href.split('?')[0].split('#')[0].split('/').pop() || '');
-          if (fileName.endsWith('.json') && fileName !== 'index.json') discovered.add(fileName);
+          const fileName = normalizeLocationFileName(href);
+          if (fileName) discovered.add(fileName);
         });
       } catch {}
 
       try {
         const fallback = await fetch('data/locations/index.json');
-        (await fallback.json()).forEach((fileName) => discovered.add(String(fileName)));
+        (await fallback.json()).forEach((fileName) => {
+          const normalizedFileName = normalizeLocationFileName(fileName);
+          if (normalizedFileName) discovered.add(normalizedFileName);
+        });
       } catch {}
       return [...discovered].sort();
     }
@@ -931,11 +941,15 @@
     async function loadLocations() {
       const files = await discoverLocationFiles();
       const entries = await Promise.all(files.map(async (fileName) => {
-        const data = await (await fetch(`data/locations/${fileName}`)).json();
+        const normalizedFileName = normalizeLocationFileName(fileName);
+        if (!normalizedFileName) throw new Error(`Arquivo de localização inválido: ${fileName}`);
+        const response = await fetch(`data/locations/${normalizedFileName}`);
+        if (!response.ok) throw new Error(`Não foi possível carregar data/locations/${normalizedFileName}`);
+        const data = await response.json();
         const type = String(data.type || 'Desconhecido');
         const defaults = getTypeDefaults(type);
         return {
-          id: fileName,
+          id: normalizedFileName,
           x: Number(data.x || 0),
           y: Number(data.y || 0),
           name: String(data.name || 'Sem nome'),
