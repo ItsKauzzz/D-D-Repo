@@ -734,6 +734,13 @@
       });
     }
 
+    function normalizeLocationFileName(rawFileName) {
+      const cleanPath = String(rawFileName || '').split('?')[0].split('#')[0].replace(/\\/g, '/');
+      const fileName = decodeURIComponent(cleanPath.split('/').filter(Boolean).pop() || '');
+      if (!fileName.endsWith('.json') || fileName === 'index.json') return '';
+      return fileName;
+    }
+
     async function discoverLocationFiles() {
       const discovered = new Set();
 
@@ -746,11 +753,8 @@
 
         hrefMatches.forEach((rawHref) => {
           const href = rawHref.replace(/href\s*=\s*["']|["']/gi, '');
-          const cleanHref = href.split('?')[0].split('#')[0];
-          const fileName = decodeURIComponent(cleanHref.split('/').pop() || '');
-          if (fileName.endsWith('.json') && fileName !== 'index.json') {
-            discovered.add(fileName);
-          }
+          const fileName = normalizeLocationFileName(href);
+          if (fileName) discovered.add(fileName);
         });
       } catch (error) {
         console.debug('Varredura direta indisponível, usando fallback index.json:', error);
@@ -758,9 +762,11 @@
 
       try {
         const fallbackResponse = await fetch('data/locations/index.json');
+        if (!fallbackResponse.ok) throw new Error('index.json indisponível.');
         const fallbackFiles = await fallbackResponse.json();
         fallbackFiles.forEach((fileName) => {
-          if (String(fileName).endsWith('.json')) discovered.add(String(fileName));
+          const normalizedFileName = normalizeLocationFileName(fileName);
+          if (normalizedFileName) discovered.add(normalizedFileName);
         });
       } catch (error) {
         console.debug('Fallback index.json indisponível:', error);
@@ -796,13 +802,16 @@
       }
 
       const entries = await Promise.all(files.map(async (fileName) => {
-        const fileResponse = await fetch(`data/locations/${fileName}`);
+        const normalizedFileName = normalizeLocationFileName(fileName);
+        if (!normalizedFileName) throw new Error(`Arquivo de localização inválido: ${fileName}`);
+        const fileResponse = await fetch(`data/locations/${normalizedFileName}`);
+        if (!fileResponse.ok) throw new Error(`Não foi possível carregar data/locations/${normalizedFileName}`);
         const data = await fileResponse.json();
         const type = String(data.type || 'desconhecido');
         const defaults = getTypeDefaults(type);
 
         return {
-          id: fileName,
+          id: normalizedFileName,
           x: Number(data.x || 0),
           y: Number(data.y || 0),
           name: String(data.name || 'Sem nome'),
@@ -811,7 +820,7 @@
           show_icon: typeof data.show_icon === 'boolean' ? data.show_icon : defaults.show_icon_default !== false,
           show_name: typeof data.show_name === 'boolean' ? data.show_name : defaults.show_name_default !== false,
           description: String(data.description || ''),
-          image_prefix: String(data.image_prefix || slugFromName(data.name || fileName.replace('.json', ''))),
+          image_prefix: String(data.image_prefix || slugFromName(data.name || normalizedFileName.replace('.json', ''))),
           images: Array.isArray(data.images) ? data.images : [],
           icon_index_offset: Number(data.icon_index_offset || 0),
           icon_override: String(data.icon_override || ''),
