@@ -1520,6 +1520,206 @@
     "description": "Serviço oficial de D&D para viagens, estadias, conjuração ou mão de obra."
   },
   {
+    "name": "Corda de Escalada",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "400 po",
+    "priceValue": 400.0,
+    "details": "Raridade: Incomum; Preço sugerido: 400 po; Corda de 18 metros que se move e se amarra obedecendo comandos.",
+    "effect": "Corda de 18 metros que se move e se amarra obedecendo comandos.",
+    "description": "Item mágico incomum para compra no mercado; Corda de 18 metros que se move e se amarra obedecendo comandos."
+  },
+  {
+    "name": "Bolsa de Armazenamento",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "500 po",
+    "priceValue": 500.0,
+    "details": "Raridade: Incomum; Preço sugerido: 500 po; Bolsa extradimensional que comporta até 225 kg sem aumentar significativamente o peso.",
+    "effect": "Bolsa extradimensional que comporta até 225 kg sem aumentar significativamente o peso.",
+    "description": "Item mágico incomum para compra no mercado; Bolsa extradimensional que comporta até 225 kg sem aumentar significativamente o peso."
+  },
+  {
+    "name": "Chave Mestra (Knock Ring/Key)",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "600 po",
+    "priceValue": 600.0,
+    "details": "Raridade: Incomum; Preço sugerido: 600 po; Auxilia na abertura de portas e fechaduras mágicas ou comuns.",
+    "effect": "Auxilia na abertura de portas e fechaduras mágicas ou comuns.",
+    "description": "Item mágico incomum para compra no mercado; Auxilia na abertura de portas e fechaduras mágicas ou comuns."
+  },
+  {
+    "name": "Botas Élficas",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "700 po",
+    "priceValue": 700.0,
+    "details": "Raridade: Incomum; Preço sugerido: 700 po; Tornam os passos praticamente silenciosos.",
+    "effect": "Tornam os passos praticamente silenciosos.",
+    "description": "Item mágico incomum para compra no mercado; Tornam os passos praticamente silenciosos."
+  },
+  {
+    "name": "Lanterna da Revelação",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "800 po",
+    "priceValue": 800.0,
+    "details": "Raridade: Incomum; Preço sugerido: 800 po; Revela criaturas e objetos invisíveis dentro de sua luz.",
+    "effect": "Revela criaturas e objetos invisíveis dentro de sua luz.",
+    "description": "Item mágico incomum para compra no mercado; Revela criaturas e objetos invisíveis dentro de sua luz."
+  },
+  {
+    "name": "Manto Élfico",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "800 po",
+    "priceValue": 800.0,
+    "details": "Raridade: Incomum; Preço sugerido: 800 po; Concede vantagem para se esconder e dificulta que o usuário seja percebido.",
+    "effect": "Concede vantagem para se esconder e dificulta que o usuário seja percebido.",
+    "description": "Item mágico incomum para compra no mercado; Concede vantagem para se esconder e dificulta que o usuário seja percebido."
+  },
+  {
+    "name": "Óculos da Visão Noturna",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "800 po",
+    "priceValue": 800.0,
+    "details": "Raridade: Incomum; Preço sugerido: 800 po; Concedem visão no escuro a quem não a possui ou ampliam seu alcance.",
+    "effect": "Concedem visão no escuro a quem não a possui ou ampliam seu alcance.",
+    "description": "Item mágico incomum para compra no mercado; Concedem visão no escuro a quem não a possui ou ampliam seu alcance."
+  },
+  {
+    "name": "Decantador de Água Inesgotável",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "900 po",
+    "priceValue": 900.0,
+    "details": "Raridade: Incomum; Preço sugerido: 900 po; Produz água ilimitada em diferentes intensidades de fluxo.",
+    "effect": "Produz água ilimitada em diferentes intensidades de fluxo.",
+    "description": "Item mágico incomum para compra no mercado; Produz água ilimitada em diferentes intensidades de fluxo."
+  },
+  {
+    "name": "Bastão Imóvel (Immovable Rod)",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "1.000 po",
+    "priceValue": 1000.0,
+    "details": "Raridade: Incomum; Preço sugerido: 1.000 po; Ao ser ativado, permanece completamente imóvel no espaço até ser desativado.",
+    "effect": "Ao ser ativado, permanece completamente imóvel no espaço até ser desativado.",
+    "description": "Item mágico incomum para compra no mercado; Ao ser ativado, permanece completamente imóvel no espaço até ser desativado."
+  },
+  {
+    "name": "Jarro da Alquimia",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "1.200 po",
+    "priceValue": 1200.0,
+    "details": "Raridade: Incomum; Preço sugerido: 1.200 po; Produz líquidos como água, cerveja, vinho, mel, óleo, vinagre, ácido e veneno em quantidades limitadas diariamente.",
+    "effect": "Produz líquidos como água, cerveja, vinho, mel, óleo, vinagre, ácido e veneno em quantidades limitadas diariamente.",
+    "description": "Item mágico incomum para compra no mercado; Produz líquidos como água, cerveja, vinho, mel, óleo, vinagre, ácido e veneno em quantidades limitadas diariamente."
+  },
+  {
+    "name": "Pérola do Poder",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "1.500 po",
+    "priceValue": 1500.0,
+    "details": "Raridade: Incomum; Preço sugerido: 1.500 po; Recupera um espaço de magia gasto (até determinado círculo) uma vez por dia.",
+    "effect": "Recupera um espaço de magia gasto (até determinado círculo) uma vez por dia.",
+    "description": "Item mágico incomum para compra no mercado; Recupera um espaço de magia gasto (até determinado círculo) uma vez por dia."
+  },
+  {
+    "name": "Manto de Proteção",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "2.000 po",
+    "priceValue": 2000.0,
+    "details": "Raridade: Incomum; Preço sugerido: 2.000 po; Também concede +1 na CA e nos testes de resistência.",
+    "effect": "Também concede +1 na CA e nos testes de resistência.",
+    "description": "Item mágico incomum para compra no mercado; Também concede +1 na CA e nos testes de resistência."
+  },
+  {
+    "name": "Pedra da Boa Sorte (Luckstone)",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "2.000 po",
+    "priceValue": 2000.0,
+    "details": "Raridade: Incomum; Preço sugerido: 2.000 po; Concede um pequeno bônus em testes de habilidade e testes de resistência.",
+    "effect": "Concede um pequeno bônus em testes de habilidade e testes de resistência.",
+    "description": "Item mágico incomum para compra no mercado; Concede um pequeno bônus em testes de habilidade e testes de resistência."
+  },
+  {
+    "name": "Ferradura da Velocidade",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "2.500 po",
+    "priceValue": 2500.0,
+    "details": "Raridade: Raro; Preço sugerido: 2.500 po; Aumenta significativamente a velocidade da montaria.",
+    "effect": "Aumenta significativamente a velocidade da montaria.",
+    "description": "Item mágico raro para compra no mercado; Aumenta significativamente a velocidade da montaria."
+  },
+  {
+    "name": "Ferradura do Cavalo do Zéfiro",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "2.500 po",
+    "priceValue": 2500.0,
+    "details": "Raridade: Raro; Preço sugerido: 2.500 po; Permite que uma montaria atravesse certos terrenos sem deixar rastros ou tocar o solo em algumas situações.",
+    "effect": "Permite que uma montaria atravesse certos terrenos sem deixar rastros ou tocar o solo em algumas situações.",
+    "description": "Item mágico raro para compra no mercado; Permite que uma montaria atravesse certos terrenos sem deixar rastros ou tocar o solo em algumas situações."
+  },
+  {
+    "name": "Anel de Proteção",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "5.000 po",
+    "priceValue": 5000.0,
+    "details": "Raridade: Raro; Preço sugerido: 5.000 po; Concede +1 na CA e em todos os testes de resistência.",
+    "effect": "Concede +1 na CA e em todos os testes de resistência.",
+    "description": "Item mágico raro para compra no mercado; Concede +1 na CA e em todos os testes de resistência."
+  },
+  {
+    "name": "Botas de Velocidade",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "5.000 po",
+    "priceValue": 5000.0,
+    "details": "Raridade: Raro; Preço sugerido: 5.000 po; Dobram o deslocamento e concedem benefícios semelhantes ao efeito de Aceleração por tempo limitado.",
+    "effect": "Dobram o deslocamento e concedem benefícios semelhantes ao efeito de Aceleração por tempo limitado.",
+    "description": "Item mágico raro para compra no mercado; Dobram o deslocamento e concedem benefícios semelhantes ao efeito de Aceleração por tempo limitado."
+  },
+  {
+    "name": "Buraco Portátil",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "6.000 po",
+    "priceValue": 6000.0,
+    "details": "Raridade: Raro; Preço sugerido: 6.000 po; Pano que cria um compartimento extradimensional para armazenar objetos.",
+    "effect": "Pano que cria um compartimento extradimensional para armazenar objetos.",
+    "description": "Item mágico raro para compra no mercado; Pano que cria um compartimento extradimensional para armazenar objetos."
+  },
+  {
+    "name": "Asas Voadoras",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "8.000 po",
+    "priceValue": 8000.0,
+    "details": "Raridade: Raro; Preço sugerido: 8.000 po; Permitem voar por períodos limitados.",
+    "effect": "Permitem voar por períodos limitados.",
+    "description": "Item mágico raro para compra no mercado; Permitem voar por períodos limitados."
+  },
+  {
+    "name": "Tapete Voador",
+    "category": "Itens mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "20.000 po",
+    "priceValue": 20000.0,
+    "details": "Raridade: Muito Raro; Preço sugerido: 20.000 po; Tapete mágico capaz de voar e transportar passageiros.",
+    "effect": "Tapete mágico capaz de voar e transportar passageiros.",
+    "description": "Item mágico muito raro para compra no mercado; Tapete mágico capaz de voar e transportar passageiros."
+  },
+  {
     "name": "Mula",
     "category": "Montarias e animais",
     "source": "D&D Oficial (value_itens.md)",
@@ -1688,6 +1888,76 @@
     "details": "Poção: Poção de Cura Suprema; Cura: 10d4 + 20; Cura Média: 45 PV.",
     "effect": "Consumível de cura: beber ou administrar aplica o efeito Cura 10d4 + 20 PV ao beber. Normalmente exige uma ação em combate.",
     "description": "Consumível prático para sobreviver a viagens, venenos, ferimentos e ameaças sobrenaturais."
+  },
+  {
+    "name": "Poção de Escalada",
+    "category": "Poções e óleos mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "150 po",
+    "priceValue": 150.0,
+    "details": "Preço sugerido: 150 po; Concede velocidade de escalada e vantagem em testes relacionados.",
+    "effect": "Concede velocidade de escalada e vantagem em testes relacionados.",
+    "description": "Consumível mágico para compra no mercado; Concede velocidade de escalada e vantagem em testes relacionados."
+  },
+  {
+    "name": "Óleo da Escorregadia",
+    "category": "Poções e óleos mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "250 po",
+    "priceValue": 250.0,
+    "details": "Preço sugerido: 250 po; Concede efeitos semelhantes à magia Liberdade de Movimento.",
+    "effect": "Concede efeitos semelhantes à magia Liberdade de Movimento.",
+    "description": "Consumível mágico para compra no mercado; Concede efeitos semelhantes à magia Liberdade de Movimento."
+  },
+  {
+    "name": "Poção de Respiração Aquática",
+    "category": "Poções e óleos mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "300 po",
+    "priceValue": 300.0,
+    "details": "Preço sugerido: 300 po; Permite respirar debaixo d’água por 1 hora.",
+    "effect": "Permite respirar debaixo d’água por 1 hora.",
+    "description": "Consumível mágico para compra no mercado; Permite respirar debaixo d’água por 1 hora."
+  },
+  {
+    "name": "Poção de Heroísmo",
+    "category": "Poções e óleos mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "500 po",
+    "priceValue": 500.0,
+    "details": "Preço sugerido: 500 po; Concede pontos de vida temporários e o efeito de Heroísmo por 1 hora.",
+    "effect": "Concede pontos de vida temporários e o efeito de Heroísmo por 1 hora.",
+    "description": "Consumível mágico para compra no mercado; Concede pontos de vida temporários e o efeito de Heroísmo por 1 hora."
+  },
+  {
+    "name": "Óleo da Afiadura",
+    "category": "Poções e óleos mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "500 po",
+    "priceValue": 500.0,
+    "details": "Preço sugerido: 500 po; Torna uma arma temporariamente mágica e melhora seus ataques.",
+    "effect": "Torna uma arma temporariamente mágica e melhora seus ataques.",
+    "description": "Consumível mágico para compra no mercado; Torna uma arma temporariamente mágica e melhora seus ataques."
+  },
+  {
+    "name": "Poção de Invisibilidade",
+    "category": "Poções e óleos mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "750 po",
+    "priceValue": 750.0,
+    "details": "Preço sugerido: 750 po; Concede invisibilidade por até 1 hora ou até atacar/conjurar magia.",
+    "effect": "Concede invisibilidade por até 1 hora ou até atacar/conjurar magia.",
+    "description": "Consumível mágico para compra no mercado; Concede invisibilidade por até 1 hora ou até atacar/conjurar magia."
+  },
+  {
+    "name": "Poção de Velocidade",
+    "category": "Poções e óleos mágicos",
+    "source": "Itens mágicos sugeridos",
+    "price": "2.500 po",
+    "priceValue": 2500.0,
+    "details": "Preço sugerido: 2.500 po; Concede os efeitos da magia Aceleração por 1 minuto.",
+    "effect": "Concede os efeitos da magia Aceleração por 1 minuto.",
+    "description": "Consumível mágico para compra no mercado; Concede os efeitos da magia Aceleração por 1 minuto."
   },
   {
     "name": "Desvalido",
