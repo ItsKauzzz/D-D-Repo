@@ -1380,6 +1380,216 @@
     "description": "Item/serviço oficial de D&D listado em equipamento de aventura, pronto para compra no mercado."
   },
   {
+    "name": "Barril Reforçado",
+    "category": "Equipamentos reforçados",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "5 po",
+    "priceValue": 5.0,
+    "details": "Item: Barril Reforçado; Peso: 40 kg; Custo: 5 po; Resiste ao dobro da pressão de um barril comum.",
+    "effect": "Resiste ao dobro da pressão de um barril comum.",
+    "description": "Equipamento utilitário comprável no mercado; Resiste ao dobro da pressão de um barril comum."
+  },
+  {
+    "name": "Espelho de Bronze",
+    "category": "Equipamentos reforçados",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "10 po",
+    "priceValue": 10.0,
+    "details": "Item: Espelho de Bronze; Peso: 0,5 kg; Custo: 10 po; Concede vantagem em testes para evitar ser surpreendido por criaturas atrás de esquinas ao observar reflexos.",
+    "effect": "Concede vantagem em testes para evitar ser surpreendido por criaturas atrás de esquinas ao observar reflexos.",
+    "description": "Equipamento utilitário comprável no mercado; Concede vantagem em testes para evitar ser surpreendido por criaturas atrás de esquinas ao observar reflexos."
+  },
+  {
+    "name": "Tenda Militar",
+    "category": "Equipamentos reforçados",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "10 po",
+    "priceValue": 10.0,
+    "details": "Item: Tenda Militar; Peso: 15 kg; Custo: 10 po; Abriga até 6 criaturas Médias e resiste a ventos fortes.",
+    "effect": "Abriga até 6 criaturas Médias e resiste a ventos fortes.",
+    "description": "Equipamento utilitário comprável no mercado; Abriga até 6 criaturas Médias e resiste a ventos fortes."
+  },
+  {
+    "name": "Corda de Seda",
+    "category": "Equipamentos reforçados",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "15 po",
+    "priceValue": 15.0,
+    "details": "Item: Corda de Seda; Peso: 2 kg; Custo: 15 po; Possui 20 PV e exige o dobro de força para ser rompida em comparação com uma corda comum.",
+    "effect": "Possui 20 PV e exige o dobro de força para ser rompida em comparação com uma corda comum.",
+    "description": "Equipamento utilitário comprável no mercado; Possui 20 PV e exige o dobro de força para ser rompida em comparação com uma corda comum."
+  },
+  {
+    "name": "Cadeado de Mestre",
+    "category": "Equipamentos reforçados",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "50 po",
+    "priceValue": 50.0,
+    "details": "Item: Cadeado de Mestre; Peso: 1 kg; Custo: 50 po; Testes para arrombá-lo têm CD +5 em relação a um cadeado comum.",
+    "effect": "Testes para arrombá-lo têm CD +5 em relação a um cadeado comum.",
+    "description": "Equipamento utilitário comprável no mercado; Testes para arrombá-lo têm CD +5 em relação a um cadeado comum."
+  },
+  {
+    "name": "Cantil Isolado",
+    "category": "Equipamentos utilitários",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "8 po",
+    "priceValue": 8.0,
+    "details": "Item: Cantil Isolado; Peso: 2 kg; Custo: 8 po; Mantém líquidos quentes ou frios por até 24 horas.",
+    "effect": "Mantém líquidos quentes ou frios por até 24 horas.",
+    "description": "Equipamento utilitário comprável no mercado; Mantém líquidos quentes ou frios por até 24 horas."
+  },
+  {
+    "name": "Capa Impermeável",
+    "category": "Equipamentos utilitários",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "20 po",
+    "priceValue": 20.0,
+    "details": "Item: Capa Impermeável; Peso: 1 kg; Custo: 20 po; O usuário ignora os efeitos de chuva comum e recebe vantagem em testes para resistir à exposição causada por chuva.",
+    "effect": "O usuário ignora os efeitos de chuva comum e recebe vantagem em testes para resistir à exposição causada por chuva.",
+    "description": "Equipamento utilitário comprável no mercado; O usuário ignora os efeitos de chuva comum e recebe vantagem em testes para resistir à exposição causada por chuva."
+  },
+  {
+    "name": "Cinto de Ferramentas",
+    "category": "Equipamentos utilitários",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "20 po",
+    "priceValue": 20.0,
+    "details": "Item: Cinto de Ferramentas; Peso: 1 kg; Custo: 20 po; Sacar ferramentas armazenadas não requer ação adicional.",
+    "effect": "Sacar ferramentas armazenadas não requer ação adicional.",
+    "description": "Equipamento utilitário comprável no mercado; Sacar ferramentas armazenadas não requer ação adicional."
+  },
+  {
+    "name": "Joelheiras de Couro",
+    "category": "Equipamentos utilitários",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "25 po",
+    "priceValue": 25.0,
+    "details": "Item: Joelheiras de Couro; Peso: 1 kg; Custo: 25 po; Levantar-se do chão consome apenas 3 m de deslocamento.",
+    "effect": "Levantar-se do chão consome apenas 3 m de deslocamento.",
+    "description": "Equipamento utilitário comprável no mercado; Levantar-se do chão consome apenas 3 m de deslocamento."
+  },
+  {
+    "name": "Capuz de Caçador",
+    "category": "Equipamentos utilitários",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "30 po",
+    "priceValue": 30.0,
+    "details": "Item: Capuz de Caçador; Peso: 0,5 kg; Custo: 30 po; Vantagem em testes para esconder o rosto e identificar-se menos facilmente.",
+    "effect": "Vantagem em testes para esconder o rosto e identificar-se menos facilmente.",
+    "description": "Equipamento utilitário comprável no mercado; Vantagem em testes para esconder o rosto e identificar-se menos facilmente."
+  },
+  {
+    "name": "Botas Reforçadas",
+    "category": "Equipamentos utilitários",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "35 po",
+    "priceValue": 35.0,
+    "details": "Item: Botas Reforçadas; Peso: 2 kg; Custo: 35 po; Ignora 1,5 m de terreno difícil por turno.",
+    "effect": "Ignora 1,5 m de terreno difícil por turno.",
+    "description": "Equipamento utilitário comprável no mercado; Ignora 1,5 m de terreno difícil por turno."
+  },
+  {
+    "name": "Capa Acolchoada",
+    "category": "Equipamentos utilitários",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "40 po",
+    "priceValue": 40.0,
+    "details": "Item: Capa Acolchoada; Peso: 2 kg; Custo: 40 po; Reduz o dano de quedas em 1d6 (mínimo 0).",
+    "effect": "Reduz o dano de quedas em 1d6 (mínimo 0).",
+    "description": "Equipamento utilitário comprável no mercado; Reduz o dano de quedas em 1d6 (mínimo 0)."
+  },
+  {
+    "name": "Colete de Bolsos",
+    "category": "Equipamentos utilitários",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "40 po",
+    "priceValue": 40.0,
+    "details": "Item: Colete de Bolsos; Peso: 1 kg; Custo: 40 po; Permite armazenar até 8 itens Pequenos que podem ser sacados como interação gratuita.",
+    "effect": "Permite armazenar até 8 itens Pequenos que podem ser sacados como interação gratuita.",
+    "description": "Equipamento utilitário comprável no mercado; Permite armazenar até 8 itens Pequenos que podem ser sacados como interação gratuita."
+  },
+  {
+    "name": "Óculos de Leitura",
+    "category": "Equipamentos utilitários",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "40 po",
+    "priceValue": 40.0,
+    "details": "Item: Óculos de Leitura; Peso: —; Custo: 40 po; Vantagem em testes de Investigação para analisar mapas, livros e manuscritos.",
+    "effect": "Vantagem em testes de Investigação para analisar mapas, livros e manuscritos.",
+    "description": "Equipamento utilitário comprável no mercado; Vantagem em testes de Investigação para analisar mapas, livros e manuscritos."
+  },
+  {
+    "name": "Luvas de Escalada",
+    "category": "Equipamentos utilitários",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "45 po",
+    "priceValue": 45.0,
+    "details": "Item: Luvas de Escalada; Peso: 0,5 kg; Custo: 45 po; Concede vantagem em testes de Atletismo para escalar superfícies naturais.",
+    "effect": "Concede vantagem em testes de Atletismo para escalar superfícies naturais.",
+    "description": "Equipamento utilitário comprável no mercado; Concede vantagem em testes de Atletismo para escalar superfícies naturais."
+  },
+  {
+    "name": "Pá Reforçada",
+    "category": "Ferramentas profissionais",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "5 po",
+    "priceValue": 5.0,
+    "details": "Item: Pá Reforçada; Peso: 3 kg; Custo: 5 po; Escava terra ou areia em metade do tempo.",
+    "effect": "Escava terra ou areia em metade do tempo.",
+    "description": "Equipamento utilitário comprável no mercado; Escava terra ou areia em metade do tempo."
+  },
+  {
+    "name": "Serra de Carpinteiro",
+    "category": "Ferramentas profissionais",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "6 po",
+    "priceValue": 6.0,
+    "details": "Item: Serra de Carpinteiro; Peso: 2 kg; Custo: 6 po; Produz tábuas de melhor qualidade, reduzindo desperdício.",
+    "effect": "Produz tábuas de melhor qualidade, reduzindo desperdício.",
+    "description": "Equipamento utilitário comprável no mercado; Produz tábuas de melhor qualidade, reduzindo desperdício."
+  },
+  {
+    "name": "Lanterna de Mineração",
+    "category": "Ferramentas profissionais",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "8 po",
+    "priceValue": 8.0,
+    "details": "Item: Lanterna de Mineração; Peso: 1 kg; Custo: 8 po; Pode ser presa ao capacete ou ao cinto, deixando as mãos livres.",
+    "effect": "Pode ser presa ao capacete ou ao cinto, deixando as mãos livres.",
+    "description": "Equipamento utilitário comprável no mercado; Pode ser presa ao capacete ou ao cinto, deixando as mãos livres."
+  },
+  {
+    "name": "Martelo de Ferreiro",
+    "category": "Ferramentas profissionais",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "8 po",
+    "priceValue": 8.0,
+    "details": "Item: Martelo de Ferreiro; Peso: 2 kg; Custo: 8 po; Reduz pela metade o tempo de pequenos reparos metálicos.",
+    "effect": "Reduz pela metade o tempo de pequenos reparos metálicos.",
+    "description": "Equipamento utilitário comprável no mercado; Reduz pela metade o tempo de pequenos reparos metálicos."
+  },
+  {
+    "name": "Machado de Lenhador",
+    "category": "Ferramentas profissionais",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "10 po",
+    "priceValue": 10.0,
+    "details": "Item: Machado de Lenhador; Peso: 3 kg; Custo: 10 po; Derruba árvores pequenas em metade do tempo.",
+    "effect": "Derruba árvores pequenas em metade do tempo.",
+    "description": "Equipamento utilitário comprável no mercado; Derruba árvores pequenas em metade do tempo."
+  },
+  {
+    "name": "Picareta de Mineração",
+    "category": "Ferramentas profissionais",
+    "source": "Equipamentos utilitários sugeridos",
+    "price": "12 po",
+    "priceValue": 12.0,
+    "details": "Item: Picareta de Mineração; Peso: 4 kg; Custo: 12 po; Concede +2 em testes para minerar.",
+    "effect": "Concede +2 em testes para minerar.",
+    "description": "Equipamento utilitário comprável no mercado; Concede +2 em testes para minerar."
+  },
+  {
     "name": "Cajado (também um Bastão)",
     "category": "Focos Arcanos",
     "source": "D&D Oficial (value_itens.md)",
@@ -2020,6 +2230,76 @@
     "description": "Serviço oficial de D&D para viagens, estadias, conjuração ou mão de obra."
   },
   {
+    "name": "Carta registrada",
+    "category": "Serviços comerciais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "2 pp",
+    "priceValue": 0.2,
+    "details": "Serviço: Carta registrada; Preço: 2 pp; Envia carta com registro formal de entrega.",
+    "effect": "Envia carta com registro formal de entrega.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Envia carta com registro formal de entrega."
+  },
+  {
+    "name": "Guarda-volumes",
+    "category": "Serviços comerciais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "5 pp/dia",
+    "priceValue": 0.5,
+    "details": "Serviço: Guarda-volumes; Preço: 5 pp/dia; Guarda pertences por dia em local controlado.",
+    "effect": "Guarda pertences por dia em local controlado.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Guarda pertences por dia em local controlado."
+  },
+  {
+    "name": "Mensagem urgente",
+    "category": "Serviços comerciais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "1 po",
+    "priceValue": 1.0,
+    "details": "Serviço: Mensagem urgente; Preço: 1 po; Entrega uma mensagem com prioridade.",
+    "effect": "Entrega uma mensagem com prioridade.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Entrega uma mensagem com prioridade."
+  },
+  {
+    "name": "Cofre protegido",
+    "category": "Serviços comerciais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "2 po/dia",
+    "priceValue": 2.0,
+    "details": "Serviço: Cofre protegido; Preço: 2 po/dia; Armazena valores em cofre protegido.",
+    "effect": "Armazena valores em cofre protegido.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Armazena valores em cofre protegido."
+  },
+  {
+    "name": "Identificação de gema",
+    "category": "Serviços comerciais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "5 po",
+    "priceValue": 5.0,
+    "details": "Serviço: Identificação de gema; Preço: 5 po; Identifica e estima características de uma gema.",
+    "effect": "Identifica e estima características de uma gema.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Identifica e estima características de uma gema."
+  },
+  {
+    "name": "Tradução de documento",
+    "category": "Serviços comerciais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "5 po",
+    "priceValue": 5.0,
+    "details": "Serviço: Tradução de documento; Preço: 5 po; Traduz um documento para outro idioma conhecido.",
+    "effect": "Traduz um documento para outro idioma conhecido.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Traduz um documento para outro idioma conhecido."
+  },
+  {
+    "name": "Avaliação de item",
+    "category": "Serviços comerciais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "10 po",
+    "priceValue": 10.0,
+    "details": "Serviço: Avaliação de item; Preço: 10 po; Avalia o valor e a qualidade de um item.",
+    "effect": "Avalia o valor e a qualidade de um item.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Avalia o valor e a qualidade de um item."
+  },
+  {
     "name": "Truque",
     "category": "Serviços de Conjuração",
     "source": "D&D Oficial (value_itens.md)",
@@ -2088,6 +2368,306 @@
     "details": "Círculo da Magia: 9º Círculo; Disponibilidade: Apenas cidade.",
     "effect": "Serviço: contrate e aplique custo, disponibilidade e duração conforme indicado. Círculo da Magia: 9º Círculo; Disponibilidade: Apenas cidade.",
     "description": "Serviço oficial de D&D para viagens, estadias, conjuração ou mão de obra."
+  },
+  {
+    "name": "Banho quente",
+    "category": "Serviços de higiene",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "5 pc",
+    "priceValue": 0.05,
+    "details": "Serviço: Banho quente; Preço: 5 pc; Banho simples com água quente.",
+    "effect": "Banho simples com água quente.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Banho simples com água quente."
+  },
+  {
+    "name": "Barba",
+    "category": "Serviços de higiene",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "1 pp",
+    "priceValue": 0.1,
+    "details": "Serviço: Barba; Preço: 1 pp; Aparo ou barbearia.",
+    "effect": "Aparo ou barbearia.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Aparo ou barbearia."
+  },
+  {
+    "name": "Corte de cabelo",
+    "category": "Serviços de higiene",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "2 pp",
+    "priceValue": 0.2,
+    "details": "Serviço: Corte de cabelo; Preço: 2 pp; Corte e ajuste de cabelo.",
+    "effect": "Corte e ajuste de cabelo.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Corte e ajuste de cabelo."
+  },
+  {
+    "name": "Sauna",
+    "category": "Serviços de higiene",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "2 pp",
+    "priceValue": 0.2,
+    "details": "Serviço: Sauna; Preço: 2 pp; Sessão de sauna.",
+    "effect": "Sessão de sauna.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Sessão de sauna."
+  },
+  {
+    "name": "Lavanderia",
+    "category": "Serviços de higiene",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "5 pp",
+    "priceValue": 0.5,
+    "details": "Serviço: Lavanderia; Preço: 5 pp; Serviço de lavagem de roupas.",
+    "effect": "Serviço de lavagem de roupas.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Serviço de lavagem de roupas."
+  },
+  {
+    "name": "Perfumaria",
+    "category": "Serviços de higiene",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "5 pp",
+    "priceValue": 0.5,
+    "details": "Serviço: Perfumaria; Preço: 5 pp; Aplicação ou compra de fragrâncias simples.",
+    "effect": "Aplicação ou compra de fragrâncias simples.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Aplicação ou compra de fragrâncias simples."
+  },
+  {
+    "name": "Massagem",
+    "category": "Serviços de higiene",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "8 pp",
+    "priceValue": 0.8,
+    "details": "Serviço: Massagem; Preço: 8 pp; Sessão de massagem relaxante.",
+    "effect": "Sessão de massagem relaxante.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Sessão de massagem relaxante."
+  },
+  {
+    "name": "Primeiros socorros",
+    "category": "Serviços médicos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "5 pp",
+    "priceValue": 0.5,
+    "details": "Serviço: Primeiros socorros; Preço: 5 pp; Atendimento básico para estabilizar e tratar ferimentos leves.",
+    "effect": "Atendimento básico para estabilizar e tratar ferimentos leves.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Atendimento básico para estabilizar e tratar ferimentos leves."
+  },
+  {
+    "name": "Banho medicinal",
+    "category": "Serviços médicos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "1 po",
+    "priceValue": 1.0,
+    "details": "Serviço: Banho medicinal; Preço: 1 po; Banho terapêutico com ervas ou sais medicinais.",
+    "effect": "Banho terapêutico com ervas ou sais medicinais.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Banho terapêutico com ervas ou sais medicinais."
+  },
+  {
+    "name": "Dentista",
+    "category": "Serviços médicos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "2 po",
+    "priceValue": 2.0,
+    "details": "Serviço: Dentista; Preço: 2 po; Tratamento odontológico.",
+    "effect": "Tratamento odontológico.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Tratamento odontológico."
+  },
+  {
+    "name": "Tratamento médico",
+    "category": "Serviços médicos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "3 po",
+    "priceValue": 3.0,
+    "details": "Serviço: Tratamento médico; Preço: 3 po; Tratamento médico comum para ferimentos e sintomas.",
+    "effect": "Tratamento médico comum para ferimentos e sintomas.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Tratamento médico comum para ferimentos e sintomas."
+  },
+  {
+    "name": "Cirurgia simples",
+    "category": "Serviços médicos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "15 po",
+    "priceValue": 15.0,
+    "details": "Serviço: Cirurgia simples; Preço: 15 po; Procedimento cirúrgico simples.",
+    "effect": "Procedimento cirúrgico simples.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Procedimento cirúrgico simples."
+  },
+  {
+    "name": "Remover doença comum",
+    "category": "Serviços médicos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "20 po",
+    "priceValue": 20.0,
+    "details": "Serviço: Remover doença comum; Preço: 20 po; Tratamento para remover uma doença comum.",
+    "effect": "Tratamento para remover uma doença comum.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Tratamento para remover uma doença comum."
+  },
+  {
+    "name": "Carpinteiro (1 hora)",
+    "category": "Serviços profissionais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "1 po",
+    "priceValue": 1.0,
+    "details": "Serviço: Carpinteiro (1 hora); Preço: 1 po; Serviço de carpinteiro por uma hora.",
+    "effect": "Serviço de carpinteiro por uma hora.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Serviço de carpinteiro por uma hora."
+  },
+  {
+    "name": "Costureiro",
+    "category": "Serviços profissionais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "1 po",
+    "priceValue": 1.0,
+    "details": "Serviço: Costureiro; Preço: 1 po; Serviço de costura e ajustes simples.",
+    "effect": "Serviço de costura e ajustes simples.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Serviço de costura e ajustes simples."
+  },
+  {
+    "name": "Encadernador",
+    "category": "Serviços profissionais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "2 po",
+    "priceValue": 2.0,
+    "details": "Serviço: Encadernador; Preço: 2 po; Serviço de encadernação e reparo de livros.",
+    "effect": "Serviço de encadernação e reparo de livros.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Serviço de encadernação e reparo de livros."
+  },
+  {
+    "name": "Escrivão",
+    "category": "Serviços profissionais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "2 po/hora",
+    "priceValue": 2.0,
+    "details": "Serviço: Escrivão; Preço: 2 po/hora; Serviço de escrita, cópia ou registro por hora.",
+    "effect": "Serviço de escrita, cópia ou registro por hora.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Serviço de escrita, cópia ou registro por hora."
+  },
+  {
+    "name": "Ferreiro (1 hora)",
+    "category": "Serviços profissionais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "2 po",
+    "priceValue": 2.0,
+    "details": "Serviço: Ferreiro (1 hora); Preço: 2 po; Serviço de ferreiro por uma hora.",
+    "effect": "Serviço de ferreiro por uma hora.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Serviço de ferreiro por uma hora."
+  },
+  {
+    "name": "Alquimista (1 hora)",
+    "category": "Serviços profissionais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "5 po",
+    "priceValue": 5.0,
+    "details": "Serviço: Alquimista (1 hora); Preço: 5 po; Serviço de alquimista por uma hora.",
+    "effect": "Serviço de alquimista por uma hora.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Serviço de alquimista por uma hora."
+  },
+  {
+    "name": "Joalheiro",
+    "category": "Serviços profissionais",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "5 po/hora",
+    "priceValue": 5.0,
+    "details": "Serviço: Joalheiro; Preço: 5 po/hora; Serviço de joalheria por hora.",
+    "effect": "Serviço de joalheria por hora.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Serviço de joalheria por hora."
+  },
+  {
+    "name": "Banho Público",
+    "category": "Serviços urbanos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "5 pc",
+    "priceValue": 0.05,
+    "details": "Serviço: Banho Público; Preço: 5 pc; Banho quente com toalhas limpas.",
+    "effect": "Banho quente com toalhas limpas.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Banho quente com toalhas limpas."
+  },
+  {
+    "name": "Guarda de Equipamentos",
+    "category": "Serviços urbanos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "2 pp/dia",
+    "priceValue": 0.2,
+    "details": "Serviço: Guarda de Equipamentos; Preço: 2 pp/dia; Armazena pertences em local seguro.",
+    "effect": "Armazena pertences em local seguro.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Armazena pertences em local seguro."
+  },
+  {
+    "name": "Lavanderia",
+    "category": "Serviços urbanos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "3 pp",
+    "priceValue": 0.30000000000000004,
+    "details": "Serviço: Lavanderia; Preço: 3 pp; Limpeza completa de roupas e mantos.",
+    "effect": "Limpeza completa de roupas e mantos.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Limpeza completa de roupas e mantos."
+  },
+  {
+    "name": "Afiar Arma",
+    "category": "Serviços urbanos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "5 pp",
+    "priceValue": 0.5,
+    "details": "Serviço: Afiar Arma; Preço: 5 pp; Recupera o fio de armas cortantes.",
+    "effect": "Recupera o fio de armas cortantes.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Recupera o fio de armas cortantes."
+  },
+  {
+    "name": "Estadia para Montaria",
+    "category": "Serviços urbanos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "8 pp/dia",
+    "priceValue": 0.8,
+    "details": "Serviço: Estadia para Montaria; Preço: 8 pp/dia; Inclui alimentação e cuidados básicos.",
+    "effect": "Inclui alimentação e cuidados básicos.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Inclui alimentação e cuidados básicos."
+  },
+  {
+    "name": "Reparo de Arma",
+    "category": "Serviços urbanos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "1 po",
+    "priceValue": 1.0,
+    "details": "Serviço: Reparo de Arma; Preço: 1 po; Conserta cabos, hastes e pequenas avarias.",
+    "effect": "Conserta cabos, hastes e pequenas avarias.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Conserta cabos, hastes e pequenas avarias."
+  },
+  {
+    "name": "Reparo de Armadura",
+    "category": "Serviços urbanos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "2 po",
+    "priceValue": 2.0,
+    "details": "Serviço: Reparo de Armadura; Preço: 2 po; Corrige danos leves em armaduras.",
+    "effect": "Corrige danos leves em armaduras.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Corrige danos leves em armaduras."
+  },
+  {
+    "name": "Guia Local",
+    "category": "Serviços urbanos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "3 po/dia",
+    "priceValue": 3.0,
+    "details": "Serviço: Guia Local; Preço: 3 po/dia; Conhece estradas, trilhas e costumes da região.",
+    "effect": "Conhece estradas, trilhas e costumes da região.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Conhece estradas, trilhas e costumes da região."
+  },
+  {
+    "name": "Tradutor",
+    "category": "Serviços urbanos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "5 po/dia",
+    "priceValue": 5.0,
+    "details": "Serviço: Tradutor; Preço: 5 po/dia; Auxilia em negociações e documentos.",
+    "effect": "Auxilia em negociações e documentos.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Auxilia em negociações e documentos."
+  },
+  {
+    "name": "Escolta Mercenária",
+    "category": "Serviços urbanos",
+    "source": "Serviços e utilitários sugeridos",
+    "price": "10 po/dia por guarda",
+    "priceValue": 10.0,
+    "details": "Serviço: Escolta Mercenária; Preço: 10 po/dia por guarda; Proteção para caravanas e viajantes.",
+    "effect": "Proteção para caravanas e viajantes.",
+    "description": "Serviço de mercado para apoio urbano e logístico; Proteção para caravanas e viajantes."
   },
   {
     "name": "Amuleto",
