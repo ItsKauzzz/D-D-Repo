@@ -197,38 +197,69 @@ function renderGeneratedShop() {
   generatorPdf.disabled = false;
 }
 
+function normalizePdfText(value) {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/[\u2022]/g, '-')
+    .replace(/[^\x09\x0a\x0d\x20-\x7e]/g, '?');
+}
+
+
 function pdfEscape(value) {
-  return String(value).replace(/[\\()]/g, '\\$&').replace(/[\r\n]+/g, ' ');
+  return normalizePdfText(value).replace(/[\\()]/g, '\\$&').replace(/[\r\n]+/g, ' ');
+}
+
+function byteLength(value) {
+  return new TextEncoder().encode(value).length;
 }
 
 function downloadGeneratedPdf() {
   if (!generatedShop) return;
-  const lines = ['Sorteador de Loja D&D', generatorSummary.textContent, '', ...generatedShop.entries.map((item) => `${item.name} | ${item.category} | ${formatGold(item.finalPrice)} | SALE ${item.saleDiscount ? `-${item.saleDiscount}%` : '—'} | ${item.details}`)];
+
+  const lines = [
+    'Sorteador de Loja D&D',
+    generatorSummary.textContent,
+    '',
+    ...generatedShop.entries.map((item) => `${item.name} | ${item.category} | ${formatGold(item.finalPrice)} | SALE ${item.saleDiscount ? `-${item.saleDiscount}%` : '-'} | ${item.details}`)
+  ];
   const pages = [];
   for (let index = 0; index < lines.length; index += 34) pages.push(lines.slice(index, index + 34));
-  const objects = [''];
+
+  const objects = [null, ''];
+  objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
   const pageRefs = [];
-  pages.forEach((pageLines) => {
+
+  pages.forEach((pageLines, pageIndex) => {
+    const contentId = 4 + (pageIndex * 2);
+    const pageId = contentId + 1;
     const content = `BT /F1 10 Tf 40 800 Td 14 TL ${pageLines.map((line) => `(${pdfEscape(line).slice(0, 170)}) Tj T*`).join(' ')} ET`;
-    const contentId = objects.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`) - 1;
-    const pageId = objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R >>`) - 1;
+    objects[contentId] = `<< /Length ${byteLength(content)} >>\nstream\n${content}\nendstream`;
+    objects[pageId] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R >>`;
     pageRefs.push(`${pageId} 0 R`);
   });
-  objects.splice(1, 0, `<< /Type /Catalog /Pages 2 0 R >>`, `<< /Type /Pages /Kids [${pageRefs.join(' ')}] /Count ${pageRefs.length} >>`, `<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>`);
+
+  objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+  objects[2] = `<< /Type /Pages /Kids [${pageRefs.join(' ')}] /Count ${pageRefs.length} >>`;
+
   const offsets = [];
   let pdf = '%PDF-1.4\n';
-  objects.slice(1).forEach((object, index) => {
-    offsets[index + 1] = pdf.length;
-    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
-  });
-  const xref = pdf.length;
+  for (let objectId = 1; objectId < objects.length; objectId += 1) {
+    offsets[objectId] = byteLength(pdf);
+    pdf += `${objectId} 0 obj\n${objects[objectId]}\nendobj\n`;
+  }
+  const xref = byteLength(pdf);
   pdf += `xref\n0 ${objects.length}\n0000000000 65535 f \n`;
-  for (let index = 1; index < objects.length; index += 1) pdf += `${String(offsets[index]).padStart(10, '0')} 00000 n \n`;
+  for (let objectId = 1; objectId < objects.length; objectId += 1) pdf += `${String(offsets[objectId]).padStart(10, '0')} 00000 n \n`;
   pdf += `trailer << /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([pdf], { type: 'application/pdf' }));
   link.download = `loja-dnd-${Date.now()}.pdf`;
+  document.body.appendChild(link);
   link.click();
+  link.remove();
   URL.revokeObjectURL(link.href);
 }
 
