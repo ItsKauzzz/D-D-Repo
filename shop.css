@@ -257,3 +257,8 @@ main { display: grid; grid-template-columns: 240px 1fr; gap: 22px; margin-top: 2
   .generator-form { grid-template-columns: 1fr; }
   .sale-toggle { grid-column: auto; }
 }
+
+.magic-item-row td {
+  color: #6b22a8;
+  font-weight: 800;
+}
