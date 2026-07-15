@@ -10,6 +10,7 @@
   <div class="page-shell">
     <header class="hero panel">
       <a class="back-link" href="./index.html">← Voltar ao salão</a>
+      <button id="shop-generator-open" class="generator-open" type="button">🎲 Sorteador</button>
       <p class="eyebrow">⚜ Catálogo do mercador ⚜</p>
       <h1>Mercado Medieval de Itens Compráveis</h1>
       <p class="hero-text">Armas, armaduras, poções, montarias, moradia, ferramentas e curiosidades para abastecer qualquer campanha de D&amp;D.</p>
@@ -48,6 +49,64 @@
         <div id="catalog-grid" class="catalog-grid"></div>
       </section>
     </main>
+  </div>
+
+  <div id="shop-generator-modal" class="modal-backdrop" hidden>
+    <section class="generator-modal panel" role="dialog" aria-modal="true" aria-labelledby="generator-title">
+      <div class="modal-heading">
+        <div>
+          <p class="eyebrow">Inventário aleatório</p>
+          <h2 id="generator-title">Sorteador de loja</h2>
+        </div>
+        <button id="shop-generator-close" class="icon-button" type="button" aria-label="Fechar sorteador">×</button>
+      </div>
+
+      <form id="shop-generator-form" class="generator-form">
+        <label>
+          Fartura da loja
+          <select id="shop-wealth">
+            <option value="barraca">Barraca Humilde — 250 PO</option>
+            <option value="pequena">Loja Pequena — 800 PO</option>
+            <option value="modesta">Loja Modesta — 2.000 PO</option>
+            <option value="comum" selected>Loja Comum — 6.000 PO</option>
+            <option value="rica">Loja Rica — 20.000 PO</option>
+            <option value="lendaria">Loja Lendária — 60.000 PO</option>
+          </select>
+        </label>
+        <label>
+          Tipo de Loja
+          <select id="shop-type">
+            <option value="equipamentos" selected>Equipamentos</option>
+            <option value="armaria">Armaria</option>
+            <option value="arcana">Arcana / Alquímica</option>
+            <option value="servicos">Serviços e Estadia</option>
+            <option value="geral">Mercado Geral</option>
+          </select>
+        </label>
+        <label>
+          Preço %%
+          <select id="shop-price-modifier">
+            <option value="-20">-20%</option>
+            <option value="-10">-10%</option>
+            <option value="0" selected>Preço base</option>
+            <option value="10">+10%</option>
+            <option value="20">+20%</option>
+            <option value="50">+50%</option>
+          </select>
+        </label>
+        <label class="sale-toggle">
+          <input id="shop-sale" type="checkbox">
+          SALE — 5% dos itens com desconto aleatório de até 40%
+        </label>
+        <button class="roll-button" type="submit">Sortear estoque</button>
+      </form>
+
+      <div id="shop-generator-summary" class="generator-summary">Configure a loja e clique em sortear.</div>
+      <div id="shop-generator-results" class="generator-results" tabindex="0"></div>
+      <div class="modal-footer">
+        <button id="shop-generator-pdf" class="view-toggle" type="button" disabled>⬇ Baixar PDF</button>
+      </div>
+    </section>
   </div>
 
   <script src="shop.js"></script>
