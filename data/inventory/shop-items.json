@@ -2838,5 +2838,485 @@
     "details": "Serviço: Passagem de navio.",
     "effect": "Serviço: contrate e aplique custo, disponibilidade e duração conforme indicado. Serviço: Passagem de navio.",
     "description": "Serviço oficial de D&D para viagens, estadias, conjuração ou mão de obra."
+  },
+  {
+    "name": "Bolsa de dentes (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "500 po",
+    "priceValue": 500.0,
+    "details": "Raridade: Incomum. Bolsa de escamas que libera um Enxame de Dentes por até 10 minutos. O enxame é hostil a todas as criaturas, possui CA 13, 22 PV, deslocamento de 9 m e realiza um ataque de +5 para atingir, causando 2d6+3 de dano perfurante (1d6+3 com metade dos PV ou menos). Desaparece ao chegar a 0 PV ou ao fim da duração.",
+    "effect": "Bolsa de escamas que libera um Enxame de Dentes por até 10 minutos. O enxame é hostil a todas as criaturas, possui CA 13, 22 PV, deslocamento de 9 m e realiza um ataque de +5 para atingir, causando 2d6+3 de dano perfurante (1d6+3 com metade dos PV ou menos). Desaparece ao chegar a 0 PV ou ao fim da duração.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Corda de Drenagem (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "350 po",
+    "priceValue": 350.0,
+    "details": "Raridade: Incomum. Corda de cânhamo de 15 metros que, ao ter uma extremidade submersa, absorve e expele até 40 litros de água por minuto pela outra ponta. Funciona continuamente enquanto permanecer na água.",
+    "effect": "Corda de cânhamo de 15 metros que, ao ter uma extremidade submersa, absorve e expele até 40 litros de água por minuto pela outra ponta. Funciona continuamente enquanto permanecer na água.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Lâmina Tagarela (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "4.000 po",
+    "priceValue": 4000.0,
+    "details": "Raridade: Raro (Sintonização). Cimitarra +1 senciente que acompanha o portador com comentários sarcásticos. Uma vez por turno, ao atingir uma criatura, pode lançar insultos mágicos; o alvo faz TR Sabedoria CD 15 ou sofre 2d4 de dano psíquico e tem desvantagem na próxima jogada de ataque antes do fim do próximo turno.",
+    "effect": "Cimitarra +1 senciente que acompanha o portador com comentários sarcásticos. Uma vez por turno, ao atingir uma criatura, pode lançar insultos mágicos; o alvo faz TR Sabedoria CD 15 ou sofre 2d4 de dano psíquico e tem desvantagem na próxima jogada de ataque antes do fim do próximo turno.",
+    "description": "Item mágico raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Pano de Vela Flutuante (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "900 po",
+    "priceValue": 900.0,
+    "details": "Raridade: Incomum. Tecido encantado pelo Plano Elemental do Ar, usado como capa ou vela. Permite planar lentamente enquanto segurado com as duas mãos e possui 3 cargas: impulsiona o usuário 9 m por carga ou aumenta a velocidade de uma embarcação por 10 minutos. Recupera 1d3 cargas ao amanhecer.",
+    "effect": "Tecido encantado pelo Plano Elemental do Ar, usado como capa ou vela. Permite planar lentamente enquanto segurado com as duas mãos e possui 3 cargas: impulsiona o usuário 9 m por carga ou aumenta a velocidade de uma embarcação por 10 minutos. Recupera 1d3 cargas ao amanhecer.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Lâmina de águas partidas (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "6.500 po",
+    "priceValue": 6500.0,
+    "details": "Raridade: Raro (Sintonização). Espada grande +1 de bronze que ignora desvantagem por lutar debaixo d'água e sempre causa crítico contra criaturas líquidas. Possui 3 cargas para criar uma onda de choque em linha de 9 × 27 m, causando 3d8 contundente (TR Força CD 17 metade), empurrando e derrubando criaturas, além de abrir trincheira temporária em corpos d'água.",
+    "effect": "Espada grande +1 de bronze que ignora desvantagem por lutar debaixo d'água e sempre causa crítico contra criaturas líquidas. Possui 3 cargas para criar uma onda de choque em linha de 9 × 27 m, causando 3d8 contundente (TR Força CD 17 metade), empurrando e derrubando criaturas, além de abrir trincheira temporária em corpos d'água.",
+    "description": "Item mágico raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Braseiros das Formas Nebulosas (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "900 po",
+    "priceValue": 900.0,
+    "details": "Raridade: Incomum. Par de braseiros prateados vinculados magicamente. Uma vez por amanhecer, ao transformar líquido em névoa, cada braseiro projeta uma imagem em movimento das criaturas e objetos ao redor do outro, criando uma esfera de 3 m de névoa levemente obscurecida por 1 minuto. Se um for destruído, o outro perde sua magia.",
+    "effect": "Par de braseiros prateados vinculados magicamente. Uma vez por amanhecer, ao transformar líquido em névoa, cada braseiro projeta uma imagem em movimento das criaturas e objetos ao redor do outro, criando uma esfera de 3 m de névoa levemente obscurecida por 1 minuto. Se um for destruído, o outro perde sua magia.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Lâmina da Explosão Salina (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "5.800 po",
+    "priceValue": 5800.0,
+    "details": "Raridade: Raro. Espada de cristal de sal que concede +1 nas jogadas de ataque e dano. Possui 3 cargas para conjurar Jato de Sal (CD 15). Ao obter um 20 natural, libera uma explosão de água salgada que destrói armaduras metálicas não mágicas usadas pelo alvo.",
+    "effect": "Espada de cristal de sal que concede +1 nas jogadas de ataque e dano. Possui 3 cargas para conjurar Jato de Sal (CD 15). Ao obter um 20 natural, libera uma explosão de água salgada que destrói armaduras metálicas não mágicas usadas pelo alvo.",
+    "description": "Item mágico raro do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Barreira de Bolha (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "1.000 po",
+    "priceValue": 1000.0,
+    "details": "Raridade: Raro. Esfera de vidro iridescente de uso único. Quando o portador sofre dano ou é alvo de um efeito visível, pode esmagá-la como reação para envolver-se em esfera protetora, como Esfera Resiliente de Otiluke, anulando completamente o efeito que a ativou até o início do próximo turno.",
+    "effect": "Esfera de vidro iridescente de uso único. Quando o portador sofre dano ou é alvo de um efeito visível, pode esmagá-la como reação para envolver-se em esfera protetora, como Esfera Resiliente de Otiluke, anulando completamente o efeito que a ativou até o início do próximo turno.",
+    "description": "Item mágico raro do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Lanterna do Capitão (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "1.100 po",
+    "priceValue": 1100.0,
+    "details": "Raridade: Incomum. Lanterna encantada que mantém toda a embarcação sob efeito de Alarme. Pode criar moedas de passagem para permitir embarque sem acionar o alarme. Uma moeda de prata redefine todas as permissões concedidas anteriormente.",
+    "effect": "Lanterna encantada que mantém toda a embarcação sob efeito de Alarme. Pode criar moedas de passagem para permitir embarque sem acionar o alarme. Uma moeda de prata redefine todas as permissões concedidas anteriormente.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Braçadeiras Cefalianas (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "3.800 po",
+    "priceValue": 3800.0,
+    "details": "Raridade: Raro (Sintonização). Braçadeiras de latão com tentáculos entrelaçados. Concedem vantagem em testes para manter agarrões. Debaixo d'água, permitem conjurar Escuridão centrada no usuário e dobrar seu deslocamento até o fim do turno. Recarrega ao amanhecer.",
+    "effect": "Braçadeiras de latão com tentáculos entrelaçados. Concedem vantagem em testes para manter agarrões. Debaixo d'água, permitem conjurar Escuridão centrada no usuário e dobrar seu deslocamento até o fim do turno. Recarrega ao amanhecer.",
+    "description": "Item mágico raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Manoplas de Garra de Caranguejo (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "4.200 po",
+    "priceValue": 4200.0,
+    "details": "Raridade: Raro. Manoplas de prata em forma de garras de caranguejo gigante. Ataques desarmados causam 1d6 + Mod. de Força de dano contundente e recebem +1 nas jogadas de ataque e dano. Ao atingir uma criatura, você a agarra automaticamente se a garra não estiver ocupada.",
+    "effect": "Manoplas de prata em forma de garras de caranguejo gigante. Ataques desarmados causam 1d6 + Mod. de Força de dano contundente e recebem +1 nas jogadas de ataque e dano. Ao atingir uma criatura, você a agarra automaticamente se a garra não estiver ocupada.",
+    "description": "Item mágico raro do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Armadura da Tartaruga-Dragão (CA 18) (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "15.000 po",
+    "priceValue": 15000.0,
+    "details": "Raridade: Muito Raro. Armadura de placas feita com casco de tartaruga-dragão. Concede natação 12 m, resistência a fogo e permite respirar na água e no ar. Também permite conjurar Mãos Flamejantes de 3º círculo (CD 15) como explosão de vapor, ignorando resistência por estar submerso. Após uso, recupera com 5–6 em 1d6 no início de cada turno.",
+    "effect": "Armadura de placas feita com casco de tartaruga-dragão. Concede natação 12 m, resistência a fogo e permite respirar na água e no ar. Também permite conjurar Mãos Flamejantes de 3º círculo (CD 15) como explosão de vapor, ignorando resistência por estar submerso. Após uso, recupera com 5–6 em 1d6 no início de cada turno.",
+    "description": "Item mágico muito raro do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Varinha dos Lulas de Figgly (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "1.800 po",
+    "priceValue": 1800.0,
+    "details": "Raridade: Incomum. Varinha negra com 7 cargas que permite conjurar Lula Explosiva de Figgly (+7 para atingir) do 1º círculo, aumentando o nível da magia com cargas adicionais. Recupera 1d6+1 cargas ao amanhecer. Se a última carga for gasta, há 5% de chance de explodir em tinta negra e ser destruída.",
+    "effect": "Varinha negra com 7 cargas que permite conjurar Lula Explosiva de Figgly (+7 para atingir) do 1º círculo, aumentando o nível da magia com cargas adicionais. Recupera 1d6+1 cargas ao amanhecer. Se a última carga for gasta, há 5% de chance de explodir em tinta negra e ser destruída.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Lâmina de Espinha de Peixe (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "18.000 po",
+    "priceValue": 18000.0,
+    "details": "Raridade: Muito Raro (Sintonização). Espada em forma de esqueleto de peixe que funciona como Espada Dançante e não sofre desvantagem em combate subaquático. Variantes: Marlim do Mestre concede vantagem no próximo ataque contra o alvo; Salmão do Sábio impõe desvantagem no próximo teste de resistência contra uma de suas magias; Esturjão do Cirurgião pode voar até criatura inconsciente e estabilizá-la.",
+    "effect": "Espada em forma de esqueleto de peixe que funciona como Espada Dançante e não sofre desvantagem em combate subaquático. Variantes: Marlim do Mestre concede vantagem no próximo ataque contra o alvo; Salmão do Sábio impõe desvantagem no próximo teste de resistência contra uma de suas magias; Esturjão do Cirurgião pode voar até criatura inconsciente e estabilizá-la.",
+    "description": "Item mágico muito raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Manoplas do Fluxo (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "5.200 po",
+    "priceValue": 5200.0,
+    "details": "Raridade: Raro (Sintonização). Manoplas de mercúrio sólido com 3 cargas. Ao conjurar uma magia sem a tag Hidromancia, você pode gastar 1 carga para concedê-la essa tag, permitindo que seja conjurada por uma mão de água criada em qualquer ponto dentro de 9 m.",
+    "effect": "Manoplas de mercúrio sólido com 3 cargas. Ao conjurar uma magia sem a tag Hidromancia, você pode gastar 1 carga para concedê-la essa tag, permitindo que seja conjurada por uma mão de água criada em qualquer ponto dentro de 9 m.",
+    "description": "Item mágico raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Berrante da Neblina (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "700 po",
+    "priceValue": 700.0,
+    "details": "Raridade: Incomum. Berrante de prata com 3 cargas. Permite conjurar Névoa Obscurecente (Fog Cloud), emitindo som grave audível a até 90 m. Pode aumentar o nível da magia gastando cargas adicionais.",
+    "effect": "Berrante de prata com 3 cargas. Permite conjurar Névoa Obscurecente (Fog Cloud), emitindo som grave audível a até 90 m. Pode aumentar o nível da magia gastando cargas adicionais.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Peixe de Ouro (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "120 po",
+    "priceValue": 120.0,
+    "details": "Raridade: Incomum. Peixe mecânico de ouro maciço que se debate quando está a até 36 m de ouro em moedas ou peças maiores. Quando submerso, nada em direção ao ouro a 3 m por rodada, funcionando como detector simples de tesouros.",
+    "effect": "Peixe mecânico de ouro maciço que se debate quando está a até 36 m de ouro em moedas ou peças maiores. Quando submerso, nada em direção ao ouro a 3 m por rodada, funcionando como detector simples de tesouros.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Cálice da Restauração (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "9.000 po",
+    "priceValue": 9000.0,
+    "details": "Raridade: Raro. Cálice de alabastro que não pode ser derramado acidentalmente. Possui 20 cargas para restaurar 1 PV por carga, conjurar Restauração Menor (5 cargas) ou Restauração Maior (20 cargas). Recupera todas as cargas ao ser preenchido com água de rio ou lago de água doce ao amanhecer.",
+    "effect": "Cálice de alabastro que não pode ser derramado acidentalmente. Possui 20 cargas para restaurar 1 PV por carga, conjurar Restauração Menor (5 cargas) ou Restauração Maior (20 cargas). Recupera todas as cargas ao ser preenchido com água de rio ou lago de água doce ao amanhecer.",
+    "description": "Item mágico raro do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Elmo da fome (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "13.000 po",
+    "priceValue": 13000.0,
+    "details": "Raridade: Muito Raro (Sintonização). Elmo em forma de tubarão que revela automaticamente a localização de criaturas feridas em 90 m. Possui 3 cargas para conjurar Metamorfose em si mesmo, assumindo forma de Tubarão-de-Recife, Tubarão-Caçador, Tubarão Gigante ou Megalodonte. Amaldiçoado: o portador precisa de 10 vezes mais alimento por dia.",
+    "effect": "Elmo em forma de tubarão que revela automaticamente a localização de criaturas feridas em 90 m. Possui 3 cargas para conjurar Metamorfose em si mesmo, assumindo forma de Tubarão-de-Recife, Tubarão-Caçador, Tubarão Gigante ou Megalodonte. Amaldiçoado: o portador precisa de 10 vezes mais alimento por dia.",
+    "description": "Item mágico muito raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Martelo da Geada (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "6.000 po",
+    "priceValue": 6000.0,
+    "details": "Raridade: Raro (Sintonização). Arma envolta por névoa gelada com 3 cargas. Como ação, gasta 1 carga para criar uma linha de 18 × 6 m coberta por espinhos de gelo até o fim do próximo turno. A área é terreno difícil, e criaturas sofrem 2d6 perfurante para cada 1,5 m percorrido nela.",
+    "effect": "Arma envolta por névoa gelada com 3 cargas. Como ação, gasta 1 carga para criar uma linha de 18 × 6 m coberta por espinhos de gelo até o fim do próximo turno. A área é terreno difícil, e criaturas sofrem 2d6 perfurante para cada 1,5 m percorrido nela.",
+    "description": "Item mágico raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Tridente do Hidromante (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "1.300 po",
+    "priceValue": 1300.0,
+    "details": "Raridade: Incomum (Sintonização). Tridente entalhado com canais arcanos. Ao atacar enquanto estiver a até 1,5 m de um corpo de água, você pode realizar o ataque como se estivesse em qualquer ponto a até 9 m dentro da mesma massa de água, usando sua própria visão para mirar.",
+    "effect": "Tridente entalhado com canais arcanos. Ao atacar enquanto estiver a até 1,5 m de um corpo de água, você pode realizar o ataque como se estivesse em qualquer ponto a até 9 m dentro da mesma massa de água, usando sua própria visão para mirar.",
+    "description": "Item mágico incomum (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Alfanje do patife (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "2.000 po",
+    "priceValue": 2000.0,
+    "details": "Raridade: Incomum. Cimitarra extremamente leve que pode ser empunhada entre os dentes, liberando as mãos, mas impedindo conjurar magias com componente verbal. Ao lutar com três armas leves de uma mão, permite realizar um ataque adicional com esta arma ao usar Combate com Duas Armas.",
+    "effect": "Cimitarra extremamente leve que pode ser empunhada entre os dentes, liberando as mãos, mas impedindo conjurar magias com componente verbal. Ao lutar com três armas leves de uma mão, permite realizar um ataque adicional com esta arma ao usar Combate com Duas Armas.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Vara de Pesca de Krend (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "2.400 po",
+    "priceValue": 2400.0,
+    "details": "Raridade: Incomum (Sintonização). Lança +1 equipada com isca mágica. Como ação bônus, lança a isca até 3 m, revelando profundidade da água e podendo prender criaturas submersas (TR Destreza CD 13). Enquanto presa, a criatura não pode se afastar mais de 9 m do portador. A isca pode ser removida com Teste de Força CD 13. Como ação, a arma vira arco longo.",
+    "effect": "Lança +1 equipada com isca mágica. Como ação bônus, lança a isca até 3 m, revelando profundidade da água e podendo prender criaturas submersas (TR Destreza CD 13). Enquanto presa, a criatura não pode se afastar mais de 9 m do portador. A isca pode ser removida com Teste de Força CD 13. Como ação, a arma vira arco longo.",
+    "description": "Item mágico incomum (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Instrumento do Mestre de Remo (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "6.800 po",
+    "priceValue": 6800.0,
+    "details": "Raridade: Raro (Sintonização Bardo). Instrumento musical com 7 cargas. Gasta 1 carga para iniciar apresentação de até 1 minuto, encantando criaturas escolhidas (TR Sabedoria contra sua CD de Magia) para cantar, dançar ou realizar trabalhos pesados. Com 6 cargas, conjura Dança Irresistível de Otto usando sua CD de Magia.",
+    "effect": "Instrumento musical com 7 cargas. Gasta 1 carga para iniciar apresentação de até 1 minuto, encantando criaturas escolhidas (TR Sabedoria contra sua CD de Magia) para cantar, dançar ou realizar trabalhos pesados. Com 6 cargas, conjura Dança Irresistível de Otto usando sua CD de Magia.",
+    "description": "Item mágico raro (sintonização bardo) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Linha da vida (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "6.000 po",
+    "priceValue": 6000.0,
+    "details": "Raridade: Raro. Corda mágica de 15 m presa ao pulso do portador. Como ação, amarra uma criatura a até 6 m (TR Destreza CD 15 se relutante). Enquanto ligados, ambos têm resistência a todo dano, compartilham integralmente o dano sofrido e podem respirar enquanto um deles puder. A corda tem CA 15, 20 PV e se recupera ao amanhecer.",
+    "effect": "Corda mágica de 15 m presa ao pulso do portador. Como ação, amarra uma criatura a até 6 m (TR Destreza CD 15 se relutante). Enquanto ligados, ambos têm resistência a todo dano, compartilham integralmente o dano sofrido e podem respirar enquanto um deles puder. A corda tem CA 15, 20 PV e se recupera ao amanhecer.",
+    "description": "Item mágico raro do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Luz da Isca (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "750 po",
+    "priceValue": 750.0,
+    "details": "Raridade: Incomum. Orbe luminoso que emite luz intensa em 4,5 m e luz fraca por mais 4,5 m, ajustáveis entre 3 m e 9 m. Criaturas que enxergam o orbe têm desvantagem em testes de Percepção (Sabedoria) para notar qualquer criatura que não esteja iluminada por sua luz.",
+    "effect": "Orbe luminoso que emite luz intensa em 4,5 m e luz fraca por mais 4,5 m, ajustáveis entre 3 m e 9 m. Criaturas que enxergam o orbe têm desvantagem em testes de Percepção (Sabedoria) para notar qualquer criatura que não esteja iluminada por sua luz.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Capuz do Marinheiro (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "5.500 po",
+    "priceValue": 5500.0,
+    "details": "Raridade: Raro (Sintonização). Manto translúcido coberto por orvalho. Com o capuz erguido, cria névoa leve ao redor do usuário e permite enxergar através de névoa, vapor e fumaça, mágicos ou não. Também permite conjurar Forma Gasosa em si mesmo sem exigir concentração, podendo encerrar a magia como ação bônus.",
+    "effect": "Manto translúcido coberto por orvalho. Com o capuz erguido, cria névoa leve ao redor do usuário e permite enxergar através de névoa, vapor e fumaça, mágicos ou não. Também permite conjurar Forma Gasosa em si mesmo sem exigir concentração, podendo encerrar a magia como ação bônus.",
+    "description": "Item mágico raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Safira da Sereia (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "14.000 po",
+    "priceValue": 14000.0,
+    "details": "Raridade: Muito Raro (Sintonização). Grande safira usada por sereias. Permite respirar na água, concede natação 18 m, visão às cegas 18 m enquanto submerso e imunidade à surdez. Ao saltar da água pelo menos 3 m, você pode saltar mais 6 m. Após nadar 9 m em linha reta, seus ataques subaquáticos têm vantagem até o início do próximo turno.",
+    "effect": "Grande safira usada por sereias. Permite respirar na água, concede natação 18 m, visão às cegas 18 m enquanto submerso e imunidade à surdez. Ao saltar da água pelo menos 3 m, você pode saltar mais 6 m. Após nadar 9 m em linha reta, seus ataques subaquáticos têm vantagem até o início do próximo turno.",
+    "description": "Item mágico muito raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Colar de Pérolas Subaquáticas (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "4.800 po",
+    "priceValue": 4800.0,
+    "details": "Raridade: Raro. Colar com 1d6+3 pérolas. Como ação, pode arremessar uma ou mais pérolas até 18 m, fazendo-as conjurar Explosão Aquosa (Aqueous Blast, CD 15). O nível da magia aumenta conforme a quantidade de pérolas utilizadas.",
+    "effect": "Colar com 1d6+3 pérolas. Como ação, pode arremessar uma ou mais pérolas até 18 m, fazendo-as conjurar Explosão Aquosa (Aqueous Blast, CD 15). O nível da magia aumenta conforme a quantidade de pérolas utilizadas.",
+    "description": "Item mágico raro do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Pérola de Absorção de Relâmpagos (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "6.500 po",
+    "priceValue": 6500.0,
+    "details": "Raridade: Raro. Pérola branca capaz de absorver dano elétrico sofrido pelo portador. Como reação, concede resistência a dano elétrico, armazenando o dano absorvido como cargas (máximo 10). Como ação, pode ser arremessada até 18 m, causando 1d10 elétrico por carga em criaturas num raio de 9 m (TR Destreza CD 15 metade). Perde 1d4 cargas ao amanhecer.",
+    "effect": "Pérola branca capaz de absorver dano elétrico sofrido pelo portador. Como reação, concede resistência a dano elétrico, armazenando o dano absorvido como cargas (máximo 10). Como ação, pode ser arremessada até 18 m, causando 1d10 elétrico por carga em criaturas num raio de 9 m (TR Destreza CD 15 metade). Perde 1d4 cargas ao amanhecer.",
+    "description": "Item mágico raro do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Pérola da putrefação (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "150 po",
+    "priceValue": 150.0,
+    "details": "Raridade: Incomum. Pérola negra amaldiçoada que aparenta ser uma Pérola do Poder e funciona como ela. Maldição: após a sintonização, o portador não recupera espaços de magia durante descansos curtos ou longos até a maldição ser removida por Remover Maldição ou magia semelhante.",
+    "effect": "Pérola negra amaldiçoada que aparenta ser uma Pérola do Poder e funciona como ela. Maldição: após a sintonização, o portador não recupera espaços de magia durante descansos curtos ou longos até a maldição ser removida por Remover Maldição ou magia semelhante.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Cachimbo de bolhas (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "100 po",
+    "priceValue": 100.0,
+    "details": "Raridade: Comum. Cachimbo de coral com 3 cargas que envia mensagens de até 25 palavras dentro de uma bolha mágica para uma criatura conhecida no mesmo plano. A bolha viaja a 9 m por rodada e pode ser destruída antes de entregar a mensagem.",
+    "effect": "Cachimbo de coral com 3 cargas que envia mensagens de até 25 palavras dentro de uma bolha mágica para uma criatura conhecida no mesmo plano. A bolha viaja a 9 m por rodada e pode ser destruída antes de entregar a mensagem.",
+    "description": "Item mágico comum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Poção de Coral Florescente (ABY)",
+    "category": "Poções e óleos mágicos",
+    "source": "Abyss (ABY)",
+    "price": "2.500 po",
+    "priceValue": 2500.0,
+    "details": "Raridade: Raro. Durante 1 hora, sua CA nunca pode ser inferior a 16 e uma aura de 3 m impede que magias de 3º círculo ou inferior afetem criaturas ou objetos dentro dela. Ao beber, exige TR Constituição CD 15 ou o usuário fica Contido; após 3 falhas, torna-se Petrificado até o fim da duração.",
+    "effect": "Durante 1 hora, sua CA nunca pode ser inferior a 16 e uma aura de 3 m impede que magias de 3º círculo ou inferior afetem criaturas ou objetos dentro dela. Ao beber, exige TR Constituição CD 15 ou o usuário fica Contido; após 3 falhas, torna-se Petrificado até o fim da duração.",
+    "description": "Item mágico raro do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Poção das Veias Gélidas (ABY)",
+    "category": "Poções e óleos mágicos",
+    "source": "Abyss (ABY)",
+    "price": "3.200 po",
+    "priceValue": 3200.0,
+    "details": "Raridade: Raro. Durante 1 hora, no início de cada um de seus turnos, você recebe novamente os efeitos de Armadura de Agathys, renovando continuamente sua proteção de gelo.",
+    "effect": "Durante 1 hora, no início de cada um de seus turnos, você recebe novamente os efeitos de Armadura de Agathys, renovando continuamente sua proteção de gelo.",
+    "description": "Item mágico raro do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Polipo Prismático (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "900 po",
+    "priceValue": 900.0,
+    "details": "Raridade: Incomum. Broto de coral colorido que pode ser arremessado até 18 m. Ao se despedaçar, espalha coral vivo em raio de 4,5 m, criando terreno difícil por 1 minuto. Criaturas que entrarem ou se moverem na área sofrem 1d4 perfurante a cada 1,5 m percorrido.",
+    "effect": "Broto de coral colorido que pode ser arremessado até 18 m. Ao se despedaçar, espalha coral vivo em raio de 4,5 m, criando terreno difícil por 1 minuto. Criaturas que entrarem ou se moverem na área sofrem 1d4 perfurante a cada 1,5 m percorrido.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Aljava do Kraken (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "45.000 po",
+    "priceValue": 45000.0,
+    "details": "Raridade: Lendário. Aljava com três compartimentos que encantam diariamente até 20 munições: Tentáculos Aprisionadores (imobiliza o alvo), Nuvem de Tinta (+2 nas jogadas, cria nuvem de 18 m que obscurece e causa 3d10 de veneno) ou Relâmpago (+2 nas jogadas e +4d10 elétrico). A munição é destruída após o uso.",
+    "effect": "Aljava com três compartimentos que encantam diariamente até 20 munições: Tentáculos Aprisionadores (imobiliza o alvo), Nuvem de Tinta (+2 nas jogadas, cria nuvem de 18 m que obscurece e causa 3d10 de veneno) ou Relâmpago (+2 nas jogadas e +4d10 elétrico). A munição é destruída após o uso.",
+    "description": "Item mágico lendário do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Capa de Chuva de Rayleigh (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "1.800 po",
+    "priceValue": 1800.0,
+    "details": "Raridade: Incomum. Casaco encantado que absorve água. Quando totalmente encharcado, torna-se Armadura de Placas Parcial (CA 17) e concede proficiência com armaduras pesadas enquanto estiver molhado. Ao secar por 1 minuto, retorna ao estado normal.",
+    "effect": "Casaco encantado que absorve água. Quando totalmente encharcado, torna-se Armadura de Placas Parcial (CA 17) e concede proficiência com armaduras pesadas enquanto estiver molhado. Ao secar por 1 minuto, retorna ao estado normal.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Âncora de Rhelmon (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "7.000 po",
+    "priceValue": 7000.0,
+    "details": "Raridade: Raro (Sintonização). Enorme âncora de ferro que funciona como malho mágico +2 com Arremesso (3/9 m). Após ataque à distância, pode ser puxada de volta como ação bônus, arrastando o alvo (TR Força CD 17) até 3 m. Amaldiçoada: prende-se ao usuário, pesa 45 kg, reduz deslocamento se Força inferior a 17 e impõe desvantagem em testes físicos enquanto equipada.",
+    "effect": "Enorme âncora de ferro que funciona como malho mágico +2 com Arremesso (3/9 m). Após ataque à distância, pode ser puxada de volta como ação bônus, arrastando o alvo (TR Força CD 17) até 3 m. Amaldiçoada: prende-se ao usuário, pesa 45 kg, reduz deslocamento se Força inferior a 17 e impõe desvantagem em testes físicos enquanto equipada.",
+    "description": "Item mágico raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Arco da Geada (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "6.200 po",
+    "priceValue": 6200.0,
+    "details": "Raridade: Raro (Sintonização). Arco ou besta +2 que cria automaticamente flechas ou virotes de gelo mágico, ignorando a propriedade Munição. Possui 3 cargas e pode gastar 1 carga para conjurar Nuvem de Névoa (Fog Cloud) no alvo do ataque sem exigir concentração.",
+    "effect": "Arco ou besta +2 que cria automaticamente flechas ou virotes de gelo mágico, ignorando a propriedade Munição. Possui 3 cargas e pode gastar 1 carga para conjurar Nuvem de Névoa (Fog Cloud) no alvo do ataque sem exigir concentração.",
+    "description": "Item mágico raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Leme Vinculado à Alma (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "18.000 po",
+    "priceValue": 18000.0,
+    "details": "Raridade: Muito Raro. Leme esculpido que abriga a alma de um marinheiro experiente, tornando-se item senciente capaz de falar e navegar. Quando ligado a um navio, conduz automaticamente, realizando testes de Sobrevivência para navegação com +7. Pode ser vinculado a um navio com teste de Ferramentas de Carpinteiro CD 15.",
+    "effect": "Leme esculpido que abriga a alma de um marinheiro experiente, tornando-se item senciente capaz de falar e navegar. Quando ligado a um navio, conduz automaticamente, realizando testes de Sobrevivência para navegação com +7. Pode ser vinculado a um navio com teste de Ferramentas de Carpinteiro CD 15.",
+    "description": "Item mágico muito raro do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Bastão do Guardião Arcano (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "7.200 po",
+    "priceValue": 7200.0,
+    "details": "Raridade: Raro (Sintonização). Bastão de coral +1 que concede +1 na CA enquanto empunhado. Possui 10 cargas. Como reação, pode gastar até 5 cargas para ganhar 5 PV temporários por carga, aplicados antes do efeito desencadeador. Enquanto possuir esses PV temporários, tem vantagem em testes de resistência contra magias e ataques mágicos têm desvantagem contra você.",
+    "effect": "Bastão de coral +1 que concede +1 na CA enquanto empunhado. Possui 10 cargas. Como reação, pode gastar até 5 cargas para ganhar 5 PV temporários por carga, aplicados antes do efeito desencadeador. Enquanto possuir esses PV temporários, tem vantagem em testes de resistência contra magias e ataques mágicos têm desvantagem contra você.",
+    "description": "Item mágico raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Escudo Pegajoso (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "1.800 po",
+    "priceValue": 1800.0,
+    "details": "Raridade: Incomum. Torna seu escudo coberto por substância adesiva. Como reação, quando uma criatura errar você por até 1 categoria de tamanho com ataque corpo a corpo, ela faz TR Destreza CD 13 ou sua arma fica presa ao escudo. Enquanto presa, o portador fica Agarrado por ela, mas o inimigo não pode utilizá-la até libertá-la com Teste de Força CD 13.",
+    "effect": "Torna seu escudo coberto por substância adesiva. Como reação, quando uma criatura errar você por até 1 categoria de tamanho com ataque corpo a corpo, ela faz TR Destreza CD 13 ou sua arma fica presa ao escudo. Enquanto presa, o portador fica Agarrado por ela, mas o inimigo não pode utilizá-la até libertá-la com Teste de Força CD 13.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Espada Fende-Tempestades (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "42.000 po",
+    "priceValue": 42000.0,
+    "details": "Raridade: Lendário. Espada grande +3 que concede resistência a dano elétrico. Uma vez por amanhecer, pode usar Golpe Aéreo, Rasgar as Nuvens, Vendaval Ascendente ou Redemoinho, criando efeitos de vento, tempestade, voo ou vórtice com TR Força CD 18 conforme o poder escolhido.",
+    "effect": "Espada grande +3 que concede resistência a dano elétrico. Uma vez por amanhecer, pode usar Golpe Aéreo, Rasgar as Nuvens, Vendaval Ascendente ou Redemoinho, criando efeitos de vento, tempestade, voo ou vórtice com TR Força CD 18 conforme o poder escolhido.",
+    "description": "Item mágico lendário do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Concha do Herdeiro das Marés (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "6.500 po",
+    "priceValue": 6500.0,
+    "details": "Raridade: Raro. Concha gigante de 135 kg. Como ação, realiza TR Constituição CD 15 para produzir som audível a até 1,6 km. Feras e humanoides em até 90 m fazem TR Sabedoria CD 15 ou ficam Enfeitiçados por 1 minuto, obedecendo comandos telepáticos simples. Criaturas que sofrerem dano repetem o teste.",
+    "effect": "Concha gigante de 135 kg. Como ação, realiza TR Constituição CD 15 para produzir som audível a até 1,6 km. Feras e humanoides em até 90 m fazem TR Sabedoria CD 15 ou ficam Enfeitiçados por 1 minuto, obedecendo comandos telepáticos simples. Criaturas que sofrerem dano repetem o teste.",
+    "description": "Item mágico raro do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Tomo das profundezas (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "55.000 po",
+    "priceValue": 55000.0,
+    "details": "Raridade: Lendário (Sintonização conjurador). Grimório indestrutível na água contendo magias exclusivas do ABYSS do 1º ao 9º círculo. Pode produzir até 144.000 galões (~545.000 L) de água do mar, consultar conhecimentos ligados aos oceanos como Contato com Outro Plano e invocar criaturas marinhas uma vez por amanhecer. Recupera água absorvendo água do mar ao longo do tempo.",
+    "effect": "Grimório indestrutível na água contendo magias exclusivas do ABYSS do 1º ao 9º círculo. Pode produzir até 144.000 galões (~545.000 L) de água do mar, consultar conhecimentos ligados aos oceanos como Contato com Outro Plano e invocar criaturas marinhas uma vez por amanhecer. Recupera água absorvendo água do mar ao longo do tempo.",
+    "description": "Item mágico lendário (sintonização conjurador) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Âncora da tranquilidade (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "14.000 po",
+    "priceValue": 14000.0,
+    "details": "Raridade: Muito Raro (Sintonização). Pingente em forma de âncora que mantém o usuário firmemente ancorado. Enquanto usado, você não pode ser movido contra sua vontade e é imune a teletransporte ou viagens planares involuntárias, como Banimento ou Teletransporte lançados contra você.",
+    "effect": "Pingente em forma de âncora que mantém o usuário firmemente ancorado. Enquanto usado, você não pode ser movido contra sua vontade e é imune a teletransporte ou viagens planares involuntárias, como Banimento ou Teletransporte lançados contra você.",
+    "description": "Item mágico muito raro (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Lágrima Vítrea (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "2.000 po",
+    "priceValue": 2000.0,
+    "details": "Raridade: Incomum (Sintonização). Pingente de vidro que, enquanto submerso, permite ao usuário tornar-se invisível como uma ação, permanecendo assim até se mover ou realizar uma ação ou reação.",
+    "effect": "Pingente de vidro que, enquanto submerso, permite ao usuário tornar-se invisível como uma ação, permanecendo assim até se mover ou realizar uma ação ou reação.",
+    "description": "Item mágico incomum (sintonização) do ABYSS, pronto para compra no mercado."
+  },
+  {
+    "name": "Varinha da mudança de fase (ABY)",
+    "category": "Itens mágicos",
+    "source": "Abyss (ABY)",
+    "price": "1.500 po",
+    "priceValue": 1500.0,
+    "details": "Raridade: Incomum. Varinha com 3 cargas. Permite condensar névoa em água, congelar água (criando gelo escorregadio e podendo prender criaturas), derreter gelo ou vaporizar água, criando uma densa nuvem de vapor em uma área de 1,5 m.",
+    "effect": "Varinha com 3 cargas. Permite condensar névoa em água, congelar água (criando gelo escorregadio e podendo prender criaturas), derreter gelo ou vaporizar água, criando uma densa nuvem de vapor em uma área de 1,5 m.",
+    "description": "Item mágico incomum do ABYSS, pronto para compra no mercado."
   }
 ]
