@@ -32,3 +32,6 @@ Os dois painéis laterais são fixos e possuem scroll próprio. Assim, navegar p
 5. Resultados com a mesma seed e configurações devem ser reproduzíveis para permitir publicação posterior aos jogadores.
 6. A máscara define pontos de spawn, não um recorte. O recorte só é aplicado quando a opção `Slice` estiver ativa.
 7. Objetos de terreno usam a coordenada Y como profundidade: elementos mais baixos são desenhados à frente.
+8. O projeto pode ser salvo em JSON com camadas, configurações, resultados e todas as imagens incorporadas, sem depender dos arquivos originais.
+9. Conjuntos de imagens formam uma biblioteca do projeto e podem ser aplicados a múltiplas camadas de terreno.
+10. “Exportar mapa” produz um HTML autônomo sem a interface administrativa, mantendo pan e zoom para visualização.

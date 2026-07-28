@@ -11,7 +11,11 @@
     <a href="admin-tools.html" aria-label="Voltar">←</a>
     <strong>Map editor</strong>
     <span id="saveState">Pronto</span>
+    <button id="openProjectBtn" class="secondary-action">Abrir projeto</button>
+    <input id="projectInput" type="file" accept=".json,.teralium" hidden>
+    <button id="saveProjectBtn" class="secondary-action">Salvar projeto</button>
     <button id="exportBtn">Exportar PNG</button>
+    <button id="exportMapBtn">Exportar mapa</button>
   </header>
 
   <aside class="sidebar left-panel">
@@ -55,8 +59,7 @@
     </section>
     <section class="terrain-control">
       <div class="section-title"><b>Imagens do mestre</b><span id="assetCount">0</span></div>
-      <label class="asset-upload" for="assetInput">＋ Adicionar imagens</label>
-      <input id="assetInput" type="file" accept="image/*" multiple hidden>
+      <button id="openAssetModal" class="asset-upload">＋ Adicionar imagens</button>
       <div id="assetGrid" class="asset-grid"><p>Adicione árvores, pedras ou qualquer elemento que queira distribuir.</p></div>
     </section>
     <section class="fields terrain-control">
@@ -77,6 +80,25 @@
     </section>
     <div class="inspector-footer"><button id="generateBtn" disabled>Gerar preenchimento</button><small id="footerHint">A seed mantém o resultado reproduzível.</small></div>
   </aside>
+  <div id="layerContextMenu" class="context-menu" hidden>
+    <button data-action="rename">Renomear</button>
+    <button data-action="toggle">Ocultar</button>
+  </div>
+  <div id="assetModal" class="modal-backdrop" hidden>
+    <div class="asset-modal" role="dialog" aria-modal="true" aria-labelledby="assetModalTitle">
+      <div class="modal-head"><div><p class="panel-label">BIBLIOTECA</p><h2 id="assetModalTitle">Conjuntos de imagens</h2></div><button id="closeAssetModal" aria-label="Fechar">×</button></div>
+      <p class="modal-copy">Reutilize o mesmo conjunto de imagens em diferentes camadas.</p>
+      <div id="setList" class="set-list"></div>
+      <div class="new-set">
+        <h3>Novo conjunto</h3>
+        <input id="setName" placeholder="Ex.: Árvores de pinheiro">
+        <label for="assetInput">Selecionar imagens</label>
+        <input id="assetInput" type="file" accept="image/*" multiple hidden>
+        <span id="newSetFiles">Nenhuma imagem selecionada</span>
+        <button id="createSetBtn" disabled>Criar conjunto</button>
+      </div>
+    </div>
+  </div>
   <script src="admin-map-editor.js"></script>
 </body>
 </html>

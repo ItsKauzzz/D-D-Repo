@@ -14,6 +14,8 @@ const state = {
   lastX: 0,
   lastY: 0,
   generationToken: 0,
+  imageSets: [],
+  contextLayerId: null,
 };
 
 function createLayer(type = 'terrain') {
@@ -41,10 +43,19 @@ function selectedLayer() {
 
 function fileImage(file) {
   return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => imageFromSource(reader.result).then(resolve, reject);
+    reader.readAsDataURL(file);
+  });
+}
+
+function imageFromSource(source) {
+  return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
     image.onerror = reject;
-    image.src = URL.createObjectURL(file);
+    image.src = source;
   });
 }
 
@@ -113,6 +124,15 @@ function renderLayers() {
     button.dataset.layerId = layer.id;
     button.querySelector('b').textContent = layer.name;
     button.addEventListener('click', () => selectLayer(layer.id));
+    button.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
+      state.contextLayerId = layer.id;
+      const menu = $('#layerContextMenu');
+      menu.querySelector('[data-action="toggle"]').textContent = layer.visible ? 'Ocultar' : 'Exibir';
+      menu.style.left = `${Math.min(event.clientX, window.innerWidth - 155)}px`;
+      menu.style.top = `${Math.min(event.clientY, window.innerHeight - 90)}px`;
+      menu.hidden = false;
+    });
     button.addEventListener('dragstart', () => button.classList.add('dragging'));
     button.addEventListener('dragend', () => button.classList.remove('dragging'));
     button.addEventListener('dragover', (event) => { event.preventDefault(); button.classList.add('drag-over'); });
@@ -390,13 +410,49 @@ $('#maskInput').addEventListener('change', async (event) => {
   updateReadyState();
   event.target.value = '';
 });
-$('#assetInput').addEventListener('change', async (event) => {
-  const layer = selectedLayer();
-  for (const file of event.target.files) layer.assets.push({ file, image: await fileImage(file) });
-  renderAssets();
-  updateReadyState();
-  event.target.value = '';
+let pendingSetAssets = [];
+$('#openAssetModal').onclick = () => { renderImageSets(); $('#assetModal').hidden = false; };
+$('#closeAssetModal').onclick = () => { $('#assetModal').hidden = true; };
+$('#assetModal').addEventListener('click', (event) => {
+  if (event.target === $('#assetModal')) $('#assetModal').hidden = true;
 });
+$('#assetInput').addEventListener('change', async (event) => {
+  pendingSetAssets = [];
+  for (const file of event.target.files) pendingSetAssets.push({ file: { name: file.name }, image: await fileImage(file) });
+  $('#newSetFiles').textContent = pendingSetAssets.length ? `${pendingSetAssets.length} imagem(ns) selecionada(s)` : 'Nenhuma imagem selecionada';
+  $('#createSetBtn').disabled = !pendingSetAssets.length;
+});
+$('#createSetBtn').onclick = () => {
+  const name = $('#setName').value.trim() || `Conjunto ${state.imageSets.length + 1}`;
+  state.imageSets.push({ id: crypto.randomUUID?.() || `${Date.now()}`, name, assets: pendingSetAssets });
+  pendingSetAssets = [];
+  $('#setName').value = '';
+  $('#assetInput').value = '';
+  $('#newSetFiles').textContent = 'Nenhuma imagem selecionada';
+  $('#createSetBtn').disabled = true;
+  renderImageSets();
+};
+
+function renderImageSets() {
+  const list = $('#setList');
+  list.replaceChildren();
+  for (const set of state.imageSets) {
+    const item = document.createElement('div');
+    item.className = 'image-set';
+    item.innerHTML = '<div><b></b><small></small></div><button>Usar</button>';
+    item.querySelector('b').textContent = set.name;
+    item.querySelector('small').textContent = `${set.assets.length} imagem(ns)`;
+    item.querySelector('button').onclick = () => {
+      const layer = selectedLayer();
+      const existing = new Set(layer.assets.map((asset) => asset.image.src));
+      layer.assets.push(...set.assets.filter((asset) => !existing.has(asset.image.src)));
+      renderAssets(); updateReadyState();
+      $('#assetModal').hidden = true;
+    };
+    list.append(item);
+  }
+  if (!state.imageSets.length) list.innerHTML = '<div class="set-empty">Nenhum conjunto criado ainda.</div>';
+}
 
 ['density', 'scale', 'sizeMin', 'sizeMax'].forEach((id) => {
   $(`#${id}`).addEventListener('input', (event) => {
@@ -422,6 +478,89 @@ $('#randomSeed').onclick = () => {
   $('#seed').value = selectedLayer().settings.seed;
 };
 $('#generateBtn').onclick = generate;
+
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('#layerContextMenu')) $('#layerContextMenu').hidden = true;
+});
+$('#layerContextMenu').addEventListener('click', (event) => {
+  const action = event.target.dataset.action;
+  const layer = state.layers.find((item) => item.id === state.contextLayerId);
+  if (!action || !layer) return;
+  if (action === 'rename') {
+    const name = window.prompt('Nome da camada:', layer.name);
+    if (name?.trim()) layer.name = name.trim();
+  } else if (action === 'toggle') {
+    layer.visible = !layer.visible;
+  }
+  $('#layerContextMenu').hidden = true;
+  if (layer.id === state.selectedId) $('#layerName').value = layer.name;
+  renderLayers(); redraw();
+});
+
+function downloadFile(name, contents, type) {
+  const link = document.createElement('a');
+  link.download = name;
+  link.href = URL.createObjectURL(new Blob([contents], { type }));
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+
+function serializeAsset(asset) {
+  return { name: asset.file.name, source: asset.image.src };
+}
+
+$('#saveProjectBtn').onclick = () => {
+  const project = {
+    format: 'teralium-map-project', version: 1,
+    canvas: { width: canvas.width, height: canvas.height },
+    selectedId: state.selectedId,
+    imageSets: state.imageSets.map((set) => ({ id: set.id, name: set.name, assets: set.assets.map(serializeAsset) })),
+    layers: state.layers.map((layer) => ({
+      id: layer.id, type: layer.type, name: layer.name, visible: layer.visible,
+      maskName: layer.maskName, maskSource: layer.mask?.src || null, imageSource: layer.image?.src || null,
+      assets: layer.assets.map(serializeAsset), settings: layer.settings,
+      outputSource: layer.output.width ? layer.output.toDataURL('image/png') : null,
+    })),
+  };
+  downloadFile('projeto-teralium.json', JSON.stringify(project), 'application/json');
+  $('#saveState').textContent = 'Projeto salvo';
+};
+
+$('#openProjectBtn').onclick = () => $('#projectInput').click();
+$('#projectInput').addEventListener('change', async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    $('#saveState').textContent = 'Abrindo…';
+    const project = JSON.parse(await file.text());
+    if (project.format !== 'teralium-map-project') throw new Error('Formato inválido');
+    canvas.width = project.canvas.width; canvas.height = project.canvas.height;
+    state.imageSets = await Promise.all(project.imageSets.map(async (set) => ({
+      ...set, assets: await Promise.all(set.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source) }))),
+    })));
+    state.layers = await Promise.all(project.layers.map(async (saved) => {
+      const layer = createLayer(saved.type);
+      Object.assign(layer, { id: saved.id, name: saved.name, visible: saved.visible, maskName: saved.maskName, settings: { ...layer.settings, ...saved.settings } });
+      if (saved.maskSource) layer.mask = await imageFromSource(saved.maskSource);
+      if (saved.imageSource) layer.image = await imageFromSource(saved.imageSource);
+      layer.assets = await Promise.all(saved.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source) })));
+      if (saved.outputSource) {
+        const output = await imageFromSource(saved.outputSource);
+        layer.output.width = canvas.width; layer.output.height = canvas.height;
+        layer.output.getContext('2d').drawImage(output, 0, 0);
+      }
+      return layer;
+    }));
+    state.selectedId = state.layers.some((layer) => layer.id === project.selectedId) ? project.selectedId : state.layers[0].id;
+    stage.style.display = 'block'; $('#emptyState').style.display = 'none';
+    selectLayer(state.selectedId); fit();
+    $('#saveState').textContent = 'Projeto aberto';
+  } catch (error) {
+    $('#saveState').textContent = 'Erro ao abrir';
+    window.alert(`Não foi possível abrir o projeto: ${error.message}`);
+  }
+  event.target.value = '';
+});
 
 viewport.addEventListener('pointerdown', (event) => {
   state.drag = true; state.lastX = event.clientX; state.lastY = event.clientY;
@@ -460,6 +599,19 @@ $('#exportBtn').onclick = () => {
   link.download = 'mapa-teralium.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
+};
+$('#exportMapBtn').onclick = () => {
+  redraw();
+  const image = canvas.toDataURL('image/png');
+  const title = selectedLayer()?.name || 'Mapa de Teralium';
+  const html = `<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title.replace(/[<>&]/g, '')}</title><style>
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#101311}#view{position:fixed;inset:0;overflow:hidden;cursor:grab;background-image:linear-gradient(#1b201c 1px,transparent 1px),linear-gradient(90deg,#1b201c 1px,transparent 1px);background-size:24px 24px}#view.dragging{cursor:grabbing}img{position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none}.hint{position:fixed;right:16px;bottom:16px;padding:8px 11px;border-radius:8px;background:#171a18cc;color:#aab2ab;font:12px sans-serif;pointer-events:none}
+</style></head><body><main id="view"><img id="map" src="${image}" alt="Mapa"><span class="hint">Arraste para mover • Scroll para zoom</span></main><script>
+const view=document.querySelector('#view'),map=document.querySelector('#map');let zoom=1,x=0,y=0,drag=false,lx=0,ly=0;function draw(){map.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')'}map.onload=()=>{zoom=Math.min(innerWidth/map.naturalWidth,innerHeight/map.naturalHeight,.95);x=(innerWidth-map.naturalWidth*zoom)/2;y=(innerHeight-map.naturalHeight*zoom)/2;draw()};view.onpointerdown=e=>{drag=true;lx=e.clientX;ly=e.clientY;view.classList.add('dragging');view.setPointerCapture(e.pointerId)};view.onpointermove=e=>{if(!drag)return;x+=e.clientX-lx;y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;draw()};view.onpointerup=()=>{drag=false;view.classList.remove('dragging')};view.onwheel=e=>{e.preventDefault();const old=zoom;zoom=Math.max(.05,Math.min(8,zoom*(e.deltaY<0?1.1:.9)));x=e.clientX-(e.clientX-x)*zoom/old;y=e.clientY-(e.clientY-y)*zoom/old;draw()};
+<\/script></body></html>`;
+  downloadFile('mapa-teralium.html', html, 'text/html');
 };
 window.addEventListener('resize', () => { if (selectedLayer()?.mask) fit(); });
 
