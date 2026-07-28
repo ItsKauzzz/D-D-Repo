@@ -16,6 +16,7 @@
     <button id="saveProjectBtn" class="secondary-action">Salvar projeto</button>
     <button id="exportBtn">Exportar PNG</button>
     <button id="exportMapBtn">Exportar mapa</button>
+    <button id="previewMapBtn" class="icon-action" title="Pré-visualizar mapa" aria-label="Pré-visualizar mapa">👁</button>
   </header>
 
   <aside class="sidebar left-panel">
@@ -26,6 +27,7 @@
     <div id="addLayerMenu" class="add-layer-menu" hidden>
       <button data-layer-type="terrain"><span>⌁</span><b>Terreno</b></button>
       <button data-layer-type="image"><span>▧</span><b>Imagem</b></button>
+      <button data-layer-type="object"><span>⌖</span><b>Objeto</b></button>
     </div>
     <div id="layerList" class="layer-list"></div>
     <div class="coming-types">
@@ -77,6 +79,19 @@
       <label><input id="rotation" type="checkbox" checked> Rotação aleatória</label>
       <label><input id="mirror" type="checkbox" checked> Mirror aleatório</label>
       <label><input id="slice" type="checkbox"> Slice na máscara</label>
+    </section>
+    <section class="object-control" hidden>
+      <div class="object-form">
+        <label>Nome<input id="objectName" placeholder="Nome do local"></label>
+        <label>Tipo<select id="objectType"></select></label>
+        <label>Ícone<select id="objectIconSet"><option value="">Selecione um conjunto</option></select></label>
+        <label>Galeria<select id="objectGallerySet"><option value="">Sem galeria</option></select></label>
+        <button id="manageObjectSets" class="position-object">＋ Gerenciar conjuntos</button>
+        <label>Descrição<textarea id="objectDescription" rows="6" placeholder="História, detalhes e informações do local..."></textarea></label>
+        <label class="check-row"><input id="objectPoi" type="checkbox" checked> Criar como ponto de interesse</label>
+        <button id="positionObject" class="position-object">⌖ Posicionar no mapa</button>
+        <small id="objectPosition">Ainda não posicionado</small>
+      </div>
     </section>
     <div class="inspector-footer"><button id="generateBtn" disabled>Gerar preenchimento</button><small id="footerHint">A seed mantém o resultado reproduzível.</small></div>
   </aside>

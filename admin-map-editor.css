@@ -6,12 +6,13 @@ html, body { height: 100%; overflow: hidden; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 14px 'DM Sans', sans-serif; }
 button, input { font: inherit; }
 
-.topbar { position: fixed; z-index: 20; inset: 0 0 auto; height: var(--top); display: grid; grid-template-columns: 36px 1fr repeat(5, auto); align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--line); background: #151815; }
+.topbar { position: fixed; z-index: 20; inset: 0 0 auto; height: var(--top); display: grid; grid-template-columns: 36px 1fr repeat(6, auto); align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--line); background: #151815; }
 .topbar a { color: var(--muted); text-decoration: none; font-size: 20px; }
 .topbar strong { font: 600 14px 'Manrope'; }
 .topbar span { color: var(--muted); font-size: 12px; }
 .topbar button, .inspector-footer button { border: 0; background: var(--accent); color: #17200d; border-radius: 8px; padding: 9px 15px; font-weight: 600; cursor: pointer; }
 .topbar .secondary-action { border: 1px solid #363d37; background: #202521; color: var(--text); }
+.topbar .icon-action { width: 36px; padding-inline: 0; font-size: 16px; }
 .sidebar { position: fixed; z-index: 10; top: var(--top); bottom: 0; background: var(--panel); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3c433d transparent; }
 .panel-label { margin: 0; font-size: 10px; letter-spacing: .16em; color: #737b75; font-weight: 600; }
 
@@ -89,6 +90,14 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .options { display: grid; gap: 12px; }
 .options label { display: flex; align-items: center; gap: 6px; font-size: 11px; }
 .options input { accent-color: var(--accent); }
+.object-form { display: grid; gap: 14px; }
+.object-form label { color: var(--muted); font-size: 10px; }
+.object-form input:not([type='checkbox']), .object-form select, .object-form textarea { display: block; width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #363d37; border-radius: 7px; outline: 0; background: #101311; color: var(--text); resize: vertical; }
+.object-form input:focus, .object-form select:focus, .object-form textarea:focus { border-color: #71865e; }
+.object-form .check-row { color: var(--text); font-size: 11px; }
+.position-object { padding: 9px; border: 1px solid #536348; border-radius: 7px; background: #283123; color: var(--accent); cursor: pointer; }
+.position-object.active { background: var(--accent); color: #17200d; }
+.object-form > small { text-align: center; color: var(--muted); font-size: 9px; }
 .inspector-footer { position: fixed; z-index: 12; right: 0; bottom: 0; width: var(--right); padding: 14px 20px; border-top: 1px solid var(--line); background: #171a18; }
 .inspector-footer button { width: 100%; }
 .inspector-footer button:disabled { background: #30362f; color: #737b74; cursor: not-allowed; }

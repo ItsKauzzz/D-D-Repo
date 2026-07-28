@@ -16,6 +16,12 @@ const state = {
   generationToken: 0,
   imageSets: [],
   contextLayerId: null,
+  placingObject: false,
+  poiTypes: [
+    { id: 'vila', name: 'Vila', color: '#f0c674' },
+    { id: 'cidade', name: 'Cidade', color: '#7fdbff' },
+    { id: 'outro', name: 'Outro', color: '#f1f3ef' },
+  ],
 };
 
 function createLayer(type = 'terrain') {
@@ -23,7 +29,7 @@ function createLayer(type = 'terrain') {
   return {
     id: crypto.randomUUID?.() || `${Date.now()}-${number}`,
     type,
-    name: type === 'image' ? `Imagem ${number}` : (number === 1 ? 'Cobertura vegetal' : `Terreno ${number}`),
+    name: type === 'image' ? `Imagem ${number}` : type === 'object' ? `Objeto ${number}` : (number === 1 ? 'Cobertura vegetal' : `Terreno ${number}`),
     visible: true,
     mask: null,
     maskName: '',
@@ -32,6 +38,7 @@ function createLayer(type = 'terrain') {
     bounds: null,
     assets: [],
     image: null,
+    object: type === 'object' ? { name: '', type: 'vila', iconSetId: '', gallerySetId: '', description: '', poi: true, x: null, y: null } : null,
     output: document.createElement('canvas'),
     settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, rotation: true, mirror: true, slice: false },
   };
@@ -95,22 +102,42 @@ function fit() {
   updateTransform();
 }
 
-function redraw() {
+function redraw(includeObjects = true) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   // The first layer in the list has the highest visual priority, so paint bottom-up.
   for (const layer of [...state.layers].reverse()) {
     if (!layer.visible) continue;
     if (layer.type === 'image' && layer.image) ctx.drawImage(layer.image, 0, 0, canvas.width, canvas.height);
     if (layer.type === 'terrain' && layer.output.width) ctx.drawImage(layer.output, 0, 0);
+    if (layer.type === 'object' && layer.object?.x !== null && (includeObjects || !layer.object.poi)) drawMapObject(layer.object);
   }
 
   const current = selectedLayer();
-  if (current?.type === 'terrain' && current.mask && !current.output.width) {
+  if (includeObjects && current?.type === 'terrain' && current.mask && !current.output.width) {
     ctx.save();
     ctx.globalAlpha = 0.12;
     ctx.drawImage(current.mask, 0, 0, canvas.width, canvas.height);
     ctx.restore();
   }
+}
+
+function drawMapObject(object) {
+  const set = state.imageSets.find((item) => item.id === object.iconSetId);
+  const icon = set?.assets[0]?.image;
+  if (!icon) return;
+  const size = 48;
+  const width = icon.naturalWidth / icon.naturalHeight * size;
+  ctx.drawImage(icon, object.x - width / 2, object.y - size, width, size);
+  if (!object.poi || !object.name) return;
+  const type = state.poiTypes.find((item) => item.id === object.type);
+  ctx.font = '600 15px DM Sans, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#111';
+  ctx.strokeText(object.name, object.x, object.y + 18);
+  ctx.fillStyle = type?.color || '#fff';
+  ctx.fillText(object.name, object.x, object.y + 18);
 }
 
 function renderLayers() {
@@ -119,7 +146,8 @@ function renderLayers() {
   for (const layer of state.layers) {
     const button = document.createElement('button');
     button.className = `layer-card${layer.id === state.selectedId ? ' active' : ''}${layer.visible ? '' : ' is-hidden'}`;
-    button.innerHTML = `<span class="layer-icon">${layer.type === 'image' ? '▧' : '⌁'}</span><div><b></b><small>${layer.type === 'image' ? 'Imagem' : 'Terreno'}</small></div><span class="visibility" title="Alternar visibilidade">◉</span>`;
+    const layerMeta = layer.type === 'image' ? ['▧', 'Imagem'] : layer.type === 'object' ? ['⌖', 'Objeto'] : ['⌁', 'Terreno'];
+    button.innerHTML = `<span class="layer-icon">${layerMeta[0]}</span><div><b></b><small>${layerMeta[1]}</small></div><span class="visibility" title="Alternar visibilidade">◉</span>`;
     button.draggable = true;
     button.dataset.layerId = layer.id;
     button.querySelector('b').textContent = layer.name;
@@ -197,14 +225,16 @@ function selectLayer(id) {
   $('#rotation').checked = layer.settings.rotation;
   $('#mirror').checked = layer.settings.mirror;
   $('#slice').checked = layer.settings.slice;
-  $('#typeBadge').textContent = layer.type === 'image' ? 'Imagem' : 'Terreno';
-  document.querySelectorAll('.terrain-control').forEach((control) => { control.hidden = layer.type !== 'terrain'; });
-  document.querySelectorAll('.image-control').forEach((control) => { control.hidden = false; });
+  $('#typeBadge').textContent = layer.type === 'image' ? 'Imagem' : layer.type === 'object' ? 'Objeto' : 'Terreno';
+  document.querySelectorAll('.terrain-control, .image-control, .object-control').forEach((control) => {
+    control.hidden = !control.classList.contains(`${layer.type}-control`);
+  });
   const upload = document.querySelector('.upload');
   upload.querySelector('b').textContent = layer.type === 'image' ? 'Enviar imagem' : 'Enviar máscara';
   upload.querySelector('small').textContent = layer.type === 'image' ? 'Background ou elemento visual' : 'PNG com transparência recomendado';
-  $('#generateBtn').hidden = layer.type === 'image';
-  $('#footerHint').textContent = layer.type === 'image' ? 'Arraste a camada para definir sua prioridade.' : 'A seed mantém o resultado reproduzível.';
+  $('#generateBtn').hidden = layer.type !== 'terrain';
+  $('#footerHint').textContent = layer.type === 'terrain' ? 'A seed mantém o resultado reproduzível.' : 'Arraste a camada para definir sua prioridade.';
+  if (layer.type === 'object') fillObjectInspector(layer.object);
   updateOutputs();
   renderLayers();
   renderAssets();
@@ -218,6 +248,31 @@ function updateOutputs() {
   $('#scaleValue').value = `${Number(layer.settings.scale).toFixed(2).replace(/\.00$/, '')}×`;
   $('#sizeValue').value = `${layer.settings.sizeMin}×–${layer.settings.sizeMax}×`;
   $('#sizeVariationFields').hidden = !layer.settings.sizeVariation;
+}
+
+function populateObjectOptions() {
+  const typeSelect = $('#objectType');
+  const currentType = typeSelect.value;
+  typeSelect.replaceChildren(...state.poiTypes.map((type) => new Option(type.name, type.id)));
+  if (state.poiTypes.some((type) => type.id === currentType)) typeSelect.value = currentType;
+  for (const id of ['objectIconSet', 'objectGallerySet']) {
+    const select = $(`#${id}`);
+    const current = select.value;
+    const empty = new Option(id === 'objectIconSet' ? 'Selecione um conjunto' : 'Sem galeria', '');
+    select.replaceChildren(empty, ...state.imageSets.map((set) => new Option(`${set.name} (${set.assets.length})`, set.id)));
+    select.value = current;
+  }
+}
+
+function fillObjectInspector(object) {
+  populateObjectOptions();
+  $('#objectName').value = object.name;
+  $('#objectType').value = object.type;
+  $('#objectIconSet').value = object.iconSetId;
+  $('#objectGallerySet').value = object.gallerySetId;
+  $('#objectDescription').value = object.description;
+  $('#objectPoi').checked = object.poi;
+  $('#objectPosition').textContent = object.x === null ? 'Ainda não posicionado' : `Posição: ${Math.round(object.x)}, ${Math.round(object.y)}`;
 }
 
 function updateReadyState() {
@@ -412,6 +467,7 @@ $('#maskInput').addEventListener('change', async (event) => {
 });
 let pendingSetAssets = [];
 $('#openAssetModal').onclick = () => { renderImageSets(); $('#assetModal').hidden = false; };
+$('#manageObjectSets').onclick = () => { renderImageSets(); $('#assetModal').hidden = false; };
 $('#closeAssetModal').onclick = () => { $('#assetModal').hidden = true; };
 $('#assetModal').addEventListener('click', (event) => {
   if (event.target === $('#assetModal')) $('#assetModal').hidden = true;
@@ -431,6 +487,7 @@ $('#createSetBtn').onclick = () => {
   $('#newSetFiles').textContent = 'Nenhuma imagem selecionada';
   $('#createSetBtn').disabled = true;
   renderImageSets();
+  populateObjectOptions();
 };
 
 function renderImageSets() {
@@ -444,6 +501,14 @@ function renderImageSets() {
     item.querySelector('small').textContent = `${set.assets.length} imagem(ns)`;
     item.querySelector('button').onclick = () => {
       const layer = selectedLayer();
+      if (layer.type === 'object') {
+        layer.object.iconSetId = set.id;
+        populateObjectOptions();
+        $('#objectIconSet').value = set.id;
+        redraw();
+        $('#assetModal').hidden = true;
+        return;
+      }
       const existing = new Set(layer.assets.map((asset) => asset.image.src));
       layer.assets.push(...set.assets.filter((asset) => !existing.has(asset.image.src)));
       renderAssets(); updateReadyState();
@@ -453,6 +518,25 @@ function renderImageSets() {
   }
   if (!state.imageSets.length) list.innerHTML = '<div class="set-empty">Nenhum conjunto criado ainda.</div>';
 }
+
+const objectBindings = {
+  objectName: 'name', objectType: 'type', objectIconSet: 'iconSetId',
+  objectGallerySet: 'gallerySetId', objectDescription: 'description', objectPoi: 'poi',
+};
+for (const [elementId, property] of Object.entries(objectBindings)) {
+  $(`#${elementId}`).addEventListener(elementId === 'objectPoi' ? 'change' : 'input', (event) => {
+    const layer = selectedLayer();
+    if (layer.type !== 'object') return;
+    layer.object[property] = elementId === 'objectPoi' ? event.target.checked : event.target.value;
+    if (property === 'name') { layer.name = event.target.value || 'Objeto'; $('#layerName').value = layer.name; renderLayers(); }
+    redraw();
+  });
+}
+$('#positionObject').onclick = () => {
+  state.placingObject = true;
+  $('#positionObject').classList.add('active');
+  $('#positionObject').textContent = 'Clique no mapa…';
+};
 
 ['density', 'scale', 'sizeMin', 'sizeMax'].forEach((id) => {
   $(`#${id}`).addEventListener('input', (event) => {
@@ -518,7 +602,7 @@ $('#saveProjectBtn').onclick = () => {
     layers: state.layers.map((layer) => ({
       id: layer.id, type: layer.type, name: layer.name, visible: layer.visible,
       maskName: layer.maskName, maskSource: layer.mask?.src || null, imageSource: layer.image?.src || null,
-      assets: layer.assets.map(serializeAsset), settings: layer.settings,
+      assets: layer.assets.map(serializeAsset), settings: layer.settings, object: layer.object,
       outputSource: layer.output.width ? layer.output.toDataURL('image/png') : null,
     })),
   };
@@ -541,6 +625,7 @@ $('#projectInput').addEventListener('change', async (event) => {
     state.layers = await Promise.all(project.layers.map(async (saved) => {
       const layer = createLayer(saved.type);
       Object.assign(layer, { id: saved.id, name: saved.name, visible: saved.visible, maskName: saved.maskName, settings: { ...layer.settings, ...saved.settings } });
+      if (saved.object) layer.object = saved.object;
       if (saved.maskSource) layer.mask = await imageFromSource(saved.maskSource);
       if (saved.imageSource) layer.image = await imageFromSource(saved.imageSource);
       layer.assets = await Promise.all(saved.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source) })));
@@ -563,6 +648,17 @@ $('#projectInput').addEventListener('change', async (event) => {
 });
 
 viewport.addEventListener('pointerdown', (event) => {
+  if (state.placingObject && selectedLayer()?.type === 'object') {
+    const rectangle = viewport.getBoundingClientRect();
+    selectedLayer().object.x = (event.clientX - rectangle.left - state.x) / state.zoom;
+    selectedLayer().object.y = (event.clientY - rectangle.top - state.y) / state.zoom;
+    state.placingObject = false;
+    $('#positionObject').classList.remove('active');
+    $('#positionObject').textContent = '⌖ Posicionar no mapa';
+    fillObjectInspector(selectedLayer().object);
+    redraw();
+    return;
+  }
   state.drag = true; state.lastX = event.clientX; state.lastY = event.clientY;
   viewport.classList.add('dragging');
   viewport.setPointerCapture(event.pointerId);
@@ -600,22 +696,43 @@ $('#exportBtn').onclick = () => {
   link.href = canvas.toDataURL('image/png');
   link.click();
 };
-$('#exportMapBtn').onclick = () => {
-  redraw();
+function exportablePois() {
+  return state.layers.filter((layer) => layer.visible && layer.type === 'object' && layer.object?.poi && layer.object.x !== null).map((layer) => {
+    const object = layer.object;
+    const iconSet = state.imageSets.find((set) => set.id === object.iconSetId);
+    const gallerySet = state.imageSets.find((set) => set.id === object.gallerySetId);
+    const type = state.poiTypes.find((item) => item.id === object.type) || state.poiTypes.at(-1);
+    return { ...object, id: layer.id, icon: iconSet?.assets[0]?.image.src || '', gallery: gallerySet?.assets.map((asset) => asset.image.src) || [], typeName: type?.name || object.type, color: type?.color || '#fff' };
+  }).filter((poi) => poi.icon);
+}
+
+function createMapHtml() {
+  redraw(false);
   const image = canvas.toDataURL('image/png');
-  const title = selectedLayer()?.name || 'Mapa de Teralium';
-  const html = `<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title.replace(/[<>&]/g, '')}</title><style>
-*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#101311}#view{position:fixed;inset:0;overflow:hidden;cursor:grab;background-image:linear-gradient(#1b201c 1px,transparent 1px),linear-gradient(90deg,#1b201c 1px,transparent 1px);background-size:24px 24px}#view.dragging{cursor:grabbing}img{position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none}.hint{position:fixed;right:16px;bottom:16px;padding:8px 11px;border-radius:8px;background:#171a18cc;color:#aab2ab;font:12px sans-serif;pointer-events:none}
-</style></head><body><main id="view"><img id="map" src="${image}" alt="Mapa"><span class="hint">Arraste para mover • Scroll para zoom</span></main><script>
-const view=document.querySelector('#view'),map=document.querySelector('#map');let zoom=1,x=0,y=0,drag=false,lx=0,ly=0;function draw(){map.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')'}map.onload=()=>{zoom=Math.min(innerWidth/map.naturalWidth,innerHeight/map.naturalHeight,.95);x=(innerWidth-map.naturalWidth*zoom)/2;y=(innerHeight-map.naturalHeight*zoom)/2;draw()};view.onpointerdown=e=>{drag=true;lx=e.clientX;ly=e.clientY;view.classList.add('dragging');view.setPointerCapture(e.pointerId)};view.onpointermove=e=>{if(!drag)return;x+=e.clientX-lx;y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;draw()};view.onpointerup=()=>{drag=false;view.classList.remove('dragging')};view.onwheel=e=>{e.preventDefault();const old=zoom;zoom=Math.max(.05,Math.min(8,zoom*(e.deltaY<0?1.1:.9)));x=e.clientX-(e.clientX-x)*zoom/old;y=e.clientY-(e.clientY-y)*zoom/old;draw()};
+  redraw(true);
+  const pois = JSON.stringify(exportablePois()).replace(/</g, '\\u003c');
+  const types = JSON.stringify(state.poiTypes).replace(/</g, '\\u003c');
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mapa de Teralium</title><style>
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#101311;color:#eef2ee;font-family:Arial,sans-serif}.side{position:fixed;z-index:10;inset:0 auto 0 0;width:280px;padding:22px 16px;background:#171a18;border-right:1px solid #303630;overflow:auto}.side h1{font-size:18px;margin:0 0 18px}.side input,.side select{width:100%;padding:10px;margin-bottom:8px;border:1px solid #343b35;border-radius:7px;background:#0f1210;color:#eef2ee}.poi-list{display:grid;gap:5px;margin-top:12px}.poi-item{padding:10px;border:0;border-radius:7px;background:transparent;color:#eef2ee;text-align:left;cursor:pointer}.poi-item:hover{background:#252b26}.poi-item small{display:block;margin-top:3px;color:#89928b}.view{position:fixed;inset:0 0 0 280px;overflow:hidden;cursor:grab;background-image:linear-gradient(#1b201c 1px,transparent 1px),linear-gradient(90deg,#1b201c 1px,transparent 1px);background-size:24px 24px}.view.dragging{cursor:grabbing}.world{position:absolute;transform-origin:0 0}.map{position:absolute;inset:0;user-select:none;-webkit-user-drag:none}.pin{position:absolute;transform:translate(-50%,-48px);display:grid;justify-items:center;border:0;background:transparent;color:var(--color);cursor:pointer}.pin img{width:48px;height:48px;object-fit:contain}.pin span{margin-top:3px;color:var(--color);font-weight:700;font-size:14px;white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.pin:hover img{filter:drop-shadow(0 0 2px white) drop-shadow(0 0 5px var(--color))}.pin:hover span{color:#fff}.modal{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:25px;background:#050706d9}.modal[hidden]{display:none}.card{position:relative;width:min(620px,100%);max-height:90vh;overflow:auto;padding:25px;border:1px solid #3b433c;border-radius:14px;background:#191d1a}.close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#aaa;font-size:25px;cursor:pointer}.card h2{margin:0;color:var(--poi-color)}.kind{color:#929b94;font-size:11px}.description{line-height:1.6;white-space:pre-wrap}.gallery{display:flex;gap:8px;overflow:auto;margin-top:20px}.gallery img{width:150px;height:100px;object-fit:cover;border-radius:7px;cursor:zoom-in}.lightbox{z-index:40}.lightbox img{max-width:92vw;max-height:90vh}.empty{color:#7f8881;font-size:12px;padding:10px}.hint{position:fixed;right:16px;bottom:16px;padding:8px;border-radius:7px;background:#171a18cc;color:#999;font-size:11px;pointer-events:none}@media(max-width:700px){.side{width:220px}.view{left:220px}}
+</style></head><body><aside class="side"><h1>Pontos de interesse</h1><input id="search" placeholder="Pesquisar..."><select id="filter"><option value="">Todos os tipos</option></select><div id="list" class="poi-list"></div></aside><main id="view" class="view"><div id="world" class="world" style="width:${canvas.width}px;height:${canvas.height}px"><img class="map" src="${image}" alt="Mapa"><div id="pins"></div></div><span class="hint">Arraste para mover • Scroll para zoom</span></main><div id="details" class="modal" hidden><article class="card"><button class="close">×</button><small class="kind"></small><h2></h2><p class="description"></p><div class="gallery"></div></article></div><div id="lightbox" class="modal lightbox" hidden><img alt="Imagem ampliada"></div><script>
+const pois=${pois},types=${types},view=document.querySelector('#view'),world=document.querySelector('#world'),pins=document.querySelector('#pins'),list=document.querySelector('#list'),search=document.querySelector('#search'),filter=document.querySelector('#filter'),details=document.querySelector('#details'),lightbox=document.querySelector('#lightbox');let zoom=1,x=0,y=0,drag=false,lx=0,ly=0;function draw(){world.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')'}function center(p){x=view.clientWidth/2-p.x*zoom;y=view.clientHeight/2-p.y*zoom;draw()}function openPoi(p){details.style.setProperty('--poi-color',p.color);details.querySelector('h2').textContent=p.name;details.querySelector('.kind').textContent=p.typeName;details.querySelector('.description').textContent=p.description||'Sem descrição.';const gallery=details.querySelector('.gallery');gallery.replaceChildren(...p.gallery.map(src=>{const image=new Image();image.src=src;image.onclick=()=>{lightbox.querySelector('img').src=src;lightbox.hidden=false};return image}));details.hidden=false}for(const type of types)filter.add(new Option(type.name,type.id));for(const p of pois){const pin=document.createElement('button');pin.className='pin';pin.style.cssText='left:'+p.x+'px;top:'+p.y+'px;--color:'+p.color;pin.innerHTML='<img><span></span>';pin.querySelector('img').src=p.icon;pin.querySelector('span').textContent=p.name;pin.onclick=()=>openPoi(p);pins.append(pin)}function renderList(){const term=search.value.toLowerCase();const shown=pois.filter(p=>(!filter.value||p.type===filter.value)&&p.name.toLowerCase().includes(term));list.replaceChildren(...shown.map(p=>{const b=document.createElement('button');b.className='poi-item';b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=p.name;b.querySelector('b').style.color=p.color;b.querySelector('small').textContent=p.typeName;b.onclick=()=>center(p);return b}));if(!shown.length)list.innerHTML='<div class="empty">Nenhum ponto encontrado.</div>'}search.oninput=renderList;filter.onchange=renderList;renderList();function fit(){zoom=Math.min(view.clientWidth/${canvas.width},view.clientHeight/${canvas.height},.95);x=(view.clientWidth-${canvas.width}*zoom)/2;y=(view.clientHeight-${canvas.height}*zoom)/2;draw()}fit();view.onpointerdown=e=>{if(e.target.closest('.pin'))return;drag=true;lx=e.clientX;ly=e.clientY;view.classList.add('dragging');view.setPointerCapture(e.pointerId)};view.onpointermove=e=>{if(!drag)return;x+=e.clientX-lx;y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;draw()};view.onpointerup=()=>{drag=false;view.classList.remove('dragging')};view.onwheel=e=>{e.preventDefault();const r=view.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,old=zoom;zoom=Math.max(.05,Math.min(8,zoom*(e.deltaY<0?1.1:.9)));x=mx-(mx-x)*zoom/old;y=my-(my-y)*zoom/old;draw()};details.querySelector('.close').onclick=()=>details.hidden=true;details.onclick=e=>{if(e.target===details)details.hidden=true};lightbox.onclick=()=>lightbox.hidden=true;
 <\/script></body></html>`;
-  downloadFile('mapa-teralium.html', html, 'text/html');
+}
+
+$('#exportMapBtn').onclick = () => downloadFile('mapa-teralium.html', createMapHtml(), 'text/html');
+$('#previewMapBtn').onclick = () => {
+  const url = URL.createObjectURL(new Blob([createMapHtml()], { type: 'text/html' }));
+  window.open(url, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 };
+
 window.addEventListener('resize', () => { if (selectedLayer()?.mask) fit(); });
 
 const firstLayer = createLayer();
 state.layers.push(firstLayer);
 selectLayer(firstLayer.id);
 updateTransform();
+fetch('data/poi-types.json')
+  .then((response) => response.ok ? response.json() : Promise.reject(new Error('Tipos indisponíveis')))
+  .then((types) => { state.poiTypes = types; populateObjectOptions(); redraw(); })
+  .catch(() => { /* The embedded defaults keep local file usage functional. */ });

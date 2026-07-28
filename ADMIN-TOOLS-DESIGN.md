@@ -35,3 +35,6 @@ Os dois painéis laterais são fixos e possuem scroll próprio. Assim, navegar p
 8. O projeto pode ser salvo em JSON com camadas, configurações, resultados e todas as imagens incorporadas, sem depender dos arquivos originais.
 9. Conjuntos de imagens formam uma biblioteca do projeto e podem ser aplicados a múltiplas camadas de terreno.
 10. “Exportar mapa” produz um HTML autônomo sem a interface administrativa, mantendo pan e zoom para visualização.
+11. Camadas do tipo Objeto representam marcadores posicionáveis e podem se tornar POIs com nome, tipo, descrição, ícone e galeria.
+12. Tipos de POI vivem em JSON e definem a cor usada nos nomes tanto no mapa quanto na navegação lateral.
+13. O mapa publicado mantém seus POIs como elementos interativos sobre o raster: pesquisa, filtro, foco, detalhes, galeria e lightbox continuam disponíveis.
