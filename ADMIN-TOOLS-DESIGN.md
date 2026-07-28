@@ -7,9 +7,9 @@ A interface segue uma linguagem **clean, escura e utilitária**, criada para man
 ## Estrutura
 
 - **Topbar fixa:** navegação de retorno, nome do editor, estado do processamento e ação de exportar.
-- **Painel de Camadas (esquerda):** lista a composição do mapa. Cada item possui nome, tipo, visibilidade e seleção. O painel também antecipa os futuros tipos Regiões, Pontos de interesse e Estradas.
+- **Painel de Camadas (esquerda):** lista a composição do mapa. Cada item possui nome, tipo, visibilidade e seleção e pode ser arrastado para alterar a prioridade. Camadas mais altas na lista aparecem à frente no mapa.
 - **Viewport (centro):** superfície independente, ampla e quadriculada. O mapa tem pan, zoom, ajuste à tela e fica visualmente elevado por uma sombra discreta.
-- **Inspector (direita):** muda de acordo com o tipo da camada selecionada. Para uma camada do tipo Terreno, contém máscara, gráficos de preenchimento, intensidade, intervalo de tamanho, seed, rotação e mirror.
+- **Inspector (direita):** muda de acordo com o tipo da camada selecionada. Para uma camada do tipo Terreno, contém máscara, gráficos de preenchimento, intensidade, escala, variação de tamanho, seed, rotação, mirror e slice. Para Imagem, apresenta o upload do background ou elemento visual.
 - **Rodapé do inspector:** mantém a ação principal sempre acessível mesmo durante o scroll.
 
 Os dois painéis laterais são fixos e possuem scroll próprio. Assim, navegar pelo inspector nunca desloca o mapa e manipular o viewport nunca interfere nos controles.
@@ -30,3 +30,5 @@ Os dois painéis laterais são fixos e possuem scroll próprio. Assim, navegar p
 3. O viewport deve permanecer independente dos painéis e ser a maior área da tela.
 4. Controles avançados aparecem no inspector, nunca sobre o mapa.
 5. Resultados com a mesma seed e configurações devem ser reproduzíveis para permitir publicação posterior aos jogadores.
+6. A máscara define pontos de spawn, não um recorte. O recorte só é aplicado quando a opção `Slice` estiver ativa.
+7. Objetos de terreno usam a coordenada Y como profundidade: elementos mais baixos são desenhados à frente.

@@ -16,12 +16,12 @@ const state = {
   generationToken: 0,
 };
 
-function createLayer() {
+function createLayer(type = 'terrain') {
   const number = state.layers.length + 1;
   return {
     id: crypto.randomUUID?.() || `${Date.now()}-${number}`,
-    type: 'terrain',
-    name: number === 1 ? 'Cobertura vegetal' : `Terreno ${number}`,
+    type,
+    name: type === 'image' ? `Imagem ${number}` : (number === 1 ? 'Cobertura vegetal' : `Terreno ${number}`),
     visible: true,
     mask: null,
     maskName: '',
@@ -29,8 +29,9 @@ function createLayer() {
     clip: null,
     bounds: null,
     assets: [],
+    image: null,
     output: document.createElement('canvas'),
-    settings: { density: 45, sizeMin: 48, sizeMax: 96, seed: `Teralium-0${number}`, rotation: true, mirror: true },
+    settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, rotation: true, mirror: true, slice: false },
   };
 }
 
@@ -84,14 +85,16 @@ function fit() {
 }
 
 function redraw() {
-  ctx.fillStyle = '#e8e4d8';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  for (const layer of state.layers) {
-    if (layer.visible && layer.output.width) ctx.drawImage(layer.output, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // The first layer in the list has the highest visual priority, so paint bottom-up.
+  for (const layer of [...state.layers].reverse()) {
+    if (!layer.visible) continue;
+    if (layer.type === 'image' && layer.image) ctx.drawImage(layer.image, 0, 0, canvas.width, canvas.height);
+    if (layer.type === 'terrain' && layer.output.width) ctx.drawImage(layer.output, 0, 0);
   }
 
   const current = selectedLayer();
-  if (current?.mask && !current.output.width) {
+  if (current?.type === 'terrain' && current.mask && !current.output.width) {
     ctx.save();
     ctx.globalAlpha = 0.12;
     ctx.drawImage(current.mask, 0, 0, canvas.width, canvas.height);
@@ -102,12 +105,29 @@ function redraw() {
 function renderLayers() {
   const list = $('#layerList');
   list.replaceChildren();
-  for (const layer of [...state.layers].reverse()) {
+  for (const layer of state.layers) {
     const button = document.createElement('button');
     button.className = `layer-card${layer.id === state.selectedId ? ' active' : ''}${layer.visible ? '' : ' is-hidden'}`;
-    button.innerHTML = '<span class="layer-icon">⌁</span><div><b></b><small>Terreno</small></div><span class="visibility" title="Alternar visibilidade">◉</span>';
+    button.innerHTML = `<span class="layer-icon">${layer.type === 'image' ? '▧' : '⌁'}</span><div><b></b><small>${layer.type === 'image' ? 'Imagem' : 'Terreno'}</small></div><span class="visibility" title="Alternar visibilidade">◉</span>`;
+    button.draggable = true;
+    button.dataset.layerId = layer.id;
     button.querySelector('b').textContent = layer.name;
     button.addEventListener('click', () => selectLayer(layer.id));
+    button.addEventListener('dragstart', () => button.classList.add('dragging'));
+    button.addEventListener('dragend', () => button.classList.remove('dragging'));
+    button.addEventListener('dragover', (event) => { event.preventDefault(); button.classList.add('drag-over'); });
+    button.addEventListener('dragleave', () => button.classList.remove('drag-over'));
+    button.addEventListener('drop', (event) => {
+      event.preventDefault();
+      button.classList.remove('drag-over');
+      const draggedId = document.querySelector('.layer-card.dragging')?.dataset.layerId;
+      if (!draggedId || draggedId === layer.id) return;
+      const from = state.layers.findIndex((item) => item.id === draggedId);
+      const to = state.layers.findIndex((item) => item.id === layer.id);
+      const [moved] = state.layers.splice(from, 1);
+      state.layers.splice(to, 0, moved);
+      renderLayers(); redraw();
+    });
     button.querySelector('.visibility').addEventListener('click', (event) => {
       event.stopPropagation();
       layer.visible = !layer.visible;
@@ -149,11 +169,22 @@ function selectLayer(id) {
   $('#layerName').value = layer.name;
   $('#maskName').textContent = layer.maskName || 'Nenhuma máscara selecionada';
   $('#density').value = layer.settings.density;
+  $('#scale').value = layer.settings.scale;
+  $('#sizeVariation').checked = layer.settings.sizeVariation;
   $('#sizeMin').value = layer.settings.sizeMin;
   $('#sizeMax').value = layer.settings.sizeMax;
   $('#seed').value = layer.settings.seed;
   $('#rotation').checked = layer.settings.rotation;
   $('#mirror').checked = layer.settings.mirror;
+  $('#slice').checked = layer.settings.slice;
+  $('#typeBadge').textContent = layer.type === 'image' ? 'Imagem' : 'Terreno';
+  document.querySelectorAll('.terrain-control').forEach((control) => { control.hidden = layer.type !== 'terrain'; });
+  document.querySelectorAll('.image-control').forEach((control) => { control.hidden = false; });
+  const upload = document.querySelector('.upload');
+  upload.querySelector('b').textContent = layer.type === 'image' ? 'Enviar imagem' : 'Enviar máscara';
+  upload.querySelector('small').textContent = layer.type === 'image' ? 'Background ou elemento visual' : 'PNG com transparência recomendado';
+  $('#generateBtn').hidden = layer.type === 'image';
+  $('#footerHint').textContent = layer.type === 'image' ? 'Arraste a camada para definir sua prioridade.' : 'A seed mantém o resultado reproduzível.';
   updateOutputs();
   renderLayers();
   renderAssets();
@@ -164,12 +195,14 @@ function selectLayer(id) {
 function updateOutputs() {
   const layer = selectedLayer();
   $('#densityValue').value = layer.settings.density;
-  $('#sizeValue').value = `${layer.settings.sizeMin}–${layer.settings.sizeMax} px`;
+  $('#scaleValue').value = `${Number(layer.settings.scale).toFixed(2).replace(/\.00$/, '')}×`;
+  $('#sizeValue').value = `${layer.settings.sizeMin}×–${layer.settings.sizeMax}×`;
+  $('#sizeVariationFields').hidden = !layer.settings.sizeVariation;
 }
 
 function updateReadyState() {
   const layer = selectedLayer();
-  $('#generateBtn').disabled = !(layer.mask && layer.assets.length);
+  $('#generateBtn').disabled = layer.type !== 'terrain' || !(layer.mask && layer.assets.length);
 }
 
 function prepareMask(layer) {
@@ -220,7 +253,7 @@ async function generate() {
   }
 
   const token = ++state.generationToken;
-  $('#saveState').textContent = 'Gerando…';
+  $('#saveState').textContent = 'Calculando…';
   $('#generateBtn').disabled = true;
   layer.output.width = canvas.width;
   layer.output.height = canvas.height;
@@ -229,14 +262,19 @@ async function generate() {
   const { minX, minY, maxX, maxY } = layer.bounds;
   const width = maxX - minX + 1;
   const height = maxY - minY + 1;
-  const averageSize = (layer.settings.sizeMin + layer.settings.sizeMax) / 2;
-  const attempts = Math.min(250000, Math.round((width * height / (averageSize * averageSize)) * layer.settings.density / 1.7));
+  const averageAssetSize = layer.assets.reduce((sum, asset) => sum + Math.max(asset.image.naturalWidth, asset.image.naturalHeight), 0) / layer.assets.length;
+  const averageVariation = layer.settings.sizeVariation ? (layer.settings.sizeMin + layer.settings.sizeMax) / 2 : 1;
+  const footprint = Math.max(8, averageAssetSize * layer.settings.scale * averageVariation);
+  const attempts = Math.min(250000, Math.round((width * height / (footprint * footprint)) * layer.settings.density / 1.7));
+  const placements = [];
   let iteration = 0;
 
+  // Resolve spawn points in small batches. The mask chooses the origin only;
+  // graphics may naturally extend beyond it unless Slice is enabled.
   await new Promise((resolve) => {
-    function renderBatch() {
+    function calculateBatch() {
       if (token !== state.generationToken) return resolve();
-      const batchEnd = Math.min(iteration + 1200, attempts);
+      const batchEnd = Math.min(iteration + 2500, attempts);
       for (; iteration < batchEnd; iteration++) {
         const x = minX + random() * width;
         const y = minY + random() * height;
@@ -245,28 +283,51 @@ async function generate() {
         const darkness = 1 - (layer.maskPixels[pixel] + layer.maskPixels[pixel + 1] + layer.maskPixels[pixel + 2]) / 765;
         const coverage = alpha * darkness;
         if (coverage < 0.2 || random() > coverage) continue;
+        placements.push({
+          x, y,
+          asset: layer.assets[Math.floor(random() * layer.assets.length)].image,
+          variation: layer.settings.sizeVariation ? layer.settings.sizeMin + random() * (layer.settings.sizeMax - layer.settings.sizeMin) : 1,
+          rotation: layer.settings.rotation ? random() * Math.PI * 2 : 0,
+          mirrored: layer.settings.mirror && random() > 0.5,
+        });
+      }
+      if (iteration < attempts) requestAnimationFrame(calculateBatch);
+      else resolve();
+    }
+    calculateBatch();
+  });
 
-        const asset = layer.assets[Math.floor(random() * layer.assets.length)].image;
-        const size = layer.settings.sizeMin + random() * (layer.settings.sizeMax - layer.settings.sizeMin);
+  // Painter's algorithm: lower objects are rendered last and appear in front.
+  placements.sort((first, second) => first.y - second.y);
+  $('#saveState').textContent = 'Renderizando…';
+  let drawn = 0;
+  await new Promise((resolve) => {
+    function drawBatch() {
+      if (token !== state.generationToken) return resolve();
+      const batchEnd = Math.min(drawn + 1200, placements.length);
+      for (; drawn < batchEnd; drawn++) {
+        const placement = placements[drawn];
+        const width = placement.asset.naturalWidth * layer.settings.scale * placement.variation;
+        const height = placement.asset.naturalHeight * layer.settings.scale * placement.variation;
         outputContext.save();
-        outputContext.translate(x, y);
-        if (layer.settings.rotation) outputContext.rotate(random() * Math.PI * 2);
-        if (layer.settings.mirror && random() > 0.5) outputContext.scale(-1, 1);
-        outputContext.drawImage(asset, -size / 2, -size / 2, size, size);
+        outputContext.translate(placement.x, placement.y);
+        outputContext.rotate(placement.rotation);
+        if (placement.mirrored) outputContext.scale(-1, 1);
+        outputContext.drawImage(placement.asset, -width / 2, -height / 2, width, height);
         outputContext.restore();
       }
       redraw();
-      if (iteration < attempts) requestAnimationFrame(renderBatch);
+      if (drawn < placements.length) requestAnimationFrame(drawBatch);
       else resolve();
     }
-    renderBatch();
+    drawBatch();
   });
 
-  // Clip the complete layer, not only the placement centers, so no part of an
-  // asset can bleed beyond the mask boundary.
-  outputContext.globalCompositeOperation = 'destination-in';
-  outputContext.drawImage(layer.clip, 0, 0);
-  outputContext.globalCompositeOperation = 'source-over';
+  if (layer.settings.slice) {
+    outputContext.globalCompositeOperation = 'destination-in';
+    outputContext.drawImage(layer.clip, 0, 0);
+    outputContext.globalCompositeOperation = 'source-over';
+  }
   redraw();
 
   if (token === state.generationToken) {
@@ -276,10 +337,19 @@ async function generate() {
 }
 
 $('#addLayer').onclick = () => {
-  const layer = createLayer();
-  state.layers.push(layer);
-  selectLayer(layer.id);
+  $('#addLayerMenu').hidden = !$('#addLayerMenu').hidden;
 };
+document.querySelectorAll('[data-layer-type]').forEach((button) => {
+  button.onclick = () => {
+    const type = button.dataset.layerType;
+    const layer = createLayer(type);
+    // Images start at the bottom as backgrounds; other layers start at the top.
+    if (type === 'image') state.layers.push(layer);
+    else state.layers.unshift(layer);
+    $('#addLayerMenu').hidden = true;
+    selectLayer(layer.id);
+  };
+});
 $('#layerName').addEventListener('input', (event) => {
   selectedLayer().name = event.target.value || 'Sem título';
   renderLayers();
@@ -288,8 +358,22 @@ $('#maskInput').addEventListener('change', async (event) => {
   const file = event.target.files[0];
   if (!file) return;
   const layer = selectedLayer();
-  layer.mask = await fileImage(file);
+  const image = await fileImage(file);
   layer.maskName = file.name;
+  if (layer.type === 'image') {
+    layer.image = image;
+    if (!state.layers.some((item) => (item.mask || item.image) && item.id !== layer.id)) {
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+    }
+    stage.style.display = 'block';
+    $('#emptyState').style.display = 'none';
+    $('#maskName').textContent = file.name;
+    redraw(); fit();
+    event.target.value = '';
+    return;
+  }
+  layer.mask = image;
   layer.maskPixels = null;
   layer.clip = null;
   layer.bounds = null;
@@ -314,7 +398,7 @@ $('#assetInput').addEventListener('change', async (event) => {
   event.target.value = '';
 });
 
-['density', 'sizeMin', 'sizeMax'].forEach((id) => {
+['density', 'scale', 'sizeMin', 'sizeMax'].forEach((id) => {
   $(`#${id}`).addEventListener('input', (event) => {
     const layer = selectedLayer();
     layer.settings[id] = Number(event.target.value);
@@ -325,9 +409,14 @@ $('#assetInput').addEventListener('change', async (event) => {
     updateOutputs();
   });
 });
+$('#sizeVariation').addEventListener('change', (event) => {
+  selectedLayer().settings.sizeVariation = event.target.checked;
+  updateOutputs();
+});
 $('#seed').addEventListener('input', (event) => { selectedLayer().settings.seed = event.target.value; });
 $('#rotation').addEventListener('change', (event) => { selectedLayer().settings.rotation = event.target.checked; });
 $('#mirror').addEventListener('change', (event) => { selectedLayer().settings.mirror = event.target.checked; });
+$('#slice').addEventListener('change', (event) => { selectedLayer().settings.slice = event.target.checked; });
 $('#randomSeed').onclick = () => {
   selectedLayer().settings.seed = Math.random().toString(36).slice(2, 10);
   $('#seed').value = selectedLayer().settings.seed;

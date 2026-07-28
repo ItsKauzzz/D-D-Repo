@@ -17,6 +17,11 @@ button, input { font: inherit; }
 .left-panel { left: 0; width: var(--left); padding: 22px 14px; border-right: 1px solid var(--line); }
 .layers-heading { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 14px; }
 .layers-heading button { width: 27px; height: 27px; padding: 0; border: 1px solid #394039; border-radius: 7px; background: #222723; color: var(--accent); cursor: pointer; }
+.add-layer-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: -5px 0 10px; padding: 8px; border: 1px solid var(--line); border-radius: 9px; background: #111512; }
+.add-layer-menu[hidden] { display: none; }
+.add-layer-menu button { display: grid; place-items: center; gap: 4px; padding: 9px 4px; border: 1px solid #343b35; border-radius: 7px; background: #202521; color: var(--text); font-size: 10px; cursor: pointer; }
+.add-layer-menu button:hover { border-color: var(--accent); }
+.add-layer-menu span { color: var(--accent); font-size: 17px; }
 .layer-list { display: grid; gap: 7px; }
 .layer-card { display: grid; grid-template-columns: 30px 1fr auto; gap: 9px; align-items: center; width: 100%; padding: 10px; text-align: left; color: var(--text); border: 1px solid transparent; border-radius: 9px; background: transparent; cursor: pointer; }
 .layer-card.active { border-color: #3d4937; background: #242a24; }
@@ -26,6 +31,8 @@ button, input { font: inherit; }
 .layer-card small { margin-top: 3px; color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
 .visibility { padding: 5px; color: var(--muted); font-size: 12px; }
 .layer-card.is-hidden { opacity: .48; }
+.layer-card.dragging { opacity: .25; }
+.layer-card.drag-over { box-shadow: inset 0 2px var(--accent); }
 .coming-types { margin: 22px 8px 0; padding-top: 16px; border-top: 1px solid var(--line); }
 .coming-types p { margin: 0 0 10px; color: #626a64; font-size: 9px; letter-spacing: .12em; }
 .coming-types span { display: inline-block; margin: 0 4px 5px 0; padding: 4px 7px; border: 1px solid #2f3530; border-radius: 99px; color: #687069; font-size: 9px; }
@@ -35,7 +42,7 @@ button, input { font: inherit; }
 #viewport { position: fixed; inset: var(--top) var(--right) 0 var(--left); overflow: hidden; background-color: #0c0f0d; background-image: linear-gradient(#171b18 1px, transparent 1px), linear-gradient(90deg, #171b18 1px, transparent 1px); background-size: 24px 24px; cursor: grab; }
 #viewport.dragging { cursor: grabbing; }
 #stage { position: absolute; display: none; transform-origin: 0 0; box-shadow: 0 18px 70px #000; }
-canvas { display: block; background: #e8e4d8; }
+canvas { display: block; background: transparent; }
 .empty-state { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; pointer-events: none; color: var(--muted); }
 .empty-state span { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid #303630; border-radius: 18px; background: #171b18; color: var(--accent); font-size: 32px; }
 .empty-state b { margin-top: 18px; color: var(--text); font: 600 16px 'Manrope'; }
@@ -66,7 +73,11 @@ canvas { display: block; background: #e8e4d8; }
 .fields { display: grid; gap: 18px; }
 .fields > label, .range-field { font-size: 11px; }
 .fields output { float: right; color: var(--muted); }
-input[type='range'] { display: block; width: 100%; margin: 10px 0 0; accent-color: var(--accent); }
+input[type='range'] { appearance: none; display: block; width: 100%; height: 5px; margin: 13px 0 3px; border-radius: 99px; outline: none; background: linear-gradient(90deg, var(--accent), #536247); accent-color: var(--accent); cursor: pointer; }
+input[type='range']::-webkit-slider-thumb { appearance: none; width: 15px; height: 15px; border: 3px solid #20261f; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1px #7f9b51, 0 2px 6px #0009; }
+input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px solid #20261f; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1px #7f9b51, 0 2px 6px #0009; }
+.check-row { display: flex; align-items: center; gap: 6px; }
+.check-row input { accent-color: var(--accent); }
 .range-field > div { margin-bottom: 6px; }
 .range-field label { display: grid; grid-template-columns: 26px 1fr; align-items: center; }
 .range-field label input { margin: 5px 0; }
