@@ -45,6 +45,7 @@ button, input { font: inherit; }
 #viewport.dragging { cursor: grabbing; }
 #stage { position: absolute; display: none; transform-origin: 0 0; box-shadow: 0 18px 70px #000; }
 canvas { display: block; background: transparent; }
+#maskEditCanvas { position: absolute; inset: 0; display: none; cursor: crosshair; touch-action: none; }
 .empty-state { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; pointer-events: none; color: var(--muted); }
 .empty-state span { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid #303630; border-radius: 18px; background: #171b18; color: var(--accent); font-size: 32px; }
 .empty-state b { margin-top: 18px; color: var(--text); font: 600 16px 'Manrope'; }
@@ -98,6 +99,17 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .position-object { padding: 9px; border: 1px solid #536348; border-radius: 7px; background: #283123; color: var(--accent); cursor: pointer; }
 .position-object.active { background: var(--accent); color: #17200d; }
 .object-form > small { text-align: center; color: var(--muted); font-size: 9px; }
+.object-thumbnails { display: flex; min-height: 0; gap: 5px; overflow-x: auto; }
+.object-thumbnails img { width: 46px; height: 46px; flex: 0 0 46px; object-fit: contain; border: 1px solid #353d36; border-radius: 6px; background: #101311; }
+.coordinate-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mask-tools { position: fixed; z-index: 45; left: calc(var(--left) + 18px); top: calc(var(--top) + 50%); transform: translateY(-50%); display: grid; gap: 5px; padding: 6px; border: 1px solid #3c443d; border-radius: 10px; background: #191d1a; box-shadow: 0 10px 28px #000b; }
+.mask-tools[hidden], .brush-size-control[hidden] { display: none; }
+.mask-tools button { width: 34px; height: 34px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.mask-tools button:hover, .mask-tools button.active { border-color: #536448; background: #2a3227; color: var(--accent); }
+.mask-tools span { height: 1px; background: var(--line); }
+.brush-size-control { position: fixed; z-index: 45; left: 50%; bottom: 70px; transform: translateX(-50%); display: grid; grid-template-columns: auto 180px 52px; align-items: center; gap: 10px; padding: 7px 12px; border: 1px solid #3c443d; border-radius: 9px; background: #191d1a; box-shadow: 0 8px 25px #000a; color: var(--muted); font-size: 10px; }
+.brush-size-control input { margin: 0; }
+.brush-size-control output { text-align: right; }
 .inspector-footer { position: fixed; z-index: 12; right: 0; bottom: 0; width: var(--right); padding: 14px 20px; border-top: 1px solid var(--line); background: #171a18; }
 .inspector-footer button { width: 100%; }
 .inspector-footer button:disabled { background: #30362f; color: #737b74; cursor: not-allowed; }
@@ -114,7 +126,7 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .modal-head button { border: 0; background: transparent; color: var(--muted); font-size: 24px; cursor: pointer; }
 .modal-copy { color: var(--muted); font-size: 12px; }
 .set-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; margin: 20px 0; }
-.image-set { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 12px; border: 1px solid #323933; border-radius: 9px; background: #202521; }
+.image-set { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 12px; border: 1px solid #323933; border-radius: 9px; background: #202521; }
 .image-set b, .image-set small { display: block; }
 .image-set small { margin-top: 4px; color: var(--muted); }
 .image-set button, .new-set button { border: 0; border-radius: 7px; background: var(--accent); color: #17200d; font-weight: 600; cursor: pointer; }
@@ -126,6 +138,11 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .new-set span { color: var(--muted); font-size: 10px; }
 .new-set button { padding: 9px 14px; }
 .new-set button:disabled { opacity: .4; cursor: not-allowed; }
+.editing-set-assets { grid-column: 1 / -1; display: flex; gap: 6px; overflow-x: auto; }
+.editing-set-assets:empty { display: none; }
+.editing-asset { position: relative; flex: 0 0 58px; height: 58px; }
+.editing-asset img { width: 100%; height: 100%; object-fit: contain; border-radius: 6px; background: #101311; }
+.editing-asset button { position: absolute; right: 2px; top: 2px; width: 18px; height: 18px; padding: 0; border-radius: 50%; background: #111d; color: white; }
 
 @media (max-width: 850px) {
   :root { --left: 74px; --right: 280px; }

@@ -38,3 +38,6 @@ Os dois painéis laterais são fixos e possuem scroll próprio. Assim, navegar p
 11. Camadas do tipo Objeto representam marcadores posicionáveis e podem se tornar POIs com nome, tipo, descrição, ícone e galeria.
 12. Tipos de POI vivem em JSON e definem a cor usada nos nomes tanto no mapa quanto na navegação lateral.
 13. O mapa publicado mantém seus POIs como elementos interativos sobre o raster: pesquisa, filtro, foco, detalhes, galeria e lightbox continuam disponíveis.
+14. O inspector é estritamente específico ao tipo: Imagem oferece offset e opacidade; Objeto oferece metadados, miniaturas e coordenadas manuais; Terreno concentra geração e máscara.
+15. Máscaras podem ser pintadas no próprio viewport com brush, eraser e fill, e permanecem invisíveis fora do modo de edição.
+16. Conjuntos da biblioteca podem ser renomeados e ter imagens adicionadas ou removidas sem precisar recriá-los.

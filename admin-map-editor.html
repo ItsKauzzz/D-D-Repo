@@ -38,7 +38,7 @@
   </aside>
 
   <main id="viewport">
-    <div id="stage"><canvas id="mapCanvas" width="1600" height="1000"></canvas></div>
+    <div id="stage"><canvas id="mapCanvas" width="1600" height="1000"></canvas><canvas id="maskEditCanvas" width="1600" height="1000"></canvas></div>
     <div class="empty-state" id="emptyState">
       <span>⌁</span><b>Seu mapa começa aqui</b>
       <small>Envie uma máscara no inspector para criar a primeira camada.</small>
@@ -58,6 +58,12 @@
       <label class="upload" for="maskInput"><span>＋</span><b>Enviar máscara</b><small>PNG com transparência recomendado</small></label>
       <input id="maskInput" type="file" accept="image/*" hidden>
       <p class="filename" id="maskName">Nenhuma máscara selecionada</p>
+      <button id="createMaskBtn" class="asset-upload terrain-control">✦ Criar máscara</button>
+    </section>
+    <section class="image-control fields" hidden>
+      <label>Offset X <output id="imageOffsetXValue">0 px</output><input id="imageOffsetX" type="range" min="-2000" max="2000" value="0"></label>
+      <label>Offset Y <output id="imageOffsetYValue">0 px</output><input id="imageOffsetY" type="range" min="-2000" max="2000" value="0"></label>
+      <label>Opacidade <output id="imageOpacityValue">100%</output><input id="imageOpacity" type="range" min="0" max="1" step="0.01" value="1"></label>
     </section>
     <section class="terrain-control">
       <div class="section-title"><b>Imagens do mestre</b><span id="assetCount">0</span></div>
@@ -85,16 +91,28 @@
         <label>Nome<input id="objectName" placeholder="Nome do local"></label>
         <label>Tipo<select id="objectType"></select></label>
         <label>Ícone<select id="objectIconSet"><option value="">Selecione um conjunto</option></select></label>
+        <div id="objectIconPreview" class="object-thumbnails"></div>
         <label>Galeria<select id="objectGallerySet"><option value="">Sem galeria</option></select></label>
+        <div id="objectGalleryPreview" class="object-thumbnails"></div>
         <button id="manageObjectSets" class="position-object">＋ Gerenciar conjuntos</button>
         <label>Descrição<textarea id="objectDescription" rows="6" placeholder="História, detalhes e informações do local..."></textarea></label>
         <label class="check-row"><input id="objectPoi" type="checkbox" checked> Criar como ponto de interesse</label>
         <button id="positionObject" class="position-object">⌖ Posicionar no mapa</button>
+        <div class="coordinate-row"><label>X<input id="objectX" type="number"></label><label>Y<input id="objectY" type="number"></label></div>
         <small id="objectPosition">Ainda não posicionado</small>
       </div>
     </section>
     <div class="inspector-footer"><button id="generateBtn" disabled>Gerar preenchimento</button><small id="footerHint">A seed mantém o resultado reproduzível.</small></div>
   </aside>
+  <div id="maskTools" class="mask-tools" hidden>
+    <button data-mask-tool="brush" class="active" title="Brush">●</button>
+    <button data-mask-tool="eraser" title="Eraser">⌫</button>
+    <button data-mask-tool="fill" title="Fill">▣</button>
+    <span></span>
+    <button id="finishMask" title="Concluir">✓</button>
+    <button id="cancelMask" title="Cancelar">×</button>
+  </div>
+  <div id="brushSizeControl" class="brush-size-control" hidden><span>Brush</span><input id="brushSize" type="range" min="2" max="300" value="60"><output id="brushSizeValue">60 px</output></div>
   <div id="layerContextMenu" class="context-menu" hidden>
     <button data-action="rename">Renomear</button>
     <button data-action="toggle">Ocultar</button>
@@ -110,6 +128,7 @@
         <label for="assetInput">Selecionar imagens</label>
         <input id="assetInput" type="file" accept="image/*" multiple hidden>
         <span id="newSetFiles">Nenhuma imagem selecionada</span>
+        <div id="editingSetAssets" class="editing-set-assets"></div>
         <button id="createSetBtn" disabled>Criar conjunto</button>
       </div>
     </div>

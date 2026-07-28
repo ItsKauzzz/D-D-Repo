@@ -22,6 +22,7 @@ const state = {
     { id: 'cidade', name: 'Cidade', color: '#7fdbff' },
     { id: 'outro', name: 'Outro', color: '#f1f3ef' },
   ],
+  maskEditing: null,
 };
 
 function createLayer(type = 'terrain') {
@@ -40,7 +41,7 @@ function createLayer(type = 'terrain') {
     image: null,
     object: type === 'object' ? { name: '', type: 'vila', iconSetId: '', gallerySetId: '', description: '', poi: true, x: null, y: null } : null,
     output: document.createElement('canvas'),
-    settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, rotation: true, mirror: true, slice: false },
+    settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, rotation: true, mirror: true, slice: false, imageOffsetX: 0, imageOffsetY: 0, imageOpacity: 1 },
   };
 }
 
@@ -107,18 +108,16 @@ function redraw(includeObjects = true) {
   // The first layer in the list has the highest visual priority, so paint bottom-up.
   for (const layer of [...state.layers].reverse()) {
     if (!layer.visible) continue;
-    if (layer.type === 'image' && layer.image) ctx.drawImage(layer.image, 0, 0, canvas.width, canvas.height);
+    if (layer.type === 'image' && layer.image) {
+      ctx.save();
+      ctx.globalAlpha = layer.settings.imageOpacity;
+      ctx.drawImage(layer.image, layer.settings.imageOffsetX, layer.settings.imageOffsetY, canvas.width, canvas.height);
+      ctx.restore();
+    }
     if (layer.type === 'terrain' && layer.output.width) ctx.drawImage(layer.output, 0, 0);
     if (layer.type === 'object' && layer.object?.x !== null && (includeObjects || !layer.object.poi)) drawMapObject(layer.object);
   }
 
-  const current = selectedLayer();
-  if (includeObjects && current?.type === 'terrain' && current.mask && !current.output.width) {
-    ctx.save();
-    ctx.globalAlpha = 0.12;
-    ctx.drawImage(current.mask, 0, 0, canvas.width, canvas.height);
-    ctx.restore();
-  }
 }
 
 function drawMapObject(object) {
@@ -225,6 +224,12 @@ function selectLayer(id) {
   $('#rotation').checked = layer.settings.rotation;
   $('#mirror').checked = layer.settings.mirror;
   $('#slice').checked = layer.settings.slice;
+  $('#imageOffsetX').value = layer.settings.imageOffsetX;
+  $('#imageOffsetY').value = layer.settings.imageOffsetY;
+  $('#imageOpacity').value = layer.settings.imageOpacity;
+  $('#imageOffsetXValue').value = `${layer.settings.imageOffsetX} px`;
+  $('#imageOffsetYValue').value = `${layer.settings.imageOffsetY} px`;
+  $('#imageOpacityValue').value = `${Math.round(layer.settings.imageOpacity * 100)}%`;
   $('#typeBadge').textContent = layer.type === 'image' ? 'Imagem' : layer.type === 'object' ? 'Objeto' : 'Terreno';
   document.querySelectorAll('.terrain-control, .image-control, .object-control').forEach((control) => {
     control.hidden = !control.classList.contains(`${layer.type}-control`);
@@ -272,7 +277,20 @@ function fillObjectInspector(object) {
   $('#objectGallerySet').value = object.gallerySetId;
   $('#objectDescription').value = object.description;
   $('#objectPoi').checked = object.poi;
+  $('#objectX').value = object.x === null ? '' : Math.round(object.x);
+  $('#objectY').value = object.y === null ? '' : Math.round(object.y);
+  renderObjectThumbnails(object);
   $('#objectPosition').textContent = object.x === null ? 'Ainda não posicionado' : `Posição: ${Math.round(object.x)}, ${Math.round(object.y)}`;
+}
+
+function renderObjectThumbnails(object) {
+  for (const [elementId, setId] of [['objectIconPreview', object.iconSetId], ['objectGalleryPreview', object.gallerySetId]]) {
+    const preview = $(`#${elementId}`);
+    const set = state.imageSets.find((item) => item.id === setId);
+    preview.replaceChildren(...(set?.assets || []).map((asset) => {
+      const image = new Image(); image.src = asset.image.src; image.alt = asset.file.name; return image;
+    }));
+  }
 }
 
 function updateReadyState() {
@@ -466,26 +484,41 @@ $('#maskInput').addEventListener('change', async (event) => {
   event.target.value = '';
 });
 let pendingSetAssets = [];
-$('#openAssetModal').onclick = () => { renderImageSets(); $('#assetModal').hidden = false; };
-$('#manageObjectSets').onclick = () => { renderImageSets(); $('#assetModal').hidden = false; };
+let editingSetId = null;
+function openAssetLibrary() {
+  editingSetId = null; pendingSetAssets = [];
+  $('#setName').value = ''; $('#newSetFiles').textContent = 'Nenhuma imagem selecionada';
+  $('#createSetBtn').textContent = 'Criar conjunto'; $('#createSetBtn').disabled = true;
+  renderEditingSetAssets(); renderImageSets(); $('#assetModal').hidden = false;
+}
+$('#openAssetModal').onclick = openAssetLibrary;
+$('#manageObjectSets').onclick = openAssetLibrary;
 $('#closeAssetModal').onclick = () => { $('#assetModal').hidden = true; };
 $('#assetModal').addEventListener('click', (event) => {
   if (event.target === $('#assetModal')) $('#assetModal').hidden = true;
 });
 $('#assetInput').addEventListener('change', async (event) => {
-  pendingSetAssets = [];
   for (const file of event.target.files) pendingSetAssets.push({ file: { name: file.name }, image: await fileImage(file) });
   $('#newSetFiles').textContent = pendingSetAssets.length ? `${pendingSetAssets.length} imagem(ns) selecionada(s)` : 'Nenhuma imagem selecionada';
   $('#createSetBtn').disabled = !pendingSetAssets.length;
+  renderEditingSetAssets();
 });
 $('#createSetBtn').onclick = () => {
   const name = $('#setName').value.trim() || `Conjunto ${state.imageSets.length + 1}`;
-  state.imageSets.push({ id: crypto.randomUUID?.() || `${Date.now()}`, name, assets: pendingSetAssets });
+  if (editingSetId) {
+    const set = state.imageSets.find((item) => item.id === editingSetId);
+    set.name = name; set.assets = pendingSetAssets;
+  } else {
+    state.imageSets.push({ id: crypto.randomUUID?.() || `${Date.now()}`, name, assets: pendingSetAssets });
+  }
+  editingSetId = null;
   pendingSetAssets = [];
   $('#setName').value = '';
   $('#assetInput').value = '';
   $('#newSetFiles').textContent = 'Nenhuma imagem selecionada';
   $('#createSetBtn').disabled = true;
+  $('#createSetBtn').textContent = 'Criar conjunto';
+  renderEditingSetAssets();
   renderImageSets();
   populateObjectOptions();
 };
@@ -496,10 +529,19 @@ function renderImageSets() {
   for (const set of state.imageSets) {
     const item = document.createElement('div');
     item.className = 'image-set';
-    item.innerHTML = '<div><b></b><small></small></div><button>Usar</button>';
+    item.innerHTML = '<div><b></b><small></small></div><button class="edit-set" title="Editar">✎</button><button class="use-set">Usar</button>';
     item.querySelector('b').textContent = set.name;
     item.querySelector('small').textContent = `${set.assets.length} imagem(ns)`;
-    item.querySelector('button').onclick = () => {
+    item.querySelector('.edit-set').onclick = () => {
+      editingSetId = set.id;
+      pendingSetAssets = [...set.assets];
+      $('#setName').value = set.name;
+      $('#newSetFiles').textContent = `${pendingSetAssets.length} imagem(ns)`;
+      $('#createSetBtn').textContent = 'Salvar alterações';
+      $('#createSetBtn').disabled = false;
+      renderEditingSetAssets();
+    };
+    item.querySelector('.use-set').onclick = () => {
       const layer = selectedLayer();
       if (layer.type === 'object') {
         layer.object.iconSetId = set.id;
@@ -519,6 +561,17 @@ function renderImageSets() {
   if (!state.imageSets.length) list.innerHTML = '<div class="set-empty">Nenhum conjunto criado ainda.</div>';
 }
 
+function renderEditingSetAssets() {
+  const list = $('#editingSetAssets');
+  list.replaceChildren(...pendingSetAssets.map((asset, index) => {
+    const item = document.createElement('div'); item.className = 'editing-asset';
+    const image = new Image(); image.src = asset.image.src; image.alt = asset.file.name;
+    const remove = document.createElement('button'); remove.textContent = '×'; remove.title = 'Remover';
+    remove.onclick = () => { pendingSetAssets.splice(index, 1); renderEditingSetAssets(); $('#createSetBtn').disabled = !pendingSetAssets.length; };
+    item.append(image, remove); return item;
+  }));
+}
+
 const objectBindings = {
   objectName: 'name', objectType: 'type', objectIconSet: 'iconSetId',
   objectGallerySet: 'gallerySetId', objectDescription: 'description', objectPoi: 'poi',
@@ -529,6 +582,7 @@ for (const [elementId, property] of Object.entries(objectBindings)) {
     if (layer.type !== 'object') return;
     layer.object[property] = elementId === 'objectPoi' ? event.target.checked : event.target.value;
     if (property === 'name') { layer.name = event.target.value || 'Objeto'; $('#layerName').value = layer.name; renderLayers(); }
+    if (property === 'iconSetId' || property === 'gallerySetId') renderObjectThumbnails(layer.object);
     redraw();
   });
 }
@@ -537,6 +591,14 @@ $('#positionObject').onclick = () => {
   $('#positionObject').classList.add('active');
   $('#positionObject').textContent = 'Clique no mapa…';
 };
+['objectX', 'objectY'].forEach((id) => {
+  $(`#${id}`).addEventListener('input', (event) => {
+    const object = selectedLayer().object;
+    object[id === 'objectX' ? 'x' : 'y'] = event.target.value === '' ? null : Number(event.target.value);
+    $('#objectPosition').textContent = object.x === null || object.y === null ? 'Ainda não posicionado' : `Posição: ${Math.round(object.x)}, ${Math.round(object.y)}`;
+    redraw();
+  });
+});
 
 ['density', 'scale', 'sizeMin', 'sizeMax'].forEach((id) => {
   $(`#${id}`).addEventListener('input', (event) => {
@@ -549,6 +611,13 @@ $('#positionObject').onclick = () => {
     updateOutputs();
   });
 });
+['imageOffsetX', 'imageOffsetY', 'imageOpacity'].forEach((id) => {
+  $(`#${id}`).addEventListener('input', (event) => {
+    selectedLayer().settings[id] = Number(event.target.value);
+    $(`#${id}Value`).value = id === 'imageOpacity' ? `${Math.round(event.target.value * 100)}%` : `${event.target.value} px`;
+    redraw();
+  });
+});
 $('#sizeVariation').addEventListener('change', (event) => {
   selectedLayer().settings.sizeVariation = event.target.checked;
   updateOutputs();
@@ -557,6 +626,57 @@ $('#seed').addEventListener('input', (event) => { selectedLayer().settings.seed 
 $('#rotation').addEventListener('change', (event) => { selectedLayer().settings.rotation = event.target.checked; });
 $('#mirror').addEventListener('change', (event) => { selectedLayer().settings.mirror = event.target.checked; });
 $('#slice').addEventListener('change', (event) => { selectedLayer().settings.slice = event.target.checked; });
+const maskEditCanvas = $('#maskEditCanvas');
+const maskEditContext = maskEditCanvas.getContext('2d');
+let maskTool = 'brush';
+let maskDrawing = false;
+
+$('#createMaskBtn').onclick = () => {
+  const layer = selectedLayer();
+  maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
+  maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
+  if (layer.mask) maskEditContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
+  state.maskEditing = layer.id;
+  maskEditCanvas.style.display = 'block';
+  $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
+  $('#saveState').textContent = 'Editando máscara';
+};
+document.querySelectorAll('[data-mask-tool]').forEach((button) => {
+  button.onclick = () => {
+    maskTool = button.dataset.maskTool;
+    document.querySelectorAll('[data-mask-tool]').forEach((item) => item.classList.toggle('active', item === button));
+    $('#brushSizeControl').hidden = maskTool === 'fill';
+    if (maskTool === 'fill') {
+      maskEditContext.globalCompositeOperation = 'source-over';
+      maskEditContext.fillStyle = '#000'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  };
+});
+$('#brushSize').oninput = (event) => { $('#brushSizeValue').value = `${event.target.value} px`; };
+function paintMask(event) {
+  if (!maskDrawing || maskTool === 'fill') return;
+  const rectangle = maskEditCanvas.getBoundingClientRect();
+  const x = (event.clientX - rectangle.left) * canvas.width / rectangle.width;
+  const y = (event.clientY - rectangle.top) * canvas.height / rectangle.height;
+  maskEditContext.globalCompositeOperation = maskTool === 'eraser' ? 'destination-out' : 'source-over';
+  maskEditContext.fillStyle = '#000';
+  maskEditContext.beginPath(); maskEditContext.arc(x, y, Number($('#brushSize').value) / 2, 0, Math.PI * 2); maskEditContext.fill();
+}
+maskEditCanvas.onpointerdown = (event) => { maskDrawing = true; maskEditCanvas.setPointerCapture(event.pointerId); paintMask(event); };
+maskEditCanvas.onpointermove = paintMask;
+maskEditCanvas.onpointerup = () => { maskDrawing = false; };
+async function closeMaskEditor(save) {
+  const layer = state.layers.find((item) => item.id === state.maskEditing);
+  if (save && layer) {
+    layer.mask = await imageFromSource(maskEditCanvas.toDataURL('image/png'));
+    layer.maskName = 'Máscara criada no editor'; layer.maskPixels = null; layer.clip = null; layer.bounds = null; layer.output.width = 0;
+    $('#maskName').textContent = layer.maskName; updateReadyState(); redraw();
+  }
+  state.maskEditing = null; maskEditCanvas.style.display = 'none'; $('#maskTools').hidden = true; $('#brushSizeControl').hidden = true;
+  $('#saveState').textContent = save ? 'Máscara atualizada' : 'Edição cancelada';
+}
+$('#finishMask').onclick = () => closeMaskEditor(true);
+$('#cancelMask').onclick = () => closeMaskEditor(false);
 $('#randomSeed').onclick = () => {
   selectedLayer().settings.seed = Math.random().toString(36).slice(2, 10);
   $('#seed').value = selectedLayer().settings.seed;
@@ -683,9 +803,15 @@ viewport.addEventListener('wheel', (event) => {
 }, { passive: false });
 
 function zoomBy(multiplier) {
+  const centerX = viewport.clientWidth / 2;
+  const centerY = viewport.clientHeight / 2;
+  const oldZoom = state.zoom;
   state.zoom = Math.max(0.15, Math.min(3, state.zoom * multiplier));
+  state.x = centerX - (centerX - state.x) * state.zoom / oldZoom;
+  state.y = centerY - (centerY - state.y) * state.zoom / oldZoom;
   updateTransform();
 }
+$('.zoom-controls').addEventListener('pointerdown', (event) => event.stopPropagation());
 $('#zoomIn').onclick = () => zoomBy(1.15);
 $('#zoomOut').onclick = () => zoomBy(0.85);
 $('#fitBtn').onclick = fit;
@@ -715,7 +841,7 @@ function createMapHtml() {
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mapa de Teralium</title><style>
 *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#101311;color:#eef2ee;font-family:Arial,sans-serif}.side{position:fixed;z-index:10;inset:0 auto 0 0;width:280px;padding:22px 16px;background:#171a18;border-right:1px solid #303630;overflow:auto}.side h1{font-size:18px;margin:0 0 18px}.side input,.side select{width:100%;padding:10px;margin-bottom:8px;border:1px solid #343b35;border-radius:7px;background:#0f1210;color:#eef2ee}.poi-list{display:grid;gap:5px;margin-top:12px}.poi-item{padding:10px;border:0;border-radius:7px;background:transparent;color:#eef2ee;text-align:left;cursor:pointer}.poi-item:hover{background:#252b26}.poi-item small{display:block;margin-top:3px;color:#89928b}.view{position:fixed;inset:0 0 0 280px;overflow:hidden;cursor:grab;background-image:linear-gradient(#1b201c 1px,transparent 1px),linear-gradient(90deg,#1b201c 1px,transparent 1px);background-size:24px 24px}.view.dragging{cursor:grabbing}.world{position:absolute;transform-origin:0 0}.map{position:absolute;inset:0;user-select:none;-webkit-user-drag:none}.pin{position:absolute;transform:translate(-50%,-48px);display:grid;justify-items:center;border:0;background:transparent;color:var(--color);cursor:pointer}.pin img{width:48px;height:48px;object-fit:contain}.pin span{margin-top:3px;color:var(--color);font-weight:700;font-size:14px;white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.pin:hover img{filter:drop-shadow(0 0 2px white) drop-shadow(0 0 5px var(--color))}.pin:hover span{color:#fff}.modal{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:25px;background:#050706d9}.modal[hidden]{display:none}.card{position:relative;width:min(620px,100%);max-height:90vh;overflow:auto;padding:25px;border:1px solid #3b433c;border-radius:14px;background:#191d1a}.close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#aaa;font-size:25px;cursor:pointer}.card h2{margin:0;color:var(--poi-color)}.kind{color:#929b94;font-size:11px}.description{line-height:1.6;white-space:pre-wrap}.gallery{display:flex;gap:8px;overflow:auto;margin-top:20px}.gallery img{width:150px;height:100px;object-fit:cover;border-radius:7px;cursor:zoom-in}.lightbox{z-index:40}.lightbox img{max-width:92vw;max-height:90vh}.empty{color:#7f8881;font-size:12px;padding:10px}.hint{position:fixed;right:16px;bottom:16px;padding:8px;border-radius:7px;background:#171a18cc;color:#999;font-size:11px;pointer-events:none}@media(max-width:700px){.side{width:220px}.view{left:220px}}
 </style></head><body><aside class="side"><h1>Pontos de interesse</h1><input id="search" placeholder="Pesquisar..."><select id="filter"><option value="">Todos os tipos</option></select><div id="list" class="poi-list"></div></aside><main id="view" class="view"><div id="world" class="world" style="width:${canvas.width}px;height:${canvas.height}px"><img class="map" src="${image}" alt="Mapa"><div id="pins"></div></div><span class="hint">Arraste para mover • Scroll para zoom</span></main><div id="details" class="modal" hidden><article class="card"><button class="close">×</button><small class="kind"></small><h2></h2><p class="description"></p><div class="gallery"></div></article></div><div id="lightbox" class="modal lightbox" hidden><img alt="Imagem ampliada"></div><script>
-const pois=${pois},types=${types},view=document.querySelector('#view'),world=document.querySelector('#world'),pins=document.querySelector('#pins'),list=document.querySelector('#list'),search=document.querySelector('#search'),filter=document.querySelector('#filter'),details=document.querySelector('#details'),lightbox=document.querySelector('#lightbox');let zoom=1,x=0,y=0,drag=false,lx=0,ly=0;function draw(){world.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')'}function center(p){x=view.clientWidth/2-p.x*zoom;y=view.clientHeight/2-p.y*zoom;draw()}function openPoi(p){details.style.setProperty('--poi-color',p.color);details.querySelector('h2').textContent=p.name;details.querySelector('.kind').textContent=p.typeName;details.querySelector('.description').textContent=p.description||'Sem descrição.';const gallery=details.querySelector('.gallery');gallery.replaceChildren(...p.gallery.map(src=>{const image=new Image();image.src=src;image.onclick=()=>{lightbox.querySelector('img').src=src;lightbox.hidden=false};return image}));details.hidden=false}for(const type of types)filter.add(new Option(type.name,type.id));for(const p of pois){const pin=document.createElement('button');pin.className='pin';pin.style.cssText='left:'+p.x+'px;top:'+p.y+'px;--color:'+p.color;pin.innerHTML='<img><span></span>';pin.querySelector('img').src=p.icon;pin.querySelector('span').textContent=p.name;pin.onclick=()=>openPoi(p);pins.append(pin)}function renderList(){const term=search.value.toLowerCase();const shown=pois.filter(p=>(!filter.value||p.type===filter.value)&&p.name.toLowerCase().includes(term));list.replaceChildren(...shown.map(p=>{const b=document.createElement('button');b.className='poi-item';b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=p.name;b.querySelector('b').style.color=p.color;b.querySelector('small').textContent=p.typeName;b.onclick=()=>center(p);return b}));if(!shown.length)list.innerHTML='<div class="empty">Nenhum ponto encontrado.</div>'}search.oninput=renderList;filter.onchange=renderList;renderList();function fit(){zoom=Math.min(view.clientWidth/${canvas.width},view.clientHeight/${canvas.height},.95);x=(view.clientWidth-${canvas.width}*zoom)/2;y=(view.clientHeight-${canvas.height}*zoom)/2;draw()}fit();view.onpointerdown=e=>{if(e.target.closest('.pin'))return;drag=true;lx=e.clientX;ly=e.clientY;view.classList.add('dragging');view.setPointerCapture(e.pointerId)};view.onpointermove=e=>{if(!drag)return;x+=e.clientX-lx;y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;draw()};view.onpointerup=()=>{drag=false;view.classList.remove('dragging')};view.onwheel=e=>{e.preventDefault();const r=view.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,old=zoom;zoom=Math.max(.05,Math.min(8,zoom*(e.deltaY<0?1.1:.9)));x=mx-(mx-x)*zoom/old;y=my-(my-y)*zoom/old;draw()};details.querySelector('.close').onclick=()=>details.hidden=true;details.onclick=e=>{if(e.target===details)details.hidden=true};lightbox.onclick=()=>lightbox.hidden=true;
+const pois=${pois},types=${types},view=document.querySelector('#view'),world=document.querySelector('#world'),pins=document.querySelector('#pins'),list=document.querySelector('#list'),search=document.querySelector('#search'),filter=document.querySelector('#filter'),details=document.querySelector('#details'),lightbox=document.querySelector('#lightbox');let zoom=1,x=0,y=0,drag=false,lx=0,ly=0;function draw(){world.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')'}function center(p){zoom=1;x=view.clientWidth/2-p.x;y=view.clientHeight/2-p.y;draw()}function openPoi(p){details.style.setProperty('--poi-color',p.color);details.querySelector('h2').textContent=p.name;details.querySelector('.kind').textContent=p.typeName;details.querySelector('.description').textContent=p.description||'Sem descrição.';const gallery=details.querySelector('.gallery');gallery.replaceChildren(...p.gallery.map(src=>{const image=new Image();image.src=src;image.onclick=()=>{lightbox.querySelector('img').src=src;lightbox.hidden=false};return image}));details.hidden=false}for(const type of types)filter.add(new Option(type.name,type.id));for(const p of pois){const pin=document.createElement('button');pin.className='pin';pin.style.cssText='left:'+p.x+'px;top:'+p.y+'px;--color:'+p.color;pin.innerHTML='<img><span></span>';pin.querySelector('img').src=p.icon;pin.querySelector('span').textContent=p.name;pin.onclick=()=>openPoi(p);pins.append(pin)}function renderList(){const term=search.value.toLowerCase();const shown=pois.filter(p=>(!filter.value||p.type===filter.value)&&p.name.toLowerCase().includes(term));list.replaceChildren(...shown.map(p=>{const b=document.createElement('button');b.className='poi-item';b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=p.name;b.querySelector('b').style.color=p.color;b.querySelector('small').textContent=p.typeName;b.onclick=()=>center(p);return b}));if(!shown.length)list.innerHTML='<div class="empty">Nenhum ponto encontrado.</div>'}search.oninput=renderList;filter.onchange=renderList;renderList();function fit(){zoom=Math.min(view.clientWidth/${canvas.width},view.clientHeight/${canvas.height},.95);x=(view.clientWidth-${canvas.width}*zoom)/2;y=(view.clientHeight-${canvas.height}*zoom)/2;draw()}fit();view.onpointerdown=e=>{if(e.target.closest('.pin'))return;drag=true;lx=e.clientX;ly=e.clientY;view.classList.add('dragging');view.setPointerCapture(e.pointerId)};view.onpointermove=e=>{if(!drag)return;x+=e.clientX-lx;y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;draw()};view.onpointerup=()=>{drag=false;view.classList.remove('dragging')};view.onwheel=e=>{e.preventDefault();const r=view.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,old=zoom;zoom=Math.max(.05,Math.min(8,zoom*(e.deltaY<0?1.1:.9)));x=mx-(mx-x)*zoom/old;y=my-(my-y)*zoom/old;draw()};details.querySelector('.close').onclick=()=>details.hidden=true;details.onclick=e=>{if(e.target===details)details.hidden=true};lightbox.onclick=()=>lightbox.hidden=true;
 <\/script></body></html>`;
 }
 
