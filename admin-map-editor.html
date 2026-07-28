@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Map editor • Admin tools</title><link rel="stylesheet" href="admin-map-editor.css"></head>
+<body>
+  <header class="topbar"><a href="admin-tools.html" aria-label="Voltar">←</a><strong>Map editor</strong><span id="saveState">Pronto</span><button id="exportBtn">Exportar PNG</button></header>
+  <aside class="sidebar left-panel">
+    <p class="panel-label">TOOLS</p>
+    <button class="tool active"><span>⌁</span><div><b>Preencher máscara</b><small>Distribuir imagens</small></div></button>
+    <button class="tool disabled" disabled><span>＋</span><div><b>Em breve</b><small>Novas ferramentas</small></div></button>
+    <div class="help"><b>Navegação</b><p>Arraste o mapa para mover. Use a roda do mouse para aplicar zoom.</p></div>
+  </aside>
+  <main id="viewport">
+    <div id="stage"><canvas id="mapCanvas" width="1600" height="1000"></canvas></div>
+    <div class="empty-state" id="emptyState"><span>⌁</span><b>Seu mapa começa aqui</b><small>Envie uma máscara no inspector para criar a primeira camada.</small></div>
+    <div class="zoom-controls"><button id="zoomOut" aria-label="Diminuir zoom">−</button><output id="zoomValue">70%</output><button id="zoomIn" aria-label="Aumentar zoom">＋</button><button id="fitBtn">Ajustar</button></div>
+  </main>
+  <aside class="sidebar inspector">
+    <div class="inspector-head"><div><p class="panel-label">INSPECTOR</p><h2>Máscara</h2></div><span class="status-dot"></span></div>
+    <section><label class="upload" for="maskInput"><span>＋</span><b>Enviar máscara</b><small>PNG, JPG ou WEBP</small></label><input id="maskInput" type="file" accept="image/*" hidden><p class="filename" id="maskName">Nenhuma máscara selecionada</p></section>
+    <section><div class="section-title"><b>Imagens do mestre</b><span id="assetCount">0</span></div><label class="asset-upload" for="assetInput">＋ Adicionar imagens</label><input id="assetInput" type="file" accept="image/*" multiple hidden><div id="assetGrid" class="asset-grid"><p>Adicione árvores, pedras ou qualquer elemento que queira distribuir.</p></div></section>
+    <section class="fields"><label>Intensidade <output id="densityValue">45</output><input id="density" type="range" min="5" max="100" value="45"></label><label>Tamanho <output id="sizeValue">72 px</output><input id="size" type="range" min="16" max="180" value="72"></label><label>Seed <div class="seed-row"><input id="seed" value="Teralium-01"><button id="randomSeed" title="Gerar seed">↻</button></div></label></section>
+    <section class="options"><label><input id="rotation" type="checkbox" checked><span></span>Rotação aleatória</label><label><input id="variation" type="checkbox" checked><span></span>Variar tamanho</label></section>
+    <div class="inspector-footer"><button id="generateBtn" disabled>Gerar preenchimento</button><small>A seed mantém o resultado reproduzível.</small></div>
+  </aside>
+  <script src="admin-map-editor.js"></script>
+</body></html>
