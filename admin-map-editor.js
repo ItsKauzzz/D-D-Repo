@@ -621,7 +621,14 @@ function fillObjectInspector(object) {
   renderObjectThumbnails(object);
   renderObjectAnchorPreview(object);
   renderObjectIconTrigger(object);
+  updateDetailedDescriptionControls(object);
   $('#objectPosition').textContent = object.x === null ? 'Ainda não posicionado' : `Posição: ${Math.round(object.x)}, ${Math.round(object.y)}`;
+}
+
+function updateDetailedDescriptionControls(object) {
+  const hasDetailedDescription = Boolean(object.descriptionPages?.length);
+  $('#openDetailedDescription').textContent = hasDetailedDescription ? 'Editar descrição detalhada' : 'Adicionar descrição detalhada';
+  $('#removeDetailedDescription').hidden = !hasDetailedDescription;
 }
 
 function renderObjectIconTrigger(object) {
@@ -717,7 +724,18 @@ function renderDescriptionPageEditor() {
   editor.replaceChildren(card);
 }
 
-$('#openDetailedDescription').onclick = () => { renderDescriptionTemplates(); $('#descriptionTemplateModal').hidden = false; };
+$('#openDetailedDescription').onclick = () => {
+  const layer = selectedLayer(); if (layer?.type !== 'object') return;
+  if (layer.object.descriptionPages?.length) openDescriptionEditor(layer.object.detailedTemplateId || '', layer.object.descriptionPages, layer.object.name || 'Descrição', true);
+  else { renderDescriptionTemplates(); $('#descriptionTemplateModal').hidden = false; }
+};
+$('#removeDetailedDescription').onclick = () => {
+  const layer = selectedLayer(); if (layer?.type !== 'object' || !layer.object.descriptionPages?.length) return;
+  if (!window.confirm('Remover a descrição detalhada e todo o conteúdo das páginas deste objeto?')) return;
+  layer.object.detailedTemplateId = ''; layer.object.descriptionPages = [];
+  updateDetailedDescriptionControls(layer.object);
+  $('#saveState').textContent = 'Descrição detalhada removida';
+};
 $('#closeDescriptionTemplates').onclick = () => { $('#descriptionTemplateModal').hidden = true; };
 $('#descriptionTemplateModal').addEventListener('click', (event) => { if (event.target === $('#descriptionTemplateModal')) $('#descriptionTemplateModal').hidden = true; });
 $('#createDescriptionTemplate').onclick = () => {
@@ -733,6 +751,7 @@ $('#saveDetailedDescription').onclick = () => {
   template.pages = editingDescriptionPages.map((page) => ({ id: page.id, title: page.title }));
   layer.object.detailedTemplateId = template.id;
   layer.object.descriptionPages = editingDescriptionPages.map((page) => ({ id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`, title: page.title, content: editingTemplateStructureOnly ? '' : page.content, images: editingTemplateStructureOnly ? [] : [...page.images] }));
+  updateDetailedDescriptionControls(layer.object);
   $('#descriptionEditorModal').hidden = true; $('#saveState').textContent = 'Descrição detalhada salva';
 };
 
