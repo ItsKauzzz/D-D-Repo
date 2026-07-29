@@ -44,3 +44,6 @@ Os dois painéis laterais são fixos e possuem scroll próprio. Assim, navegar p
 17. Valores de sliders também aceitam entrada numérica direta para ajustes precisos.
 18. Durante a pintura da máscara, o botão esquerdo pinta/apaga e o botão direito assume o pan; confirmar rasteriza o desenho como PNG reutilizável da camada.
 19. Objetos possuem escala, opacidade e offset próprios, independentes dos controles procedurais de Terreno.
+20. A pintura de máscara mantém histórico local para `Ctrl+Z` e mostra o raio exato do brush junto ao cursor.
+21. Ícones usam amostragem nearest-neighbor para preservar pixels e bordas em qualquer zoom.
+22. O visualizador publicado pode alternar entre mapa 2D e perspectiva simulada, com o chão inclinado, ícones em pé e órbita pelo botão direito.

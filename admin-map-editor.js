@@ -104,6 +104,7 @@ function fit() {
 }
 
 function redraw(includeObjects = true) {
+  ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   // The first layer in the list has the highest visual priority, so paint bottom-up.
   for (const layer of [...state.layers].reverse()) {
@@ -376,6 +377,7 @@ async function generate() {
   layer.output.width = canvas.width;
   layer.output.height = canvas.height;
   const outputContext = layer.output.getContext('2d');
+  outputContext.imageSmoothingEnabled = false;
   const random = randomFactory(hashSeed(layer.settings.seed));
   const { minX, minY, maxX, maxY } = layer.bounds;
   const width = maxX - minX + 1;
@@ -688,6 +690,8 @@ let maskPanning = false;
 let maskPanX = 0;
 let maskPanY = 0;
 let maskPaintPointerId = null;
+let maskHistory = [];
+const brushCursor = $('#brushCursor');
 
 $('#createMaskBtn').onclick = () => {
   const layer = selectedLayer();
@@ -695,6 +699,7 @@ $('#createMaskBtn').onclick = () => {
   maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
   if (layer.mask) maskEditContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
   state.maskEditing = layer.id;
+  maskHistory = [];
   state.drag = false;
   viewport.classList.remove('dragging');
   maskEditCanvas.style.display = 'block';
@@ -708,7 +713,10 @@ document.querySelectorAll('[data-mask-tool]').forEach((button) => {
     $('#brushSizeControl').hidden = maskTool === 'fill';
   };
 });
-$('#brushSize').oninput = (event) => { $('#brushSizeValue').value = event.target.value; };
+$('#brushSize').oninput = (event) => {
+  $('#brushSizeValue').value = event.target.value;
+  brushCursor.style.width = `${event.target.value}px`; brushCursor.style.height = `${event.target.value}px`;
+};
 bindNumberInput('brushSizeValue', 'brushSize', () => {});
 function paintMask(event) {
   if (!maskDrawing || maskPaintPointerId !== event.pointerId || !(event.buttons & 1)) return;
@@ -729,8 +737,11 @@ maskEditCanvas.oncontextmenu = (event) => event.preventDefault();
 maskEditCanvas.onpointerdown = (event) => {
   event.stopPropagation();
   if (event.button === 2) {
+    brushCursor.style.display = 'none';
     maskPanning = true; maskPanX = event.clientX; maskPanY = event.clientY;
   } else if (event.button === 0) {
+    maskHistory.push(maskEditCanvas.toDataURL('image/png'));
+    if (maskHistory.length > 20) maskHistory.shift();
     maskDrawing = true; maskPaintPointerId = event.pointerId; paintMask(event);
   } else return;
   maskEditCanvas.setPointerCapture(event.pointerId);
@@ -742,10 +753,17 @@ maskEditCanvas.onpointermove = (event) => {
     state.x += event.clientX - maskPanX; state.y += event.clientY - maskPanY;
     maskPanX = event.clientX; maskPanY = event.clientY; updateTransform();
   } else {
+    const rectangle = maskEditCanvas.getBoundingClientRect();
+    const x = (event.clientX - rectangle.left) * canvas.width / rectangle.width;
+    const y = (event.clientY - rectangle.top) * canvas.height / rectangle.height;
+    brushCursor.style.left = `${x}px`; brushCursor.style.top = `${y}px`;
+    brushCursor.style.display = maskTool === 'fill' ? 'none' : 'block';
     if (!(event.buttons & 1)) { maskDrawing = false; maskPaintPointerId = null; return; }
     paintMask(event);
   }
 };
+maskEditCanvas.onpointerleave = () => { if (!maskDrawing) brushCursor.style.display = 'none'; };
+maskEditCanvas.onpointerenter = (event) => { if (!maskPanning && maskTool !== 'fill') maskEditCanvas.onpointermove(event); };
 function stopMaskPointer(event) {
   event?.stopPropagation();
   maskDrawing = false; maskPanning = false; maskPaintPointerId = null;
@@ -761,10 +779,22 @@ async function closeMaskEditor(save) {
     $('#maskName').textContent = layer.maskName; renderMaskPreview(layer); updateReadyState(); redraw();
   }
   state.maskEditing = null; maskEditCanvas.style.display = 'none'; $('#maskTools').hidden = true; $('#brushSizeControl').hidden = true;
+  brushCursor.style.display = 'none'; maskHistory = [];
   $('#saveState').textContent = save ? 'Máscara atualizada' : 'Edição cancelada';
 }
 $('#finishMask').onclick = () => closeMaskEditor(true);
 $('#cancelMask').onclick = () => closeMaskEditor(false);
+document.addEventListener('keydown', async (event) => {
+  if (!state.maskEditing || !(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return;
+  event.preventDefault();
+  const snapshot = maskHistory.pop();
+  if (!snapshot) return;
+  const image = await imageFromSource(snapshot);
+  maskEditContext.globalCompositeOperation = 'source-over';
+  maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
+  maskEditContext.drawImage(image, 0, 0);
+  $('#saveState').textContent = `Desfazer • ${maskHistory.length} restante(s)`;
+});
 $('#randomSeed').onclick = () => {
   selectedLayer().settings.seed = Math.random().toString(36).slice(2, 10);
   $('#seed').value = selectedLayer().settings.seed;
@@ -927,9 +957,9 @@ function createMapHtml() {
   const pois = JSON.stringify(exportablePois()).replace(/</g, '\\u003c');
   const types = JSON.stringify(state.poiTypes).replace(/</g, '\\u003c');
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mapa de Teralium</title><style>
-*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#101311;color:#eef2ee;font-family:Arial,sans-serif}.side{position:fixed;z-index:10;inset:0 auto 0 0;width:280px;padding:22px 16px;background:#171a18;border-right:1px solid #303630;overflow:auto}.side h1{font-size:18px;margin:0 0 18px}.side input,.side select{width:100%;padding:10px;margin-bottom:8px;border:1px solid #343b35;border-radius:7px;background:#0f1210;color:#eef2ee}.poi-list{display:grid;gap:5px;margin-top:12px}.poi-item{padding:10px;border:0;border-radius:7px;background:transparent;color:#eef2ee;text-align:left;cursor:pointer}.poi-item:hover{background:#252b26}.poi-item small{display:block;margin-top:3px;color:#89928b}.view{position:fixed;inset:0 0 0 280px;overflow:hidden;cursor:grab;background-image:linear-gradient(#1b201c 1px,transparent 1px),linear-gradient(90deg,#1b201c 1px,transparent 1px);background-size:24px 24px}.view.dragging{cursor:grabbing}.world{position:absolute;transform-origin:0 0}.map{position:absolute;inset:0;user-select:none;-webkit-user-drag:none}.pin{position:absolute;transform:translate(-50%,calc(-48px * var(--scale)));display:grid;justify-items:center;border:0;background:transparent;color:var(--color);cursor:pointer}.pin img{width:calc(48px * var(--scale));height:calc(48px * var(--scale));object-fit:contain}.pin span{margin-top:3px;color:var(--color);font-weight:700;font-size:14px;white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.pin:hover img{filter:drop-shadow(0 0 2px white) drop-shadow(0 0 5px var(--color))}.pin:hover span{color:#fff}.modal{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:25px;background:#050706d9}.modal[hidden]{display:none}.card{position:relative;width:min(620px,100%);max-height:90vh;overflow:auto;padding:25px;border:1px solid #3b433c;border-radius:14px;background:#191d1a}.close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#aaa;font-size:25px;cursor:pointer}.card h2{margin:0;color:var(--poi-color)}.kind{color:#929b94;font-size:11px}.description{line-height:1.6;white-space:pre-wrap}.gallery{display:flex;gap:8px;overflow:auto;margin-top:20px}.gallery img{width:150px;height:100px;object-fit:cover;border-radius:7px;cursor:zoom-in}.lightbox{z-index:40}.lightbox img{max-width:92vw;max-height:90vh}.empty{color:#7f8881;font-size:12px;padding:10px}.hint{position:fixed;right:16px;bottom:16px;padding:8px;border-radius:7px;background:#171a18cc;color:#999;font-size:11px;pointer-events:none}@media(max-width:700px){.side{width:220px}.view{left:220px}}
-</style></head><body><aside class="side"><h1>Pontos de interesse</h1><input id="search" placeholder="Pesquisar..."><select id="filter"><option value="">Todos os tipos</option></select><div id="list" class="poi-list"></div></aside><main id="view" class="view"><div id="world" class="world" style="width:${canvas.width}px;height:${canvas.height}px"><img class="map" src="${image}" alt="Mapa"><div id="pins"></div></div><span class="hint">Arraste para mover • Scroll para zoom</span></main><div id="details" class="modal" hidden><article class="card"><button class="close">×</button><small class="kind"></small><h2></h2><p class="description"></p><div class="gallery"></div></article></div><div id="lightbox" class="modal lightbox" hidden><img alt="Imagem ampliada"></div><script>
-const pois=${pois},types=${types},view=document.querySelector('#view'),world=document.querySelector('#world'),pins=document.querySelector('#pins'),list=document.querySelector('#list'),search=document.querySelector('#search'),filter=document.querySelector('#filter'),details=document.querySelector('#details'),lightbox=document.querySelector('#lightbox');let zoom=1,x=0,y=0,drag=false,lx=0,ly=0;function draw(){world.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')'}function center(p){zoom=1;x=view.clientWidth/2-p.x;y=view.clientHeight/2-p.y;draw()}function openPoi(p){details.style.setProperty('--poi-color',p.color);details.querySelector('h2').textContent=p.name;details.querySelector('.kind').textContent=p.typeName;details.querySelector('.description').textContent=p.description||'Sem descrição.';const gallery=details.querySelector('.gallery');gallery.replaceChildren(...p.gallery.map(src=>{const image=new Image();image.src=src;image.onclick=()=>{lightbox.querySelector('img').src=src;lightbox.hidden=false};return image}));details.hidden=false}for(const type of types)filter.add(new Option(type.name,type.id));for(const p of pois){const pin=document.createElement('button');pin.className='pin';pin.style.cssText='left:'+p.x+'px;top:'+p.y+'px;--color:'+p.color+';--scale:'+(p.scale||1)+';opacity:'+(p.opacity??1);pin.innerHTML='<img><span></span>';pin.querySelector('img').src=p.icon;pin.querySelector('span').textContent=p.name;pin.onclick=()=>openPoi(p);pins.append(pin)}function renderList(){const term=search.value.toLowerCase();const shown=pois.filter(p=>(!filter.value||p.type===filter.value)&&p.name.toLowerCase().includes(term));list.replaceChildren(...shown.map(p=>{const b=document.createElement('button');b.className='poi-item';b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=p.name;b.querySelector('b').style.color=p.color;b.querySelector('small').textContent=p.typeName;b.onclick=()=>center(p);return b}));if(!shown.length)list.innerHTML='<div class="empty">Nenhum ponto encontrado.</div>'}search.oninput=renderList;filter.onchange=renderList;renderList();function fit(){zoom=Math.min(view.clientWidth/${canvas.width},view.clientHeight/${canvas.height},.95);x=(view.clientWidth-${canvas.width}*zoom)/2;y=(view.clientHeight-${canvas.height}*zoom)/2;draw()}fit();view.onpointerdown=e=>{if(e.target.closest('.pin'))return;drag=true;lx=e.clientX;ly=e.clientY;view.classList.add('dragging');view.setPointerCapture(e.pointerId)};view.onpointermove=e=>{if(!drag)return;x+=e.clientX-lx;y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;draw()};view.onpointerup=()=>{drag=false;view.classList.remove('dragging')};view.onwheel=e=>{e.preventDefault();const r=view.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,old=zoom;zoom=Math.max(.05,Math.min(8,zoom*(e.deltaY<0?1.1:.9)));x=mx-(mx-x)*zoom/old;y=my-(my-y)*zoom/old;draw()};details.querySelector('.close').onclick=()=>details.hidden=true;details.onclick=e=>{if(e.target===details)details.hidden=true};lightbox.onclick=()=>lightbox.hidden=true;
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#101311;color:#eef2ee;font-family:Arial,sans-serif}.side{position:fixed;z-index:10;inset:0 auto 0 0;width:280px;padding:22px 16px;background:#171a18;border-right:1px solid #303630;overflow:auto}.side h1{font-size:18px;margin:0 0 18px}.side input,.side select{width:100%;padding:10px;margin-bottom:8px;border:1px solid #343b35;border-radius:7px;background:#0f1210;color:#eef2ee}.mode-toggle{width:100%;margin:2px 0 8px;padding:10px;border:1px solid #46513f;border-radius:7px;background:#252d23;color:#b7df72;cursor:pointer}.mode-toggle.active{background:#b7df72;color:#17200d}.poi-list{display:grid;gap:5px;margin-top:12px}.poi-item{padding:10px;border:0;border-radius:7px;background:transparent;color:#eef2ee;text-align:left;cursor:pointer}.poi-item:hover{background:#252b26}.poi-item small{display:block;margin-top:3px;color:#89928b}.view{position:fixed;inset:0 0 0 280px;overflow:hidden;cursor:grab;background-image:linear-gradient(#1b201c 1px,transparent 1px),linear-gradient(90deg,#1b201c 1px,transparent 1px);background-size:24px 24px}.view.dragging{cursor:grabbing}.world{position:absolute;transform-origin:center center;transform-style:preserve-3d}.map{position:absolute;inset:0;user-select:none;-webkit-user-drag:none;image-rendering:pixelated;image-rendering:crisp-edges}.pin{position:absolute;transform:translate(-50%,calc(-48px * var(--scale)));display:grid;justify-items:center;border:0;background:transparent;color:var(--color);cursor:pointer}.pin img{width:calc(48px * var(--scale));height:calc(48px * var(--scale));object-fit:contain;image-rendering:pixelated;image-rendering:crisp-edges}.view.three .pin{transform:translate(-50%,calc(-48px * var(--scale))) rotateZ(calc(var(--yaw) * -1deg)) rotateX(calc(var(--tilt) * -1deg));transform-origin:50% 100%}.pin span{margin-top:3px;color:var(--color);font-weight:700;font-size:14px;white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.pin:hover img{filter:drop-shadow(0 0 2px white) drop-shadow(0 0 5px var(--color))}.pin:hover span{color:#fff}.modal{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:25px;background:#050706d9}.modal[hidden]{display:none}.card{position:relative;width:min(620px,100%);max-height:90vh;overflow:auto;padding:25px;border:1px solid #3b433c;border-radius:14px;background:#191d1a}.close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#aaa;font-size:25px;cursor:pointer}.card h2{margin:0;color:var(--poi-color)}.kind{color:#929b94;font-size:11px}.description{line-height:1.6;white-space:pre-wrap}.gallery{display:flex;gap:8px;overflow:auto;margin-top:20px}.gallery img{width:150px;height:100px;object-fit:cover;border-radius:7px;cursor:zoom-in}.lightbox{z-index:40}.lightbox img{max-width:92vw;max-height:90vh}.empty{color:#7f8881;font-size:12px;padding:10px}.hint{position:fixed;right:16px;bottom:16px;padding:8px;border-radius:7px;background:#171a18cc;color:#999;font-size:11px;pointer-events:none}@media(max-width:700px){.side{width:220px}.view{left:220px}}
+</style></head><body><aside class="side"><h1>Pontos de interesse</h1><input id="search" placeholder="Pesquisar..."><select id="filter"><option value="">Todos os tipos</option></select><button id="mode3d" class="mode-toggle">◈ Perspectiva 3D</button><div id="list" class="poi-list"></div></aside><main id="view" class="view"><div id="world" class="world" style="width:${canvas.width}px;height:${canvas.height}px"><img class="map" src="${image}" alt="Mapa"><div id="pins"></div></div><span class="hint">Arraste para mover • Scroll para zoom</span></main><div id="details" class="modal" hidden><article class="card"><button class="close">×</button><small class="kind"></small><h2></h2><p class="description"></p><div class="gallery"></div></article></div><div id="lightbox" class="modal lightbox" hidden><img alt="Imagem ampliada"></div><script>
+const pois=${pois},types=${types},view=document.querySelector('#view'),world=document.querySelector('#world'),pins=document.querySelector('#pins'),list=document.querySelector('#list'),search=document.querySelector('#search'),filter=document.querySelector('#filter'),details=document.querySelector('#details'),lightbox=document.querySelector('#lightbox'),mode3d=document.querySelector('#mode3d');let zoom=1,x=0,y=0,drag=false,orbit=false,lx=0,ly=0,three=false,yaw=0,tilt=55;function draw(){world.style.transform=three?'translate('+x+'px,'+y+'px) scale('+zoom+') perspective(1200px) rotateX('+tilt+'deg) rotateZ('+yaw+'deg)':'translate('+x+'px,'+y+'px) scale('+zoom+')';world.style.setProperty('--yaw',yaw);world.style.setProperty('--tilt',tilt);view.classList.toggle('three',three)}function center(p){zoom=1;x=view.clientWidth/2-p.x;y=view.clientHeight/2-p.y;draw()}function openPoi(p){details.style.setProperty('--poi-color',p.color);details.querySelector('h2').textContent=p.name;details.querySelector('.kind').textContent=p.typeName;details.querySelector('.description').textContent=p.description||'Sem descrição.';const gallery=details.querySelector('.gallery');gallery.replaceChildren(...p.gallery.map(src=>{const image=new Image();image.src=src;image.onclick=()=>{lightbox.querySelector('img').src=src;lightbox.hidden=false};return image}));details.hidden=false}for(const type of types)filter.add(new Option(type.name,type.id));for(const p of pois){const pin=document.createElement('button');pin.className='pin';pin.style.cssText='left:'+p.x+'px;top:'+p.y+'px;--color:'+p.color+';--scale:'+(p.scale||1)+';opacity:'+(p.opacity??1);pin.innerHTML='<img><span></span>';pin.querySelector('img').src=p.icon;pin.querySelector('span').textContent=p.name;pin.onclick=()=>openPoi(p);pins.append(pin)}function renderList(){const term=search.value.toLowerCase();const shown=pois.filter(p=>(!filter.value||p.type===filter.value)&&p.name.toLowerCase().includes(term));list.replaceChildren(...shown.map(p=>{const b=document.createElement('button');b.className='poi-item';b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=p.name;b.querySelector('b').style.color=p.color;b.querySelector('small').textContent=p.typeName;b.onclick=()=>center(p);return b}));if(!shown.length)list.innerHTML='<div class="empty">Nenhum ponto encontrado.</div>'}search.oninput=renderList;filter.onchange=renderList;renderList();function fit(){zoom=Math.min(view.clientWidth/${canvas.width},view.clientHeight/${canvas.height},.95);x=(view.clientWidth-${canvas.width}*zoom)/2;y=(view.clientHeight-${canvas.height}*zoom)/2;draw()}fit();mode3d.onclick=()=>{three=!three;mode3d.classList.toggle('active',three);mode3d.textContent=three?'◇ Voltar ao mapa 2D':'◈ Perspectiva 3D';draw()};view.oncontextmenu=e=>e.preventDefault();view.onpointerdown=e=>{if(e.target.closest('.pin'))return;if(three&&e.button===2)orbit=true;else if(e.button===0)drag=true;else return;lx=e.clientX;ly=e.clientY;view.classList.add('dragging');view.setPointerCapture(e.pointerId)};view.onpointermove=e=>{if(!drag&&!orbit)return;if(orbit){yaw+=(e.clientX-lx)*.3;tilt=Math.max(20,Math.min(78,tilt-(e.clientY-ly)*.25))}else{x+=e.clientX-lx;y+=e.clientY-ly}lx=e.clientX;ly=e.clientY;draw()};view.onpointerup=()=>{drag=false;orbit=false;view.classList.remove('dragging')};view.onwheel=e=>{e.preventDefault();const r=view.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,old=zoom;zoom=Math.max(.05,Math.min(8,zoom*(e.deltaY<0?1.1:.9)));x=mx-(mx-x)*zoom/old;y=my-(my-y)*zoom/old;draw()};details.querySelector('.close').onclick=()=>details.hidden=true;details.onclick=e=>{if(e.target===details)details.hidden=true};lightbox.onclick=()=>lightbox.hidden=true;
 <\/script></body></html>`;
 }
 

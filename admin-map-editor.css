@@ -45,8 +45,9 @@ button, input { font: inherit; }
 #viewport { position: fixed; inset: var(--top) var(--right) 0 var(--left); overflow: hidden; background-color: #0c0f0d; background-image: linear-gradient(#171b18 1px, transparent 1px), linear-gradient(90deg, #171b18 1px, transparent 1px); background-size: 24px 24px; cursor: grab; }
 #viewport.dragging { cursor: grabbing; }
 #stage { position: absolute; display: none; transform-origin: 0 0; box-shadow: 0 18px 70px #000; }
-canvas { display: block; background: transparent; }
+canvas { display: block; background: transparent; image-rendering: pixelated; image-rendering: crisp-edges; }
 #maskEditCanvas { position: absolute; inset: 0; display: none; cursor: crosshair; touch-action: none; }
+.brush-cursor { position: absolute; z-index: 3; display: none; width: 60px; height: 60px; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #000; transform: translate(-50%, -50%); pointer-events: none; }
 .empty-state { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; pointer-events: none; color: var(--muted); }
 .empty-state span { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid #303630; border-radius: 18px; background: #171b18; color: var(--accent); font-size: 32px; }
 .empty-state b { margin-top: 18px; color: var(--text); font: 600 16px 'Manrope'; }
