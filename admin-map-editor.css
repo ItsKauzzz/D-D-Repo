@@ -30,6 +30,7 @@ button, input { font: inherit; }
 .region-layer-group > p { margin: 2px 5px 4px; color: #79827b; font-size: 9px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
 .folder-layer { display: grid; gap: 4px; padding: 5px; border: 1px solid #303831; border-radius: 9px; background: #121613; }
 .folder-layer > .layer-card { background: #1c211d; }
+.folder-layer > .layer-card .layer-icon { background: #493f24; color: #f0c674; }
 .folder-children { display: grid; gap: 4px; padding-left: 13px; }
 .folder-layer.collapsed .folder-children { display: none; }
 .layer-card { display: grid; grid-template-columns: 30px 1fr auto; gap: 9px; align-items: center; width: 100%; padding: 10px; text-align: left; color: var(--text); border: 1px solid transparent; border-radius: 9px; background: transparent; cursor: pointer; }
@@ -109,6 +110,7 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .object-form .check-row { color: var(--text); font-size: 11px; }
 .position-object { padding: 9px; border: 1px solid #536348; border-radius: 7px; background: #283123; color: var(--accent); cursor: pointer; }
 .position-object.active { background: var(--accent); color: #17200d; }
+.danger-button { border-color: #6b3935; background: #342220; color: #ff9188; }
 .object-form > small { text-align: center; color: var(--muted); font-size: 9px; }
 .region-note { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .object-visual-controls { padding: 12px; border: 1px solid var(--line); border-radius: 8px; }

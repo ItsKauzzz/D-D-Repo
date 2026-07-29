@@ -127,9 +127,15 @@
     </section>
     <section class="region-control" hidden>
       <div class="object-form">
-        <label>Layer / tipo de região<input id="regionGroup" placeholder="Ex.: Fronteiras políticas"></label>
         <label>Nome da região<input id="regionName" placeholder="Ex.: Reino do Norte"></label>
-        <label>Cor<input id="regionColor" type="color" value="#6fa86b"></label>
+        <label>Layer / tipo de região<select id="regionPreset"></select></label>
+        <div class="path-preset-editor">
+          <input id="regionPresetName" placeholder="Nome do tipo de região">
+          <label>Cor<input id="regionColor" type="color" value="#6fa86b"></label>
+          <label class="check-row"><input id="regionDefaultOverview" type="checkbox"> Mostrar por padrão no overview</label>
+          <button id="saveRegionPreset" type="button" class="position-object">Salvar preset de região</button>
+          <button id="deleteRegionPreset" type="button" class="position-object danger-button">Excluir preset</button>
+        </div>
         <p class="region-note">Regiões desenhadas por último removem automaticamente as intersecções das regiões anteriores.</p>
       </div>
     </section>
@@ -145,7 +151,9 @@
           <label>Stroke<input id="pathStroke" type="number" min="1" max="100" value="8"></label>
           <label>Cor<input id="pathColor" type="color" value="#c99b57"></label>
           <label class="check-row"><input id="pathDashed" type="checkbox"> Tracejado / pontilhado</label>
+          <label>Espaço do tracejado<input id="pathDashGap" type="number" min="1" max="500" value="12"></label>
           <button id="savePathPreset" type="button" class="position-object">Salvar como preset</button>
+          <button id="deletePathPreset" type="button" class="position-object danger-button">Excluir preset</button>
         </div>
         <button id="drawPath" class="position-object">〰 Desenhar caminho</button>
         <small id="pathDistance">Distância: 0 km</small>
