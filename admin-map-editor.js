@@ -32,6 +32,8 @@ const state = {
   travelSpeeds: { walking: 5, horse: 15, ship: 30, air: 80 },
   descriptionTemplates: [],
   editingDescriptionTemplateId: null,
+  terrainHeightEditing: null,
+  terrainColors: { shallow: '#51746f', medium: '#4b6c6a', deep: '#405a5b', land: '#d7c89d' },
 };
 
 const translations = {
@@ -138,6 +140,8 @@ function createLayer(type = 'terrain') {
     region: type === 'region' ? { group: 'Regiões', presetId: 'regions', name: `Região ${number}`, color: '#6fa86b', fillMode: 'fill', outlineThickness: 3, outlineDashed: false, outlineGap: 12, defaultOverview: false, drawnAt: 0 } : null,
     path: type === 'path' ? { name: `Caminho ${number}`, description: '', gallerySetId: '', showOnMap: true, presetId: 'road', points: [], distance: 0 } : null,
     output: document.createElement('canvas'),
+    heightMap: null,
+    heightOutput: document.createElement('canvas'),
     placements: [],
     settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, rotation: true, mirror: true, slice: false, imageOffsetX: 0, imageOffsetY: 0, imageOpacity: 1 },
   };
@@ -214,6 +218,7 @@ function redraw(includeObjects = true, showSelection = true, includePaths = true
       ctx.restore();
     }
   }
+  for (const layer of [...state.layers].reverse()) if (layer.visible && layer.type === 'terrain' && layer.heightOutput.width) ctx.drawImage(layer.heightOutput, 0, 0);
 
   // Every generated asset and placed object shares one Y-sorted scene, even
   // when the entries came from different layers.
@@ -744,7 +749,11 @@ function renderDescriptionPageEditor() {
     } else {
       const html = document.createElement('textarea'); html.className = 'description-html-editor'; html.value = page.content || ''; html.placeholder = '<p>Conteúdo com <b>HTML</b> simples...</p>'; html.oninput = () => { page.content = html.value; }; contentEditor.append(html);
     }
-    const images = document.createElement('div'); images.className = 'description-page-images'; images.replaceChildren(...page.images.map((source) => { const image = new Image(); image.src = source; return image; }));
+    const images = document.createElement('div'); images.className = 'description-page-images'; images.replaceChildren(...page.images.map((source, imageIndex) => {
+      const item = document.createElement('div'); item.className = 'editing-asset'; const image = new Image(); image.src = source;
+      const removeImage = document.createElement('button'); removeImage.type = 'button'; removeImage.textContent = '×'; removeImage.title = 'Remover imagem'; removeImage.onclick = () => { page.images.splice(imageIndex, 1); renderDescriptionPageEditor(); };
+      item.append(image, removeImage); return item;
+    }));
     const upload = document.createElement('label'); upload.className = 'position-object'; upload.textContent = '＋ Adicionar imagens nesta página';
     const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.multiple = true; input.hidden = true;
     input.onchange = async () => { for (const file of input.files) page.images.push((await fileImage(file)).src); renderDescriptionPageEditor(); }; upload.append(input);
@@ -1104,6 +1113,7 @@ $('#assetModal').addEventListener('click', (event) => {
 $('#projectSettingsBtn').onclick = () => {
   $('#distanceScaleKm').value = state.distanceScaleKm;
   $('#speedWalking').value = state.travelSpeeds.walking; $('#speedHorse').value = state.travelSpeeds.horse; $('#speedShip').value = state.travelSpeeds.ship; $('#speedAir').value = state.travelSpeeds.air;
+  $('#terrainWaterShallow').value = state.terrainColors.shallow; $('#terrainWaterMedium').value = state.terrainColors.medium; $('#terrainWaterDeep').value = state.terrainColors.deep; $('#terrainLandColor').value = state.terrainColors.land;
   $('#projectSettingsModal').hidden = false;
 };
 $('#closeProjectSettings').onclick = () => { $('#projectSettingsModal').hidden = true; };
@@ -1115,6 +1125,12 @@ $('#distanceScaleKm').addEventListener('input', (event) => {
 });
 for (const [id, property] of Object.entries({ speedWalking: 'walking', speedHorse: 'horse', speedShip: 'ship', speedAir: 'air' })) {
   $(`#${id}`).addEventListener('input', (event) => { state.travelSpeeds[property] = Math.max(0.01, Number(event.target.value) || 0.01); });
+}
+for (const [id, property] of Object.entries({ terrainWaterShallow: 'shallow', terrainWaterMedium: 'medium', terrainWaterDeep: 'deep', terrainLandColor: 'land' })) {
+  $(`#${id}`).addEventListener('input', (event) => {
+    state.terrainColors[property] = event.target.value;
+    state.layers.filter((layer) => layer.type === 'terrain' && layer.heightMap).forEach((layer) => renderTerrainHeight(layer));
+  });
 }
 $('#assetInput').addEventListener('change', async (event) => {
   for (const file of event.target.files) pendingSetAssets.push({ file: { name: file.name }, image: await fileImage(file) });
@@ -1364,6 +1380,38 @@ let maskPaintPointerId = null;
 let maskHistory = [];
 const brushCursor = $('#brushCursor');
 
+function renderTerrainHeight(layer, sourceCanvas = null) {
+  let source = sourceCanvas;
+  if (!source && layer.heightMap) {
+    source = document.createElement('canvas'); source.width = canvas.width; source.height = canvas.height; source.getContext('2d').drawImage(layer.heightMap, 0, 0, canvas.width, canvas.height);
+  }
+  if (!source.width || !source.height) return;
+  const sourceContext = source.getContext('2d', { willReadFrequently: true });
+  const heightData = sourceContext.getImageData(0, 0, source.width, source.height);
+  const output = layer.heightOutput; output.width = source.width; output.height = source.height;
+  const outputContext = output.getContext('2d'); const colored = outputContext.createImageData(source.width, source.height);
+  const colors = [state.terrainColors.deep, state.terrainColors.medium, state.terrainColors.shallow, state.terrainColors.land].map((color) => [parseInt(color.slice(1, 3), 16), parseInt(color.slice(3, 5), 16), parseInt(color.slice(5, 7), 16)]);
+  for (let index = 0; index < heightData.data.length; index += 4) {
+    const height = heightData.data[index] / 255;
+    const color = height < 1 / 6 ? colors[0] : height < 1 / 3 ? colors[1] : height < 0.5 ? colors[2] : colors[3];
+    colored.data[index] = color[0]; colored.data[index + 1] = color[1]; colored.data[index + 2] = color[2]; colored.data[index + 3] = 255;
+  }
+  outputContext.putImageData(colored, 0, 0); redraw();
+}
+
+$('#editTerrainHeight').onclick = () => {
+  const layer = selectedLayer(); if (layer?.type !== 'terrain') return;
+  maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
+  maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
+  if (layer.heightMap) maskEditContext.drawImage(layer.heightMap, 0, 0, canvas.width, canvas.height);
+  else { maskEditContext.fillStyle = 'rgb(128,128,128)'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); }
+  state.terrainHeightEditing = layer.id; state.maskEditing = layer.id; maskHistory = [];
+  maskEditCanvas.style.display = 'block'; maskEditCanvas.style.opacity = '0';
+  $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
+  $('#brushSizeControl span').textContent = 'Height'; $('#brushOpacity').max = '0.5'; $('#brushOpacity').value = '0.5'; $('#brushOpacity').dispatchEvent(new Event('input'));
+  renderTerrainHeight(layer, maskEditCanvas); $('#saveState').textContent = 'Editando altura do terreno';
+};
+
 $('#createMaskBtn').onclick = () => {
   const layer = selectedLayer();
   maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
@@ -1394,20 +1442,25 @@ bindNumberInput('brushSizeValue', 'brushSize', () => {});
 bindNumberInput('brushOpacityValue', 'brushOpacity', () => {}, 100);
 function paintMask(event) {
   if (!maskDrawing || maskPaintPointerId !== event.pointerId || !(event.buttons & 1)) return;
+  const heightLayer = state.terrainHeightEditing ? state.layers.find((layer) => layer.id === state.terrainHeightEditing) : null;
   if (maskTool === 'fill') {
     maskEditContext.globalCompositeOperation = 'source-over';
-    maskEditContext.globalAlpha = Number($('#brushOpacity').value);
-    maskEditContext.fillStyle = '#000'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); maskEditContext.globalAlpha = 1;
+    maskEditContext.globalAlpha = heightLayer ? 1 : Number($('#brushOpacity').value);
+    const level = Math.round(Number($('#brushOpacity').value) * 255);
+    maskEditContext.fillStyle = heightLayer ? `rgb(${level},${level},${level})` : '#000'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); maskEditContext.globalAlpha = 1;
+    if (heightLayer) renderTerrainHeight(heightLayer, maskEditCanvas);
     maskDrawing = false;
     return;
   }
   const rectangle = maskEditCanvas.getBoundingClientRect();
   const x = (event.clientX - rectangle.left) * canvas.width / rectangle.width;
   const y = (event.clientY - rectangle.top) * canvas.height / rectangle.height;
-  maskEditContext.globalCompositeOperation = maskTool === 'eraser' ? 'destination-out' : 'source-over';
-  maskEditContext.globalAlpha = Number($('#brushOpacity').value);
-  maskEditContext.fillStyle = '#000';
+  maskEditContext.globalCompositeOperation = heightLayer ? 'source-over' : maskTool === 'eraser' ? 'destination-out' : 'source-over';
+  maskEditContext.globalAlpha = heightLayer ? 1 : Number($('#brushOpacity').value);
+  const level = Math.round(Number($('#brushOpacity').value) * 255);
+  maskEditContext.fillStyle = heightLayer ? `rgb(${level},${level},${level})` : '#000';
   maskEditContext.beginPath(); maskEditContext.arc(x, y, Number($('#brushSize').value) / 2, 0, Math.PI * 2); maskEditContext.fill(); maskEditContext.globalAlpha = 1;
+  if (heightLayer) renderTerrainHeight(heightLayer, maskEditCanvas);
 }
 maskEditCanvas.oncontextmenu = (event) => event.preventDefault();
 const maskShortcutKeys = new Set();
@@ -1464,13 +1517,20 @@ maskEditCanvas.onpointercancel = stopMaskPointer;
 maskEditCanvas.onlostpointercapture = stopMaskPointer;
 async function closeMaskEditor(save) {
   const layer = state.layers.find((item) => item.id === state.maskEditing);
-  if (save && layer) {
+  if (state.terrainHeightEditing && layer) {
+    if (save) {
+      layer.heightMap = await imageFromSource(maskEditCanvas.toDataURL('image/png'));
+      renderTerrainHeight(layer, maskEditCanvas);
+    } else if (layer.heightMap) renderTerrainHeight(layer);
+    else { layer.heightOutput.width = 0; redraw(); }
+  } else if (save && layer) {
     layer.mask = await imageFromSource(maskEditCanvas.toDataURL('image/png'));
     layer.maskName = 'Máscara criada no editor'; layer.maskPixels = null; layer.maskPath = null; layer.clip = null; layer.bounds = null; layer.output.width = 0; layer.placements = [];
     if (layer.type === 'region') await applyRegionPriority(layer);
     $('#maskName').textContent = layer.maskName; $('#createMaskBtn').textContent = t('editMask'); renderMaskPreview(layer); updateReadyState(); redraw();
   }
-  state.maskEditing = null; maskEditCanvas.style.display = 'none'; $('#maskTools').hidden = true; $('#brushSizeControl').hidden = true;
+  state.maskEditing = null; state.terrainHeightEditing = null; maskEditCanvas.style.display = 'none'; maskEditCanvas.style.opacity = '1'; $('#maskTools').hidden = true; $('#brushSizeControl').hidden = true;
+  $('#brushSizeControl span').textContent = 'Opacidade'; $('#brushOpacity').max = '1';
   brushCursor.style.display = 'none'; maskHistory = [];
   redraw();
   $('#saveState').textContent = save ? 'Máscara atualizada' : 'Edição cancelada';
@@ -1486,6 +1546,7 @@ document.addEventListener('keydown', async (event) => {
   maskEditContext.globalCompositeOperation = 'source-over';
   maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
   maskEditContext.drawImage(image, 0, 0);
+  if (state.terrainHeightEditing) renderTerrainHeight(state.layers.find((layer) => layer.id === state.terrainHeightEditing), maskEditCanvas);
   $('#saveState').textContent = `Desfazer • ${maskHistory.length} restante(s)`;
 });
 $('#randomSeed').onclick = () => {
@@ -1541,10 +1602,11 @@ function createProjectData() {
     distanceScaleKm: state.distanceScaleKm,
     travelSpeeds: state.travelSpeeds,
     descriptionTemplates: state.descriptionTemplates,
+    terrainColors: state.terrainColors,
     imageSets: state.imageSets.map((set) => ({ id: set.id, name: set.name, assets: set.assets.map(serializeAsset) })),
     layers: state.layers.map((layer) => ({
       id: layer.id, type: layer.type, name: layer.name, visible: layer.visible, parentId: layer.parentId, collapsed: layer.collapsed, selectedAssetIndex: layer.selectedAssetIndex,
-      maskName: layer.maskName, maskSource: layer.mask?.src || null, imageSource: layer.image?.src || null,
+      maskName: layer.maskName, maskSource: layer.mask?.src || null, heightMapSource: layer.heightMap?.src || null, imageSource: layer.image?.src || null,
       assets: layer.assets.map(serializeAsset), settings: layer.settings, object: layer.object, region: layer.region, path: layer.path,
       placements: (layer.placements || []).map(({ x, y, assetIndex, variation, rotation, mirrored }) => ({ x, y, assetIndex, variation, rotation, mirrored })),
       outputSource: layer.output.width ? layer.output.toDataURL('image/png') : null,
@@ -1590,6 +1652,7 @@ $('#projectInput').addEventListener('change', async (event) => {
     state.distanceScaleKm = Number(project.distanceScaleKm) || 100;
     state.travelSpeeds = { ...state.travelSpeeds, ...project.travelSpeeds };
     state.descriptionTemplates = project.descriptionTemplates || [];
+    state.terrainColors = { ...state.terrainColors, ...project.terrainColors };
     state.imageSets = await Promise.all(project.imageSets.map(async (set) => ({
       ...set, assets: await Promise.all(set.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source), anchorX: asset.anchorX, anchorY: asset.anchorY }))),
     })));
@@ -1600,6 +1663,7 @@ $('#projectInput').addEventListener('change', async (event) => {
       if (saved.region) layer.region = { ...layer.region, ...saved.region };
       if (saved.path) layer.path = saved.path;
       if (saved.maskSource) layer.mask = await imageFromSource(saved.maskSource);
+      if (saved.heightMapSource) { layer.heightMap = await imageFromSource(saved.heightMapSource); renderTerrainHeight(layer); }
       if (saved.imageSource) layer.image = await imageFromSource(saved.imageSource);
       layer.assets = await Promise.all(saved.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source), anchorX: asset.anchorX, anchorY: asset.anchorY })));
       layer.placements = saved.placements || [];
@@ -1734,6 +1798,7 @@ $('#exportBtn').onclick = () => {
   ];
   state.layers.forEach((layer, index) => {
     if (layer.mask) files.push({ name: `mascaras/${index + 1}-${safeFileName(layer.maskName, layer.name)}.png`, bytes: dataUrlBytes(layer.mask.src) });
+    if (layer.heightMap) files.push({ name: `alturas/${index + 1}-${safeFileName(layer.name, 'terreno')}.png`, bytes: dataUrlBytes(layer.heightMap.src) });
     if (layer.image) files.push({ name: `assets/camadas/${index + 1}-${safeFileName(layer.name, 'imagem')}.png`, bytes: dataUrlBytes(layer.image.src) });
     layer.assets.forEach((asset, assetIndex) => files.push({ name: `assets/camadas/${index + 1}/${assetIndex + 1}-${safeFileName(asset.file.name, 'asset')}`, bytes: dataUrlBytes(asset.image.src) }));
   });
@@ -1783,8 +1848,8 @@ function createMapHtml() {
   const paths = JSON.stringify(exportablePaths()).replace(/</g, '\\u003c');
   const types = JSON.stringify(state.poiTypes).replace(/</g, '\\u003c');
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mapa de Teralium</title><style>
-*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#101311;color:#eef2ee;font-family:Arial,sans-serif}.side{position:fixed;z-index:10;inset:0 auto 0 0;width:280px;padding:22px 16px;background:#171a18;border-right:1px solid #303630;overflow:auto}.side h1{font-size:18px;margin:0 0 18px}.side input,.side select,.filter-button{width:100%;padding:10px;margin-bottom:8px;border:1px solid #343b35;border-radius:7px;background:#0f1210;color:#eef2ee}.filter-button{border:1px solid #343b35;border-radius:7px;background:#0f1210;color:#eef2ee;text-align:left;cursor:pointer}.type-choices{display:grid;gap:8px;margin-top:18px}.type-choices label{display:flex;gap:8px;align-items:center;padding:9px;border-radius:7px;background:#111512}.poi-list{display:grid;gap:5px;margin-top:12px}.poi-item{padding:10px;border:0;border-radius:7px;background:transparent;color:#eef2ee;text-align:left;cursor:pointer}.poi-item:hover{background:#252b26}.poi-item small{display:block;margin-top:3px;color:#89928b}.view{position:fixed;inset:0 0 0 280px;overflow:hidden;cursor:grab;background-image:linear-gradient(#1b201c 1px,transparent 1px),linear-gradient(90deg,#1b201c 1px,transparent 1px);background-size:24px 24px}.view.dragging{cursor:grabbing}.world{position:absolute;transform-origin:0 0}.map{position:absolute;inset:0;pointer-events:none;user-select:none;-webkit-user-drag:none;image-rendering:pixelated}.paths{position:absolute;inset:0;overflow:visible}.path-line{fill:none;pointer-events:stroke;cursor:pointer;transition:filter .15s,stroke .15s}.path-line:hover{stroke:#fff!important;filter:drop-shadow(0 0 5px #fff)}.path-label{display:none;position:absolute;z-index:5;transform:translate(-50%,-100%);padding:5px 8px;border-radius:5px;background:#111d;color:#fff;font-size:12px;white-space:nowrap;pointer-events:none}.pin{position:absolute;transform:translate(-50%,calc(-48px * var(--scale)));display:grid;justify-items:center;border:0;background:transparent;color:var(--color);cursor:pointer}.pin img{width:calc(48px * var(--scale));height:calc(48px * var(--scale));object-fit:contain;image-rendering:pixelated}.pin span{margin-top:3px;color:var(--color);font-weight:700;font-size:14px;white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.pin:hover img{filter:drop-shadow(0 0 2px white) drop-shadow(0 0 5px var(--color))}.pin:hover span{color:#fff}.pin.focused img{filter:drop-shadow(0 0 3px #ff8a2a) drop-shadow(0 0 9px #ff8a2a)}.pin.focused span{color:#ff9b42}.view-tools{position:fixed;z-index:12;left:296px;top:50%;transform:translateY(-50%);display:grid;gap:4px;padding:5px;border:1px solid #3a423b;border-radius:9px;background:#181c19dd;box-shadow:0 8px 25px #0009}.view-tools button{width:38px;height:38px;padding:0;border:0;border-radius:6px;background:transparent;color:#879088;cursor:pointer}.view-tools button.active{background:#30392c;color:#b7df72}.region-layer{position:absolute;inset:0;display:none;pointer-events:none}.region-layer canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}.region-layer .fill,.region-layer .outline{display:none}.region-layer.hovered .outline{display:block}.region-layer span{position:absolute;transform:translate(-50%,-50%);font-weight:700;font-size:18px;color:#fff;white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.region-layer.hovered{display:block}.region-layer.overview{display:block;opacity:.5}.region-layer.overview .fill{display:block}.region-layer.overview .outline{display:none}.region-layer.overview.mode-outline .fill{display:none}.region-layer.overview.mode-outline .outline{display:block}.regions-mode #pins{display:none}.modal{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:25px;background:#050706d9}.modal[hidden]{display:none}.card{position:relative;width:min(620px,100%);max-height:90vh;overflow:auto;padding:25px;border:1px solid #3b433c;border-radius:14px;background:#191d1a}.close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#aaa;font-size:25px;cursor:pointer}.card.detailed{width:50vw;min-width:700px;height:50vh;min-height:480px}.detail-layout{display:grid;grid-template-columns:0 1fr;height:100%}.card.detailed .detail-layout{grid-template-columns:190px 1fr;gap:22px}.detail-pages{display:none;overflow-y:auto;border-right:1px solid #343b35;padding-right:12px}.card.detailed .detail-pages{display:grid;align-content:start;gap:6px}.detail-pages button{padding:9px;text-align:left;border:0;border-radius:6px;background:transparent;color:#aaa;cursor:pointer}.detail-pages button.active{background:#2b3428;color:#b7df72}.detail-content{overflow-y:auto}.card h2{margin:0;color:var(--poi-color)}.kind{color:#929b94;font-size:11px}.description{line-height:1.6;white-space:pre-wrap}.gallery{display:flex;gap:8px;overflow:auto;margin-top:20px}.gallery img{width:150px;height:100px;object-fit:cover;border-radius:7px;cursor:zoom-in}.lightbox{z-index:40}.lightbox img{max-width:92vw;max-height:90vh}.empty{color:#7f8881;font-size:12px;padding:10px}.hint{position:fixed;right:16px;bottom:16px;padding:8px;border-radius:7px;background:#171a18cc;color:#999;font-size:11px;pointer-events:none}@media(max-width:700px){.side{width:220px}.view{left:220px}.view-tools{left:236px}}
-</style></head><body><aside class="side"><h1>Pontos de interesse</h1><input id="search" placeholder="Pesquisar..."><button id="filterButton" class="filter-button">Tipos de navegação</button><div id="list" class="poi-list"></div></aside><div id="typeFilter" class="modal" hidden><article class="card"><button class="close">×</button><h2>Tipos visíveis</h2><div id="typeChoices" class="type-choices"></div></article></div><nav class="view-tools" aria-label="Modo do mapa"><button data-mode="objects" class="active" title="Objetos">⌖</button></nav><main id="view" class="view"><div id="world" class="world" style="width:${canvas.width}px;height:${canvas.height}px"><img class="map" src="${image}" alt="Mapa"><div id="regionLayers"></div><svg id="pathLayers" class="paths" width="${canvas.width}" height="${canvas.height}"></svg><span id="pathLabel" class="path-label"></span><div id="pins"></div></div><span class="hint">Arraste para mover • Scroll para zoom</span></main><div id="details" class="modal" hidden><article class="card"><button class="close">×</button><div class="detail-layout"><nav id="detailPages" class="detail-pages"></nav><section class="detail-content"><small class="kind"></small><h2></h2><p class="description"></p><div class="gallery"></div></section></div></article></div><div id="lightbox" class="modal lightbox" hidden><img alt="Imagem ampliada"></div><script>
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#101311;color:#eef2ee;font-family:Arial,sans-serif}.side{position:fixed;z-index:10;inset:0 auto 0 0;width:280px;padding:22px 16px;background:#171a18;border-right:1px solid #303630;overflow:auto}.side h1{font-size:18px;margin:0 0 18px}.side input,.side select,.filter-button{width:100%;padding:10px;margin-bottom:8px;border:1px solid #343b35;border-radius:7px;background:#0f1210;color:#eef2ee}.filter-button{border:1px solid #343b35;border-radius:7px;background:#0f1210;color:#eef2ee;text-align:left;cursor:pointer}.type-choices{display:grid;gap:8px;margin-top:18px}.type-choices label{display:flex;gap:8px;align-items:center;padding:9px;border-radius:7px;background:#111512}.poi-list{display:grid;gap:5px;margin-top:12px}.poi-item{padding:10px;border:0;border-radius:7px;background:transparent;color:#eef2ee;text-align:left;cursor:pointer}.poi-item:hover{background:#252b26}.poi-item small{display:block;margin-top:3px;color:#89928b}.view{position:fixed;inset:0 0 0 280px;overflow:hidden;cursor:grab;background-image:linear-gradient(#1b201c 1px,transparent 1px),linear-gradient(90deg,#1b201c 1px,transparent 1px);background-size:24px 24px}.view.dragging{cursor:grabbing}.world{position:absolute;transform-origin:0 0}.map{position:absolute;inset:0;pointer-events:none;user-select:none;-webkit-user-drag:none;image-rendering:pixelated}.paths{position:absolute;inset:0;overflow:visible}.path-line{fill:none;pointer-events:stroke;cursor:pointer;transition:filter .15s,stroke .15s}.path-line:hover{stroke:#fff!important;filter:drop-shadow(0 0 5px #fff)}.path-label{display:none;position:absolute;z-index:5;transform:translate(-50%,-100%);padding:5px 8px;border-radius:5px;background:#111d;color:#fff;font-size:12px;white-space:nowrap;pointer-events:none}.pin{position:absolute;transform:translate(-50%,calc(-48px * var(--scale)));display:grid;justify-items:center;border:0;background:transparent;color:var(--color);cursor:pointer}.pin img{width:calc(48px * var(--scale));height:calc(48px * var(--scale));object-fit:contain;image-rendering:pixelated}.pin span{margin-top:3px;color:var(--color);font-weight:700;font-size:14px;white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.pin:hover img{filter:drop-shadow(0 0 2px white) drop-shadow(0 0 5px var(--color))}.pin:hover span{color:#fff}.pin.focused img{filter:drop-shadow(0 0 3px #ff8a2a) drop-shadow(0 0 9px #ff8a2a)}.pin.focused span{color:#ff9b42}.view-tools{position:fixed;z-index:12;left:296px;top:50%;transform:translateY(-50%);display:grid;gap:4px;padding:5px;border:1px solid #3a423b;border-radius:9px;background:#181c19dd;box-shadow:0 8px 25px #0009}.view-tools button{width:38px;height:38px;padding:0;border:0;border-radius:6px;background:transparent;color:#879088;cursor:pointer}.view-tools button.active{background:#30392c;color:#b7df72}.region-layer{position:absolute;inset:0;display:none;pointer-events:none}.region-layer canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}.region-layer .fill,.region-layer .outline{display:none}.region-layer.hovered .outline{display:block}.region-layer span{position:absolute;transform:translate(-50%,-50%);font-weight:700;font-size:18px;color:#fff;white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.region-layer.hovered{display:block}.region-layer.overview{display:block;opacity:.5}.region-layer.overview .fill{display:block}.region-layer.overview .outline{display:none}.region-layer.overview.mode-outline .fill{display:none}.region-layer.overview.mode-outline .outline{display:block}.regions-mode #pins{display:none}.modal{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:25px;background:#050706d9}.modal[hidden]{display:none}.card{position:relative;width:min(620px,100%);max-height:90vh;overflow:auto;padding:25px;border:1px solid #3b433c;border-radius:14px;background:#191d1a}.close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#aaa;font-size:25px;cursor:pointer}.window-card{padding-top:70px;border:1px solid #4a554b;outline:7px solid #111512;box-shadow:0 25px 80px #000}.window-title{position:absolute;inset:0 0 auto;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid #394139;background:#202521}.window-title h2{margin:0!important}.window-title .close{position:static}.card.detailed{width:50vw;min-width:700px;height:50vh;min-height:480px}.detail-layout{display:grid;grid-template-columns:0 1fr;height:100%}.card.detailed .detail-layout{grid-template-columns:190px 1fr;gap:22px}.detail-pages{display:none;overflow-y:auto;border-right:1px solid #343b35;padding-right:12px}.card.detailed .detail-pages{display:grid;align-content:start;gap:6px}.detail-pages button{padding:9px;text-align:left;border:0;border-radius:6px;background:transparent;color:#aaa;cursor:pointer}.detail-pages button.active{background:#2b3428;color:#b7df72}.detail-content{overflow-y:auto}.card h2{margin:0;color:var(--poi-color)}.kind{color:#929b94;font-size:11px}.description{line-height:1.6;white-space:pre-wrap}.gallery{display:flex;gap:8px;overflow:auto;margin-top:20px}.gallery img{width:150px;height:100px;object-fit:cover;border-radius:7px;cursor:zoom-in}.lightbox{z-index:40}.lightbox img{max-width:92vw;max-height:90vh}.empty{color:#7f8881;font-size:12px;padding:10px}.hint{position:fixed;right:16px;bottom:16px;padding:8px;border-radius:7px;background:#171a18cc;color:#999;font-size:11px;pointer-events:none}@media(max-width:700px){.side{width:220px}.view{left:220px}.view-tools{left:236px}}
+</style></head><body><aside class="side"><h1>Pontos de interesse</h1><input id="search" placeholder="Pesquisar..."><button id="filterButton" class="filter-button">Tipos de navegação</button><div id="list" class="poi-list"></div></aside><div id="typeFilter" class="modal" hidden><article class="card"><button class="close">×</button><h2>Tipos visíveis</h2><div id="typeChoices" class="type-choices"></div></article></div><nav class="view-tools" aria-label="Modo do mapa"><button data-mode="objects" class="active" title="Objetos">⌖</button></nav><main id="view" class="view"><div id="world" class="world" style="width:${canvas.width}px;height:${canvas.height}px"><img class="map" src="${image}" alt="Mapa"><div id="regionLayers"></div><svg id="pathLayers" class="paths" width="${canvas.width}" height="${canvas.height}"></svg><span id="pathLabel" class="path-label"></span><div id="pins"></div></div><span class="hint">Arraste para mover • Scroll para zoom</span></main><div id="details" class="modal" hidden><article class="card window-card"><header class="window-title"><h2></h2><button class="close">×</button></header><div class="detail-layout"><nav id="detailPages" class="detail-pages"></nav><section class="detail-content"><small class="kind"></small><div class="gallery"></div><p class="description"></p></section></div></article></div><div id="lightbox" class="modal lightbox" hidden><img alt="Imagem ampliada"></div><script>
 const pois=${pois},regions=${regions},paths=${paths},types=${types},view=document.querySelector('#view'),world=document.querySelector('#world'),pins=document.querySelector('#pins'),regionLayers=document.querySelector('#regionLayers'),pathLayers=document.querySelector('#pathLayers'),pathLabel=document.querySelector('#pathLabel'),list=document.querySelector('#list'),search=document.querySelector('#search'),filterButton=document.querySelector('#filterButton'),typeFilter=document.querySelector('#typeFilter'),typeChoices=document.querySelector('#typeChoices'),details=document.querySelector('#details'),detailPages=document.querySelector('#detailPages'),lightbox=document.querySelector('#lightbox');let zoom=1,x=0,y=0,drag=false,moved=false,lx=0,ly=0,mode='objects';const regionViews=[];for(const group of [...new Set(regions.map(r=>r.group))]){const button=document.createElement('button');button.dataset.mode='region:'+group;button.title=group;button.textContent='◒';document.querySelector('.view-tools').append(button)}function draw(){world.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')'}function center(p,targetZoom=2){zoom=targetZoom;x=view.clientWidth/2-p.x*zoom;y=view.clientHeight/2-p.y*zoom;draw()}function focusPoi(p){center(p,2);document.querySelectorAll('.pin').forEach(pin=>pin.classList.toggle('focused',pin.dataset.poiId===p.id))}function fit(){zoom=Math.min(view.clientWidth/${canvas.width},view.clientHeight/${canvas.height},.95);x=(view.clientWidth-${canvas.width}*zoom)/2;y=(view.clientHeight-${canvas.height}*zoom)/2;draw()}function sanitizeRichHTML(value){const template=document.createElement('template');template.innerHTML=value||'';const allowed=new Set(['B','STRONG','I','EM','U','S','SPAN','P','BR','UL','OL','LI','H3','H4']);template.content.querySelectorAll('script,style,iframe,object,embed').forEach(element=>element.remove());[...template.content.querySelectorAll('*')].forEach(element=>{if(!allowed.has(element.tagName)){element.replaceWith(...element.childNodes);return}const color=element.style.color,weight=element.style.fontWeight,fontStyle=element.style.fontStyle,decoration=element.style.textDecoration;[...element.attributes].forEach(attribute=>element.removeAttribute(attribute.name));if(color)element.style.color=color;if(weight)element.style.fontWeight=weight;if(fontStyle)element.style.fontStyle=fontStyle;if(decoration)element.style.textDecoration=decoration});return template.innerHTML}function fillDetailGallery(sources){const gallery=details.querySelector('.gallery');gallery.replaceChildren(...sources.map(src=>{const image=new Image();image.src=src;image.onclick=()=>{lightbox.querySelector('img').src=src;lightbox.hidden=false};return image}))}function openPoi(p){const card=details.querySelector('.card');details.style.setProperty('--poi-color',p.color);details.querySelector('h2').textContent=p.name;details.querySelector('.kind').textContent=p.typeName;const pages=p.descriptionPages||[];card.classList.toggle('detailed',pages.length>0);detailPages.replaceChildren();if(pages.length){const showPage=(page,button)=>{detailPages.querySelectorAll('button').forEach(item=>item.classList.toggle('active',item===button));details.querySelector('.description').innerHTML=sanitizeRichHTML(page.content||'Sem descrição.');fillDetailGallery(page.images||[])};pages.forEach((page,index)=>{const button=document.createElement('button');button.textContent=page.title||('Página '+(index+1));button.onclick=()=>showPage(page,button);detailPages.append(button)});showPage(pages[0],detailPages.firstChild)}else{details.querySelector('.description').textContent=p.description||'Sem descrição.';fillDetailGallery(p.gallery)}details.hidden=false}function openRegion(r){details.querySelector('.card').classList.remove('detailed');detailPages.replaceChildren();details.style.setProperty('--poi-color',r.color);details.querySelector('h2').textContent=r.name;details.querySelector('.kind').textContent=r.group;details.querySelector('.description').textContent='Região';details.querySelector('.gallery').replaceChildren();details.hidden=false}function openPath(p){details.querySelector('.card').classList.remove('detailed');detailPages.replaceChildren();details.style.setProperty('--poi-color',p.preset.color);details.querySelector('h2').textContent=p.name;details.querySelector('.kind').textContent=Math.round(p.distance)+' km';details.querySelector('.description').textContent=p.description||'Sem descrição.';const gallery=details.querySelector('.gallery');gallery.replaceChildren(...p.gallery.map(src=>{const image=new Image();image.src=src;image.onclick=()=>{lightbox.querySelector('img').src=src;lightbox.hidden=false};return image}));details.hidden=false}for(const p of paths){const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');line.classList.add('path-line');line.setAttribute('points',p.points.map(point=>point.x+','+point.y).join(' '));line.setAttribute('stroke',p.preset.color);line.setAttribute('stroke-width',p.preset.stroke);line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');if(p.preset.dashed)line.setAttribute('stroke-dasharray',(p.preset.stroke*2)+' '+(p.preset.dashGap??p.preset.stroke*1.5));line.onmouseenter=e=>{pathLabel.textContent=p.name;pathLabel.style.display='block'};line.onmousemove=e=>{const r=view.getBoundingClientRect();pathLabel.style.left=((e.clientX-r.left-x)/zoom)+'px';pathLabel.style.top=((e.clientY-r.top-y)/zoom)+'px'};line.onmouseleave=()=>pathLabel.style.display='none';line.onclick=e=>{e.stopPropagation();openPath(p)};pathLayers.append(line)}const enabledTypes=new Set(types.map(type=>type.id));for(const type of [...types.map(type=>({id:type.id,name:type.name,enabled:true})),{id:'paths',name:'Caminhos',enabled:false},{id:'regions',name:'Regiões',enabled:false}]){const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=type.enabled;check.onchange=()=>{check.checked?enabledTypes.add(type.id):enabledTypes.delete(type.id);renderList()};label.append(check,type.name);typeChoices.append(label)}filterButton.onclick=()=>typeFilter.hidden=false;typeFilter.querySelector('.close').onclick=()=>typeFilter.hidden=true;typeFilter.onclick=e=>{if(e.target===typeFilter)typeFilter.hidden=true};for(const p of pois){const pin=document.createElement('button');pin.className='pin';pin.dataset.poiId=p.id;pin.style.cssText='left:'+p.x+'px;top:'+p.y+'px;--color:'+p.color+';--scale:'+(p.scale||1)+';opacity:'+(p.opacity??1);pin.innerHTML='<img><span></span>';pin.querySelector('img').src=p.icon;pin.querySelector('span').textContent=p.name;pin.onclick=()=>{focusPoi(p);openPoi(p)};pins.append(pin)}for(const region of regions){const layer=document.createElement('div');layer.className='region-layer '+(region.fillMode==='outline'?'mode-outline':'mode-fill');layer.style.setProperty('--color',region.color);const surface=document.createElement('canvas'),outline=document.createElement('canvas');surface.className='fill';outline.className='outline';surface.width=outline.width=${canvas.width};surface.height=outline.height=${canvas.height};const label=document.createElement('span');label.textContent=region.name;label.style.cssText='left:'+region.centerX+'px;top:'+region.centerY+'px';layer.append(surface,outline,label);regionLayers.append(layer);const image=new Image();image.onload=()=>{const c=surface.getContext('2d',{willReadFrequently:true});c.drawImage(image,0,0);const alpha=c.getImageData(0,0,surface.width,surface.height).data;c.globalCompositeOperation='source-in';c.fillStyle=region.color;c.fillRect(0,0,surface.width,surface.height);const o=outline.getContext('2d');for(let d=1;d<=(region.outlineThickness||3);d++){o.drawImage(surface,-d,0);o.drawImage(surface,d,0);o.drawImage(surface,0,-d);o.drawImage(surface,0,d)}o.globalCompositeOperation='destination-out';o.drawImage(image,0,0);if(region.outlineDashed){o.globalCompositeOperation='destination-in';o.fillStyle='#fff';const segment=Math.max(2,(region.outlineThickness||3)*3),gap=Math.max(1,region.outlineGap||12);for(let sx=0;sx<outline.width;sx+=segment+gap)o.fillRect(sx,0,segment,outline.height);o.globalCompositeOperation='source-over'}const item={layer,alpha,group:region.group,region};regionViews.push(item);if(region.defaultOverview)layer.classList.add('overview')};image.src=region.mask}function renderList(){const term=search.value.toLowerCase();const objectItems=pois.map(p=>({...p,navType:p.type,navKind:'object'})),pathItems=paths.map(p=>({...p,navType:'paths',navKind:'path',typeName:Math.round(p.distance)+' km'})),regionItems=regions.map(p=>({...p,navType:'regions',navKind:'region',typeName:p.group,x:p.centerX,y:p.centerY}));const shown=[...objectItems,...pathItems,...regionItems].filter(p=>enabledTypes.has(p.navType)&&p.name.toLowerCase().includes(term));list.replaceChildren(...shown.map(p=>{const b=document.createElement('button');b.className='poi-item';b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=p.name;b.querySelector('b').style.color=p.navKind==='path'?p.preset.color:p.color;b.querySelector('small').textContent=p.navKind==='path'?'Caminho • '+p.typeName:p.navKind==='region'?'Região • '+p.typeName:p.typeName;b.onclick=()=>{if(p.navKind==='path'){const middle=p.points[Math.floor(p.points.length/2)];center(middle)}else if(p.navKind==='region'){center(p);openRegion(p)}else focusPoi(p)};return b}));if(!shown.length)list.innerHTML='<div class="empty">Nenhum ponto encontrado.</div>'}function regionAt(e,group){const r=view.getBoundingClientRect(),mx=Math.floor((e.clientX-r.left-x)/zoom),my=Math.floor((e.clientY-r.top-y)/zoom);if(mx<0||my<0||mx>=${canvas.width}||my>=${canvas.height})return null;return [...regionViews].reverse().find(item=>(!group||item.group===group)&&item.alpha[(my*${canvas.width}+mx)*4+3]>32)||null}function hoverRegion(e){if(mode!=='objects'||drag)return;const r=view.getBoundingClientRect(),mx=Math.floor((e.clientX-r.left-x)/zoom),my=Math.floor((e.clientY-r.top-y)/zoom);let found=null;if(mx>=0&&my>=0&&mx<${canvas.width}&&my<${canvas.height})for(const item of regionViews)if(item.alpha[(my*${canvas.width}+mx)*4+3]>32)found=item;for(const item of regionViews)item.layer.classList.toggle('hovered',item===found)}document.querySelectorAll('[data-mode]').forEach(button=>button.onclick=()=>{mode=button.dataset.mode;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===button));view.classList.toggle('regions-mode',mode!=='objects');for(const item of regionViews){item.layer.classList.remove('hovered');item.layer.classList.toggle('overview',mode==='objects'?item.region.defaultOverview:mode==='region:'+item.group)}});search.oninput=renderList;renderList();fit();addEventListener('resize',fit);view.oncontextmenu=e=>e.preventDefault();view.onpointerdown=e=>{if(e.target.closest('.pin')||e.target.closest('.path-line'))return;if(![0,1,2].includes(e.button))return;e.preventDefault();drag=true;moved=false;lx=e.clientX;ly=e.clientY;view.classList.add('dragging');view.setPointerCapture(e.pointerId)};view.onpointermove=e=>{hoverRegion(e);if(!drag)return;if(Math.abs(e.clientX-lx)+Math.abs(e.clientY-ly)>2)moved=true;x+=e.clientX-lx;y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;draw()};view.onpointerup=e=>{if(!moved&&mode.startsWith('region:')){const found=regionAt(e,mode.slice(7));if(found)openRegion(found.region)}drag=false;view.classList.remove('dragging')};view.onwheel=e=>{e.preventDefault();const r=view.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,old=zoom;zoom=Math.max(.05,Math.min(8,zoom*(e.deltaY<0?1.1:.9)));x=mx-(mx-x)*zoom/old;y=my-(my-y)*zoom/old;draw()};details.querySelector('.close').onclick=()=>details.hidden=true;details.onclick=e=>{if(e.target===details)details.hidden=true};lightbox.onclick=()=>lightbox.hidden=true;
 <\/script></body></html>`;
 }

@@ -69,6 +69,7 @@
       <input id="maskInput" type="file" accept="image/*" hidden>
       <p class="filename" id="maskName">Nenhuma máscara selecionada</p>
       <button id="createMaskBtn" class="asset-upload terrain-control region-control">✦ Criar máscara</button>
+      <button id="editTerrainHeight" class="asset-upload terrain-control">▦ Editor de terreno</button>
       <div id="maskPreview" class="mask-preview terrain-control region-control"></div>
     </section>
     <section class="image-control fields" hidden>
@@ -193,6 +194,12 @@
         <label>A cavalo <span><input id="speedHorse" type="number" min="0.01" value="15"> km/h</span></label>
         <label>De navio <span><input id="speedShip" type="number" min="0.01" value="30"> km/h</span></label>
         <label>De aeroplano / balão <span><input id="speedAir" type="number" min="0.01" value="80"> km/h</span></label>
+      </fieldset>
+      <fieldset class="speed-settings"><legend>Cores de altura do terreno</legend>
+        <label>Água rasa <input id="terrainWaterShallow" type="color" value="#51746f"></label>
+        <label>Água média <input id="terrainWaterMedium" type="color" value="#4b6c6a"></label>
+        <label>Água profunda <input id="terrainWaterDeep" type="color" value="#405a5b"></label>
+        <label>Nível da terra <input id="terrainLandColor" type="color" value="#d7c89d"></label>
       </fieldset>
     </div>
   </div>
