@@ -12,9 +12,9 @@
     <strong>Map editor</strong>
     <span id="saveState">Pronto</span>
     <button id="openProjectBtn" class="secondary-action">Abrir projeto</button>
-    <input id="projectInput" type="file" accept=".json,.teralium" hidden>
+    <input id="projectInput" type="file" accept=".json,.teralium,.zip" hidden>
     <button id="saveProjectBtn" class="secondary-action">Salvar projeto</button>
-    <button id="exportBtn">Exportar PNG</button>
+    <button id="exportBtn">Exportar projeto</button>
     <button id="exportMapBtn">Exportar mapa</button>
     <button id="previewMapBtn" class="icon-action" title="Pré-visualizar mapa" aria-label="Pré-visualizar mapa">👁</button>
   </header>
@@ -90,6 +90,10 @@
     </section>
     <section class="object-control" hidden>
       <div class="object-form">
+        <div class="object-anchor-field">
+          <span>Preview e ponto âncora</span>
+          <button id="objectAnchorPreview" type="button" aria-label="Definir ponto âncora"><img alt="Preview do objeto"><i></i><small>Selecione um ícone</small></button>
+        </div>
         <label>Nome<input id="objectName" placeholder="Nome do local"></label>
         <label>Tipo<select id="objectType"></select></label>
         <label>Ícone<select id="objectIconSet"><option value="">Selecione um conjunto</option></select></label>
@@ -132,7 +136,9 @@
   <div id="layerContextMenu" class="context-menu" hidden>
     <button data-action="rename">Renomear</button>
     <button data-action="toggle">Ocultar</button>
+    <button data-action="delete" class="danger">Excluir camada</button>
   </div>
+  <label class="language-picker">Language: <select id="languageSelect"><option value="pt-BR">Português</option><option value="en">English</option><option value="ja">日本語</option></select></label>
   <div id="assetModal" class="modal-backdrop" hidden>
     <div class="asset-modal" role="dialog" aria-modal="true" aria-labelledby="assetModalTitle">
       <div class="modal-head"><div><p class="panel-label">BIBLIOTECA</p><h2 id="assetModalTitle">Conjuntos de imagens</h2></div><button id="closeAssetModal" aria-label="Fechar">×</button></div>

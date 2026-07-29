@@ -23,7 +23,35 @@ const state = {
     { id: 'outro', name: 'Outro', color: '#f1f3ef' },
   ],
   maskEditing: null,
+  language: localStorage.getItem('teralium-language') || 'pt-BR',
 };
+
+const translations = {
+  'pt-BR': { open: 'Abrir projeto', save: 'Salvar projeto', export: 'Exportar projeto', exportMap: 'Exportar mapa', layers: 'CAMADAS', inspector: 'INSPECTOR', uploadMask: 'Enviar máscara', uploadImage: 'Enviar imagem', createMask: '✦ Criar máscara', editMask: '✦ Editar máscara', generate: 'Gerar preenchimento', rename: 'Renomear', hide: 'Ocultar', show: 'Exibir', delete: 'Excluir camada', ready: 'Pronto', language: 'Language:' },
+  en: { open: 'Open project', save: 'Save project', export: 'Export project', exportMap: 'Export map', layers: 'LAYERS', inspector: 'INSPECTOR', uploadMask: 'Upload mask', uploadImage: 'Upload image', createMask: '✦ Create mask', editMask: '✦ Edit mask', generate: 'Generate fill', rename: 'Rename', hide: 'Hide', show: 'Show', delete: 'Delete layer', ready: 'Ready', language: 'Language:' },
+  ja: { open: 'プロジェクトを開く', save: 'プロジェクトを保存', export: 'プロジェクトを書き出す', exportMap: 'マップを書き出す', layers: 'レイヤー', inspector: 'インスペクター', uploadMask: 'マスクをアップロード', uploadImage: '画像をアップロード', createMask: '✦ マスクを作成', editMask: '✦ マスクを編集', generate: '塗りつぶしを生成', rename: '名前を変更', hide: '非表示', show: '表示', delete: 'レイヤーを削除', ready: '準備完了', language: 'Language:' },
+};
+
+function t(key) { return translations[state.language]?.[key] || translations['pt-BR'][key] || key; }
+
+function applyLanguage(language) {
+  state.language = translations[language] ? language : 'pt-BR';
+  document.documentElement.lang = state.language;
+  localStorage.setItem('teralium-language', state.language);
+  $('#languageSelect').value = state.language;
+  $('#openProjectBtn').textContent = t('open'); $('#saveProjectBtn').textContent = t('save');
+  $('#exportBtn').textContent = t('export'); $('#exportMapBtn').textContent = t('exportMap');
+  $('.layers-heading .panel-label').textContent = t('layers'); $('.inspector-head .panel-label').textContent = t('inspector');
+  $('#generateBtn').textContent = t('generate');
+  $('#layerContextMenu [data-action="rename"]').textContent = t('rename');
+  $('#layerContextMenu [data-action="delete"]').textContent = t('delete');
+  $('.language-picker').firstChild.textContent = `${t('language')} `;
+  const layer = selectedLayer();
+  if (layer) {
+    $('#createMaskBtn').textContent = layer.mask ? t('editMask') : t('createMask');
+    document.querySelector('.upload b').textContent = layer.type === 'image' ? t('uploadImage') : t('uploadMask');
+  }
+}
 
 function createLayer(type = 'terrain') {
   const number = state.layers.length + 1;
@@ -39,9 +67,10 @@ function createLayer(type = 'terrain') {
     bounds: null,
     assets: [],
     image: null,
-    object: type === 'object' ? { name: '', type: 'vila', iconSetId: '', gallerySetId: '', description: '', poi: true, x: null, y: null, scale: 1, opacity: 1, offsetX: 0, offsetY: 0 } : null,
+    object: type === 'object' ? { name: '', type: 'vila', iconSetId: '', gallerySetId: '', description: '', poi: true, x: null, y: null, scale: 1, opacity: 1, offsetX: 0, offsetY: 0, anchorX: 0.5, anchorY: 1 } : null,
     region: type === 'region' ? { group: 'Regiões', name: `Região ${number}`, color: '#6fa86b', drawnAt: 0 } : null,
     output: document.createElement('canvas'),
+    placements: [],
     settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, rotation: true, mirror: true, slice: false, imageOffsetX: 0, imageOffsetY: 0, imageOpacity: 1 },
   };
 }
@@ -104,10 +133,10 @@ function fit() {
   updateTransform();
 }
 
-function redraw(includeObjects = true) {
+function redraw(includeObjects = true, showSelection = true) {
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // The first layer in the list has the highest visual priority, so paint bottom-up.
+  // Background images retain their explicit layer priority.
   for (const layer of [...state.layers].reverse()) {
     if (!layer.visible) continue;
     if (layer.type === 'image' && layer.image) {
@@ -116,18 +145,49 @@ function redraw(includeObjects = true) {
       ctx.drawImage(layer.image, layer.settings.imageOffsetX, layer.settings.imageOffsetY, canvas.width, canvas.height);
       ctx.restore();
     }
-    if (layer.type === 'terrain' && layer.output.width) ctx.drawImage(layer.output, 0, 0);
-    if (layer.type === 'object' && layer.object?.x !== null && (includeObjects || !layer.object.poi)) drawMapObject(layer.object);
+  }
+
+  // Every generated asset and placed object shares one Y-sorted scene, even
+  // when the entries came from different layers.
+  const depthEntries = [];
+  state.layers.forEach((layer, layerIndex) => {
+    if (!layer.visible) return;
+    if (layer.type === 'terrain') {
+      if (layer.placements?.length && !layer.settings.slice) layer.placements.forEach((placement) => depthEntries.push({ y: placement.y, layerIndex, layer, placement }));
+      else if (layer.output.width) depthEntries.push({ y: -Infinity, layerIndex, layer });
+    }
+    if (layer.type === 'object' && layer.object?.x !== null && (includeObjects || !layer.object.poi)) {
+      depthEntries.push({ y: layer.object.y + (layer.object.offsetY ?? 0), layerIndex, object: layer.object });
+    }
+  });
+  depthEntries.sort((first, second) => first.y - second.y || second.layerIndex - first.layerIndex);
+  for (const entry of depthEntries) {
+    if (entry.object) drawMapObject(entry.object);
+    else if (entry.placement) drawTerrainPlacement(entry.layer, entry.placement, ctx);
+    else ctx.drawImage(entry.layer.output, 0, 0);
   }
 
   const selected = selectedLayer();
-  if (includeObjects && !state.maskEditing && selected?.mask) {
+  if (includeObjects && showSelection && !state.maskEditing && selected?.mask) {
     ctx.save();
     ctx.globalAlpha = 0.2;
     ctx.drawImage(selected.mask, 0, 0, canvas.width, canvas.height);
     ctx.restore();
   }
 
+}
+
+function drawTerrainPlacement(layer, placement, context) {
+  const asset = layer.assets[placement.assetIndex]?.image || placement.asset;
+  if (!asset) return;
+  const width = asset.naturalWidth * layer.settings.scale * placement.variation;
+  const height = asset.naturalHeight * layer.settings.scale * placement.variation;
+  context.save();
+  context.translate(placement.x, placement.y);
+  context.rotate(placement.rotation);
+  if (placement.mirrored) context.scale(-1, 1);
+  context.drawImage(asset, -width / 2, -height / 2, width, height);
+  context.restore();
 }
 
 function drawMapObject(object) {
@@ -140,7 +200,7 @@ function drawMapObject(object) {
   const y = object.y + (object.offsetY ?? 0);
   ctx.save();
   ctx.globalAlpha = object.opacity ?? 1;
-  ctx.drawImage(icon, x - width / 2, y - size, width, size);
+  ctx.drawImage(icon, x - width * (object.anchorX ?? 0.5), y - size * (object.anchorY ?? 1), width, size);
   if (!object.poi || !object.name) { ctx.restore(); return; }
   const type = state.poiTypes.find((item) => item.id === object.type);
   ctx.font = '600 15px DM Sans, sans-serif';
@@ -171,7 +231,7 @@ function renderLayers() {
       event.preventDefault();
       state.contextLayerId = layer.id;
       const menu = $('#layerContextMenu');
-      menu.querySelector('[data-action="toggle"]').textContent = layer.visible ? 'Ocultar' : 'Exibir';
+      menu.querySelector('[data-action="toggle"]').textContent = layer.visible ? t('hide') : t('show');
       menu.style.left = `${Math.min(event.clientX, window.innerWidth - 155)}px`;
       menu.style.top = `${Math.min(event.clientY, window.innerHeight - 90)}px`;
       menu.hidden = false;
@@ -240,6 +300,7 @@ function selectLayer(id) {
   const layer = selectedLayer();
   $('#layerName').value = layer.name;
   $('#maskName').textContent = layer.maskName || 'Nenhuma máscara selecionada';
+  $('#createMaskBtn').textContent = layer.mask ? t('editMask') : t('createMask');
   $('#density').value = layer.settings.density;
   $('#scale').value = layer.settings.scale;
   $('#sizeVariation').checked = layer.settings.sizeVariation;
@@ -260,7 +321,7 @@ function selectLayer(id) {
     control.hidden = !control.classList.contains(`${layer.type}-control`);
   });
   const upload = document.querySelector('.upload');
-  upload.querySelector('b').textContent = layer.type === 'image' ? 'Enviar imagem' : 'Enviar máscara';
+  upload.querySelector('b').textContent = layer.type === 'image' ? t('uploadImage') : t('uploadMask');
   upload.querySelector('small').textContent = layer.type === 'image' ? 'Background ou elemento visual' : 'PNG preto com transparência recomendado';
   $('#generateBtn').hidden = layer.type !== 'terrain';
   $('#footerHint').textContent = layer.type === 'terrain' ? 'A seed mantém o resultado reproduzível.' : 'Arraste a camada para definir sua prioridade.';
@@ -288,7 +349,8 @@ function renderMaskPreview(layer) {
   const remove = document.createElement('button'); remove.textContent = '×'; remove.title = 'Remover máscara';
   remove.onclick = () => {
     layer.mask = null; layer.maskName = ''; layer.maskPixels = null; layer.clip = null; layer.bounds = null; layer.output.width = 0;
-    $('#maskName').textContent = 'Nenhuma máscara selecionada'; renderMaskPreview(layer); updateReadyState(); redraw();
+    layer.placements = [];
+    $('#maskName').textContent = 'Nenhuma máscara selecionada'; $('#createMaskBtn').textContent = t('createMask'); renderMaskPreview(layer); updateReadyState(); redraw();
   };
   card.append(image, name, remove); preview.append(card);
 }
@@ -346,8 +408,32 @@ function fillObjectInspector(object) {
   $('#objectOffsetX').value = object.offsetX ?? 0; $('#objectOffsetXValue').value = object.offsetX ?? 0;
   $('#objectOffsetY').value = object.offsetY ?? 0; $('#objectOffsetYValue').value = object.offsetY ?? 0;
   renderObjectThumbnails(object);
+  renderObjectAnchorPreview(object);
   $('#objectPosition').textContent = object.x === null ? 'Ainda não posicionado' : `Posição: ${Math.round(object.x)}, ${Math.round(object.y)}`;
 }
+
+function renderObjectAnchorPreview(object) {
+  const preview = $('#objectAnchorPreview');
+  const icon = state.imageSets.find((item) => item.id === object.iconSetId)?.assets[0]?.image;
+  const image = preview.querySelector('img');
+  image.src = icon?.src || '';
+  image.hidden = !icon;
+  preview.querySelector('small').hidden = Boolean(icon);
+  const marker = preview.querySelector('i');
+  marker.hidden = !icon;
+  marker.style.left = `${(object.anchorX ?? 0.5) * 100}%`;
+  marker.style.top = `${(object.anchorY ?? 1) * 100}%`;
+}
+
+$('#objectAnchorPreview').addEventListener('click', (event) => {
+  const layer = selectedLayer();
+  if (layer?.type !== 'object' || !event.currentTarget.querySelector('img').src) return;
+  const rectangle = event.currentTarget.getBoundingClientRect();
+  layer.object.anchorX = Math.max(0, Math.min(1, (event.clientX - rectangle.left) / rectangle.width));
+  layer.object.anchorY = Math.max(0, Math.min(1, (event.clientY - rectangle.top) / rectangle.height));
+  renderObjectAnchorPreview(layer.object);
+  redraw();
+});
 
 function renderObjectThumbnails(object) {
   for (const [elementId, setId] of [['objectIconPreview', object.iconSetId], ['objectGalleryPreview', object.gallerySetId]]) {
@@ -416,6 +502,7 @@ async function generate() {
   $('#generateBtn').disabled = true;
   layer.output.width = canvas.width;
   layer.output.height = canvas.height;
+  layer.placements = [];
   const outputContext = layer.output.getContext('2d');
   outputContext.imageSmoothingEnabled = false;
   const random = randomFactory(hashSeed(layer.settings.seed));
@@ -455,9 +542,11 @@ async function generate() {
         const darkness = 1 - (layer.maskPixels[pixel] + layer.maskPixels[pixel + 1] + layer.maskPixels[pixel + 2]) / 765;
         const coverage = alpha * darkness;
         if (coverage < 0.2 || random() > coverage) continue;
+        const assetIndex = Math.floor(random() * layer.assets.length);
         placements.push({
           x, y,
-          asset: layer.assets[Math.floor(random() * layer.assets.length)].image,
+          assetIndex,
+          asset: layer.assets[assetIndex].image,
           variation: layer.settings.sizeVariation ? layer.settings.sizeMin + random() * (layer.settings.sizeMax - layer.settings.sizeMin) : 1,
           rotation: layer.settings.rotation ? random() * Math.PI * 2 : 0,
           mirrored: layer.settings.mirror && random() > 0.5,
@@ -500,6 +589,7 @@ async function generate() {
     outputContext.drawImage(layer.clip, 0, 0);
     outputContext.globalCompositeOperation = 'source-over';
   }
+  layer.placements = placements;
   redraw();
 
   if (token === state.generationToken) {
@@ -550,6 +640,7 @@ $('#maskInput').addEventListener('change', async (event) => {
   layer.clip = null;
   layer.bounds = null;
   layer.output.width = 0;
+  layer.placements = [];
   if (!state.layers.some((item) => item.mask && item.id !== layer.id)) {
     canvas.width = layer.mask.naturalWidth;
     canvas.height = layer.mask.naturalHeight;
@@ -557,6 +648,7 @@ $('#maskInput').addEventListener('change', async (event) => {
   stage.style.display = 'block';
   $('#emptyState').style.display = 'none';
   $('#maskName').textContent = file.name;
+  $('#createMaskBtn').textContent = t('editMask');
   if (layer.type === 'region') await applyRegionPriority(layer);
   renderMaskPreview(layer);
   redraw();
@@ -628,6 +720,8 @@ function renderImageSets() {
         layer.object.iconSetId = set.id;
         populateObjectOptions();
         $('#objectIconSet').value = set.id;
+        renderObjectThumbnails(layer.object);
+        renderObjectAnchorPreview(layer.object);
         redraw();
         $('#assetModal').hidden = true;
         return;
@@ -664,6 +758,7 @@ for (const [elementId, property] of Object.entries(objectBindings)) {
     layer.object[property] = elementId === 'objectPoi' ? event.target.checked : event.target.value;
     if (property === 'name') { layer.name = event.target.value || 'Objeto'; $('#layerName').value = layer.name; renderLayers(); }
     if (property === 'iconSetId' || property === 'gallerySetId') renderObjectThumbnails(layer.object);
+    if (property === 'iconSetId') renderObjectAnchorPreview(layer.object);
     redraw();
   });
 }
@@ -803,6 +898,15 @@ function paintMask(event) {
   maskEditContext.beginPath(); maskEditContext.arc(x, y, Number($('#brushSize').value) / 2, 0, Math.PI * 2); maskEditContext.fill();
 }
 maskEditCanvas.oncontextmenu = (event) => event.preventDefault();
+maskEditCanvas.addEventListener('wheel', (event) => {
+  if (!event.altKey || maskTool === 'fill') return;
+  event.preventDefault();
+  event.stopPropagation();
+  const control = $('#brushSize');
+  const nextSize = Math.max(Number(control.min), Math.min(Number(control.max), Number(control.value) + (event.deltaY < 0 ? 5 : -5)));
+  control.value = nextSize;
+  control.dispatchEvent(new Event('input', { bubbles: true }));
+}, { passive: false });
 maskEditCanvas.onpointerdown = (event) => {
   event.stopPropagation();
   if (event.button === 2) {
@@ -844,9 +948,9 @@ async function closeMaskEditor(save) {
   const layer = state.layers.find((item) => item.id === state.maskEditing);
   if (save && layer) {
     layer.mask = await imageFromSource(maskEditCanvas.toDataURL('image/png'));
-    layer.maskName = 'Máscara criada no editor'; layer.maskPixels = null; layer.clip = null; layer.bounds = null; layer.output.width = 0;
+    layer.maskName = 'Máscara criada no editor'; layer.maskPixels = null; layer.clip = null; layer.bounds = null; layer.output.width = 0; layer.placements = [];
     if (layer.type === 'region') await applyRegionPriority(layer);
-    $('#maskName').textContent = layer.maskName; renderMaskPreview(layer); updateReadyState(); redraw();
+    $('#maskName').textContent = layer.maskName; $('#createMaskBtn').textContent = t('editMask'); renderMaskPreview(layer); updateReadyState(); redraw();
   }
   state.maskEditing = null; maskEditCanvas.style.display = 'none'; $('#maskTools').hidden = true; $('#brushSizeControl').hidden = true;
   brushCursor.style.display = 'none'; maskHistory = [];
@@ -884,6 +988,11 @@ $('#layerContextMenu').addEventListener('click', (event) => {
     if (name?.trim()) layer.name = name.trim();
   } else if (action === 'toggle') {
     layer.visible = !layer.visible;
+  } else if (action === 'delete') {
+    const index = state.layers.indexOf(layer);
+    state.layers.splice(index, 1);
+    if (!state.layers.length) state.layers.push(createLayer());
+    if (layer.id === state.selectedId) selectLayer(state.layers[Math.min(index, state.layers.length - 1)].id);
   }
   $('#layerContextMenu').hidden = true;
   if (layer.id === state.selectedId) $('#layerName').value = layer.name;
@@ -902,9 +1011,9 @@ function serializeAsset(asset) {
   return { name: asset.file.name, source: asset.image.src };
 }
 
-$('#saveProjectBtn').onclick = () => {
-  const project = {
-    format: 'teralium-map-project', version: 1,
+function createProjectData() {
+  return {
+    format: 'teralium-map-project', version: 2,
     canvas: { width: canvas.width, height: canvas.height },
     selectedId: state.selectedId,
     imageSets: state.imageSets.map((set) => ({ id: set.id, name: set.name, assets: set.assets.map(serializeAsset) })),
@@ -912,20 +1021,43 @@ $('#saveProjectBtn').onclick = () => {
       id: layer.id, type: layer.type, name: layer.name, visible: layer.visible,
       maskName: layer.maskName, maskSource: layer.mask?.src || null, imageSource: layer.image?.src || null,
       assets: layer.assets.map(serializeAsset), settings: layer.settings, object: layer.object, region: layer.region,
+      placements: (layer.placements || []).map(({ x, y, assetIndex, variation, rotation, mirrored }) => ({ x, y, assetIndex, variation, rotation, mirrored })),
       outputSource: layer.output.width ? layer.output.toDataURL('image/png') : null,
     })),
   };
+}
+
+$('#saveProjectBtn').onclick = () => {
+  const project = createProjectData();
   downloadFile('projeto-teralium.json', JSON.stringify(project), 'application/json');
   $('#saveState').textContent = 'Projeto salvo';
 };
 
 $('#openProjectBtn').onclick = () => $('#projectInput').click();
+function projectJsonFromZip(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const view = new DataView(buffer);
+  const decoder = new TextDecoder();
+  let offset = 0;
+  while (offset + 30 <= bytes.length && view.getUint32(offset, true) === 0x04034b50) {
+    const compressedSize = view.getUint32(offset + 18, true);
+    const nameLength = view.getUint16(offset + 26, true);
+    const extraLength = view.getUint16(offset + 28, true);
+    const nameStart = offset + 30;
+    const dataStart = nameStart + nameLength + extraLength;
+    const name = decoder.decode(bytes.subarray(nameStart, nameStart + nameLength));
+    if (name === 'projeto-teralium.json') return decoder.decode(bytes.subarray(dataStart, dataStart + compressedSize));
+    offset = dataStart + compressedSize;
+  }
+  throw new Error('Arquivo de projeto não encontrado no ZIP');
+}
 $('#projectInput').addEventListener('change', async (event) => {
   const file = event.target.files[0];
   if (!file) return;
   try {
     $('#saveState').textContent = 'Abrindo…';
-    const project = JSON.parse(await file.text());
+    const projectText = file.name.toLowerCase().endsWith('.zip') ? projectJsonFromZip(await file.arrayBuffer()) : await file.text();
+    const project = JSON.parse(projectText);
     if (project.format !== 'teralium-map-project') throw new Error('Formato inválido');
     canvas.width = project.canvas.width; canvas.height = project.canvas.height;
     state.imageSets = await Promise.all(project.imageSets.map(async (set) => ({
@@ -939,6 +1071,7 @@ $('#projectInput').addEventListener('change', async (event) => {
       if (saved.maskSource) layer.mask = await imageFromSource(saved.maskSource);
       if (saved.imageSource) layer.image = await imageFromSource(saved.imageSource);
       layer.assets = await Promise.all(saved.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source) })));
+      layer.placements = saved.placements || [];
       if (saved.outputSource) {
         const output = await imageFromSource(saved.outputSource);
         layer.output.width = canvas.width; layer.output.height = canvas.height;
@@ -1005,12 +1138,71 @@ $('.zoom-controls').addEventListener('pointerdown', (event) => event.stopPropaga
 $('#zoomIn').onclick = () => zoomBy(1.15);
 $('#zoomOut').onclick = () => zoomBy(0.85);
 $('#fitBtn').onclick = fit;
+function dataUrlBytes(source) {
+  const binary = atob(source.split(',')[1]);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+function crc32(bytes) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function zipProject(files) {
+  const encoder = new TextEncoder();
+  const chunks = [];
+  const directory = [];
+  let offset = 0;
+  const record = (size) => new DataView(new ArrayBuffer(size));
+  for (const file of files) {
+    const name = encoder.encode(file.name);
+    const bytes = file.bytes instanceof Uint8Array ? file.bytes : encoder.encode(file.bytes);
+    const checksum = crc32(bytes);
+    const header = record(30);
+    header.setUint32(0, 0x04034b50, true); header.setUint16(4, 20, true); header.setUint16(6, 0x0800, true);
+    header.setUint32(14, checksum, true); header.setUint32(18, bytes.length, true); header.setUint32(22, bytes.length, true); header.setUint16(26, name.length, true);
+    chunks.push(header.buffer, name, bytes);
+    directory.push({ name, bytes, checksum, offset });
+    offset += header.byteLength + name.length + bytes.length;
+  }
+  const directoryOffset = offset;
+  for (const file of directory) {
+    const header = record(46);
+    header.setUint32(0, 0x02014b50, true); header.setUint16(4, 20, true); header.setUint16(6, 20, true); header.setUint16(8, 0x0800, true);
+    header.setUint32(16, file.checksum, true); header.setUint32(20, file.bytes.length, true); header.setUint32(24, file.bytes.length, true); header.setUint16(28, file.name.length, true); header.setUint32(42, file.offset, true);
+    chunks.push(header.buffer, file.name); offset += header.byteLength + file.name.length;
+  }
+  const end = record(22);
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, directory.length, true); end.setUint16(10, directory.length, true); end.setUint32(12, offset - directoryOffset, true); end.setUint32(16, directoryOffset, true);
+  chunks.push(end.buffer);
+  return new Blob(chunks, { type: 'application/zip' });
+}
+
+function safeFileName(name, fallback) {
+  return (name || fallback).replace(/[^a-z0-9._-]+/gi, '-');
+}
+
 $('#exportBtn').onclick = () => {
+  $('#saveState').textContent = 'Exportando projeto…';
+  redraw(true, false);
+  const project = createProjectData();
+  const files = [
+    { name: 'projeto-teralium.json', bytes: JSON.stringify(project, null, 2) },
+    { name: 'mapa-render-final.png', bytes: dataUrlBytes(canvas.toDataURL('image/png')) },
+  ];
+  state.layers.forEach((layer, index) => {
+    if (layer.mask) files.push({ name: `mascaras/${index + 1}-${safeFileName(layer.maskName, layer.name)}.png`, bytes: dataUrlBytes(layer.mask.src) });
+    if (layer.image) files.push({ name: `assets/camadas/${index + 1}-${safeFileName(layer.name, 'imagem')}.png`, bytes: dataUrlBytes(layer.image.src) });
+    layer.assets.forEach((asset, assetIndex) => files.push({ name: `assets/camadas/${index + 1}/${assetIndex + 1}-${safeFileName(asset.file.name, 'asset')}`, bytes: dataUrlBytes(asset.image.src) }));
+  });
+  state.imageSets.forEach((set, setIndex) => set.assets.forEach((asset, assetIndex) => files.push({ name: `assets/biblioteca/${setIndex + 1}-${safeFileName(set.name, 'conjunto')}/${assetIndex + 1}-${safeFileName(asset.file.name, 'asset')}`, bytes: dataUrlBytes(asset.image.src) })));
+  downloadFile('projeto-teralium.zip', zipProject(files), 'application/zip');
   redraw();
-  const link = document.createElement('a');
-  link.download = 'mapa-teralium.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  $('#saveState').textContent = 'Projeto exportado';
 };
 function exportablePois() {
   return state.layers.filter((layer) => layer.visible && layer.type === 'object' && layer.object?.poi && layer.object.x !== null).map((layer) => {
@@ -1059,9 +1251,12 @@ $('#previewMapBtn').onclick = () => {
 
 window.addEventListener('resize', () => { if (selectedLayer()?.mask) fit(); });
 
+$('#languageSelect').addEventListener('change', (event) => applyLanguage(event.target.value));
+
 const firstLayer = createLayer();
 state.layers.push(firstLayer);
 selectLayer(firstLayer.id);
+applyLanguage(state.language);
 updateTransform();
 fetch('data/poi-types.json')
   .then((response) => response.ok ? response.json() : Promise.reject(new Error('Tipos indisponíveis')))
