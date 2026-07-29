@@ -33,7 +33,8 @@ const state = {
   descriptionTemplates: [],
   editingDescriptionTemplateId: null,
   terrainHeightEditing: null,
-  terrainColors: { shallow: '#51746f', medium: '#4b6c6a', deep: '#405a5b', land: '#d7c89d' },
+  terrainColors: { shallow: '#51746f', medium: '#4b6c6a', deep: '#405a5b', land: '#d7c89d', coastLand: '#65483b', coastWave: '#91c9cf', coastLandThickness: 3, coastWaveThickness: 2, coastVariation: true, coastNoiseMultiplier: 0.6 },
+  terrainBrushImage: null,
 };
 
 const translations = {
@@ -225,6 +226,7 @@ function redraw(includeObjects = true, showSelection = true, includePaths = true
   const depthEntries = [];
   state.layers.forEach((layer, layerIndex) => {
     if (!layer.visible) return;
+    if (state.terrainHeightEditing && layer.type === 'terrain') return;
     if (layer.type === 'terrain') {
       if (layer.placements?.length) {
         if (layer.settings.slice && layer.mask && !layer.maskPath) prepareMask(layer);
@@ -1114,6 +1116,9 @@ $('#projectSettingsBtn').onclick = () => {
   $('#distanceScaleKm').value = state.distanceScaleKm;
   $('#speedWalking').value = state.travelSpeeds.walking; $('#speedHorse').value = state.travelSpeeds.horse; $('#speedShip').value = state.travelSpeeds.ship; $('#speedAir').value = state.travelSpeeds.air;
   $('#terrainWaterShallow').value = state.terrainColors.shallow; $('#terrainWaterMedium').value = state.terrainColors.medium; $('#terrainWaterDeep').value = state.terrainColors.deep; $('#terrainLandColor').value = state.terrainColors.land;
+  $('#terrainCoastLandColor').value = state.terrainColors.coastLand; $('#terrainCoastWaveColor').value = state.terrainColors.coastWave;
+  $('#terrainCoastLandThickness').value = state.terrainColors.coastLandThickness; $('#terrainCoastWaveThickness').value = state.terrainColors.coastWaveThickness;
+  $('#terrainCoastVariation').checked = state.terrainColors.coastVariation; $('#terrainCoastNoiseMultiplier').value = state.terrainColors.coastNoiseMultiplier;
   $('#projectSettingsModal').hidden = false;
 };
 $('#closeProjectSettings').onclick = () => { $('#projectSettingsModal').hidden = true; };
@@ -1126,12 +1131,16 @@ $('#distanceScaleKm').addEventListener('input', (event) => {
 for (const [id, property] of Object.entries({ speedWalking: 'walking', speedHorse: 'horse', speedShip: 'ship', speedAir: 'air' })) {
   $(`#${id}`).addEventListener('input', (event) => { state.travelSpeeds[property] = Math.max(0.01, Number(event.target.value) || 0.01); });
 }
-for (const [id, property] of Object.entries({ terrainWaterShallow: 'shallow', terrainWaterMedium: 'medium', terrainWaterDeep: 'deep', terrainLandColor: 'land' })) {
+for (const [id, property] of Object.entries({ terrainWaterShallow: 'shallow', terrainWaterMedium: 'medium', terrainWaterDeep: 'deep', terrainLandColor: 'land', terrainCoastLandColor: 'coastLand', terrainCoastWaveColor: 'coastWave' })) {
   $(`#${id}`).addEventListener('input', (event) => {
     state.terrainColors[property] = event.target.value;
     state.layers.filter((layer) => layer.type === 'terrain' && layer.heightMap).forEach((layer) => renderTerrainHeight(layer));
   });
 }
+for (const [id, property] of Object.entries({ terrainCoastLandThickness: 'coastLandThickness', terrainCoastWaveThickness: 'coastWaveThickness', terrainCoastNoiseMultiplier: 'coastNoiseMultiplier' })) {
+  $(`#${id}`).addEventListener('input', (event) => { state.terrainColors[property] = Number(event.target.value); state.layers.filter((layer) => layer.type === 'terrain' && layer.heightMap).forEach((layer) => renderTerrainHeight(layer)); });
+}
+$('#terrainCoastVariation').addEventListener('change', (event) => { state.terrainColors.coastVariation = event.target.checked; state.layers.filter((layer) => layer.type === 'terrain' && layer.heightMap).forEach((layer) => renderTerrainHeight(layer)); });
 $('#assetInput').addEventListener('change', async (event) => {
   for (const file of event.target.files) pendingSetAssets.push({ file: { name: file.name }, image: await fileImage(file) });
   $('#newSetFiles').textContent = pendingSetAssets.length ? `${pendingSetAssets.length} imagem(ns) selecionada(s)` : 'Nenhuma imagem selecionada';
@@ -1380,23 +1389,54 @@ let maskPaintPointerId = null;
 let maskHistory = [];
 const brushCursor = $('#brushCursor');
 
-function renderTerrainHeight(layer, sourceCanvas = null) {
+function perlinCoastNoise(x, y) {
+  const hash = (ix, iy) => {
+    const value = Math.sin(ix * 127.1 + iy * 311.7) * 43758.5453;
+    return value - Math.floor(value);
+  };
+  const scale = 18, gx = x / scale, gy = y / scale, x0 = Math.floor(gx), y0 = Math.floor(gy), tx = gx - x0, ty = gy - y0;
+  const smoothX = tx * tx * (3 - 2 * tx), smoothY = ty * ty * (3 - 2 * ty);
+  const top = hash(x0, y0) * (1 - smoothX) + hash(x0 + 1, y0) * smoothX;
+  const bottom = hash(x0, y0 + 1) * (1 - smoothX) + hash(x0 + 1, y0 + 1) * smoothX;
+  return top * (1 - smoothY) + bottom * smoothY;
+}
+
+function renderTerrainHeight(layer, sourceCanvas = null, dirty = null) {
   let source = sourceCanvas;
   if (!source && layer.heightMap) {
     source = document.createElement('canvas'); source.width = canvas.width; source.height = canvas.height; source.getContext('2d').drawImage(layer.heightMap, 0, 0, canvas.width, canvas.height);
   }
   if (!source.width || !source.height) return;
   const sourceContext = source.getContext('2d', { willReadFrequently: true });
-  const heightData = sourceContext.getImageData(0, 0, source.width, source.height);
-  const output = layer.heightOutput; output.width = source.width; output.height = source.height;
-  const outputContext = output.getContext('2d'); const colored = outputContext.createImageData(source.width, source.height);
+  const maxThickness = Math.ceil(Math.max(state.terrainColors.coastLandThickness, state.terrainColors.coastWaveThickness) * (1 + state.terrainColors.coastNoiseMultiplier)) + 2;
+  const region = dirty ? {
+    x: Math.max(0, Math.floor(dirty.x - maxThickness)), y: Math.max(0, Math.floor(dirty.y - maxThickness)),
+    width: Math.min(source.width, Math.ceil(dirty.x + dirty.width + maxThickness)) - Math.max(0, Math.floor(dirty.x - maxThickness)),
+    height: Math.min(source.height, Math.ceil(dirty.y + dirty.height + maxThickness)) - Math.max(0, Math.floor(dirty.y - maxThickness)),
+  } : { x: 0, y: 0, width: source.width, height: source.height };
+  const heightData = sourceContext.getImageData(region.x, region.y, region.width, region.height);
+  const output = layer.heightOutput;
+  if (output.width !== source.width || output.height !== source.height) { output.width = source.width; output.height = source.height; }
+  const outputContext = output.getContext('2d'); const colored = outputContext.createImageData(region.width, region.height);
   const colors = [state.terrainColors.deep, state.terrainColors.medium, state.terrainColors.shallow, state.terrainColors.land].map((color) => [parseInt(color.slice(1, 3), 16), parseInt(color.slice(3, 5), 16), parseInt(color.slice(5, 7), 16)]);
+  const coastColors = [state.terrainColors.coastLand, state.terrainColors.coastWave].map((color) => [parseInt(color.slice(1, 3), 16), parseInt(color.slice(3, 5), 16), parseInt(color.slice(5, 7), 16)]);
   for (let index = 0; index < heightData.data.length; index += 4) {
     const height = heightData.data[index] / 255;
-    const color = height < 1 / 6 ? colors[0] : height < 1 / 3 ? colors[1] : height < 0.5 ? colors[2] : colors[3];
+    const localPixel = index / 4, localX = localPixel % region.width, localY = Math.floor(localPixel / region.width), land = height >= 0.5;
+    const noise = state.terrainColors.coastVariation ? 1 + (perlinCoastNoise(region.x + localX, region.y + localY) - 0.5) * 2 * state.terrainColors.coastNoiseMultiplier : 1;
+    const thickness = Math.max(0, Math.round((land ? state.terrainColors.coastLandThickness : state.terrainColors.coastWaveThickness) * noise));
+    let coast = false;
+    for (let distance = 1; distance <= thickness && !coast; distance++) for (const [dx, dy] of [[-distance, 0], [distance, 0], [0, -distance], [0, distance]]) {
+      const nx = localX + dx, ny = localY + dy;
+      if (nx >= 0 && ny >= 0 && nx < region.width && ny < region.height) {
+        const neighborLand = heightData.data[(ny * region.width + nx) * 4] / 255 >= 0.5;
+        if (neighborLand !== land) { coast = true; break; }
+      }
+    }
+    const color = coast ? coastColors[land ? 0 : 1] : height < 1 / 6 ? colors[0] : height < 1 / 3 ? colors[1] : height < 0.5 ? colors[2] : colors[3];
     colored.data[index] = color[0]; colored.data[index + 1] = color[1]; colored.data[index + 2] = color[2]; colored.data[index + 3] = 255;
   }
-  outputContext.putImageData(colored, 0, 0); redraw();
+  outputContext.putImageData(colored, region.x, region.y); redraw();
 }
 
 $('#editTerrainHeight').onclick = () => {
@@ -1404,13 +1444,19 @@ $('#editTerrainHeight').onclick = () => {
   maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
   maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
   if (layer.heightMap) maskEditContext.drawImage(layer.heightMap, 0, 0, canvas.width, canvas.height);
-  else { maskEditContext.fillStyle = 'rgb(128,128,128)'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); }
+  else { maskEditContext.fillStyle = 'rgb(0,0,0)'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); }
   state.terrainHeightEditing = layer.id; state.maskEditing = layer.id; maskHistory = [];
   maskEditCanvas.style.display = 'block'; maskEditCanvas.style.opacity = '0';
   $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
   $('#brushSizeControl span').textContent = 'Height'; $('#brushOpacity').max = '0.5'; $('#brushOpacity').value = '0.5'; $('#brushOpacity').dispatchEvent(new Event('input'));
+  $('#terrainBrushUpload').hidden = false; $('#clearTerrainBrush').hidden = !state.terrainBrushImage;
   renderTerrainHeight(layer, maskEditCanvas); $('#saveState').textContent = 'Editando altura do terreno';
 };
+$('#terrainBrushInput').addEventListener('change', async (event) => {
+  const file = event.target.files[0]; if (!file) return;
+  state.terrainBrushImage = await fileImage(file); $('#terrainBrushName').textContent = file.name; $('#clearTerrainBrush').hidden = false; event.target.value = '';
+});
+$('#clearTerrainBrush').onclick = () => { state.terrainBrushImage = null; $('#terrainBrushName').textContent = ''; $('#clearTerrainBrush').hidden = true; };
 
 $('#createMaskBtn').onclick = () => {
   const layer = selectedLayer();
@@ -1455,12 +1501,25 @@ function paintMask(event) {
   const rectangle = maskEditCanvas.getBoundingClientRect();
   const x = (event.clientX - rectangle.left) * canvas.width / rectangle.width;
   const y = (event.clientY - rectangle.top) * canvas.height / rectangle.height;
-  maskEditContext.globalCompositeOperation = heightLayer ? 'source-over' : maskTool === 'eraser' ? 'destination-out' : 'source-over';
-  maskEditContext.globalAlpha = heightLayer ? 1 : Number($('#brushOpacity').value);
-  const level = Math.round(Number($('#brushOpacity').value) * 255);
-  maskEditContext.fillStyle = heightLayer ? `rgb(${level},${level},${level})` : '#000';
-  maskEditContext.beginPath(); maskEditContext.arc(x, y, Number($('#brushSize').value) / 2, 0, Math.PI * 2); maskEditContext.fill(); maskEditContext.globalAlpha = 1;
-  if (heightLayer) renderTerrainHeight(heightLayer, maskEditCanvas);
+  const brushSize = Number($('#brushSize').value), radius = brushSize / 2;
+  if (heightLayer && state.terrainBrushImage) {
+    const brushCanvas = document.createElement('canvas'); brushCanvas.width = brushCanvas.height = Math.max(1, Math.round(brushSize));
+    const brushContext = brushCanvas.getContext('2d', { willReadFrequently: true }); brushContext.drawImage(state.terrainBrushImage, 0, 0, brushCanvas.width, brushCanvas.height);
+    const brushData = brushContext.getImageData(0, 0, brushCanvas.width, brushCanvas.height); const level = Number($('#brushOpacity').value) * 255;
+    for (let index = 0; index < brushData.data.length; index += 4) {
+      const darkness = 1 - (brushData.data[index] + brushData.data[index + 1] + brushData.data[index + 2]) / 765;
+      const value = Math.round(level * darkness * brushData.data[index + 3] / 255);
+      brushData.data[index] = brushData.data[index + 1] = brushData.data[index + 2] = value; brushData.data[index + 3] = 255;
+    }
+    brushContext.putImageData(brushData, 0, 0); maskEditContext.globalCompositeOperation = 'source-over'; maskEditContext.drawImage(brushCanvas, x - radius, y - radius);
+  } else {
+    maskEditContext.globalCompositeOperation = heightLayer ? 'source-over' : maskTool === 'eraser' ? 'destination-out' : 'source-over';
+    maskEditContext.globalAlpha = heightLayer ? 1 : Number($('#brushOpacity').value);
+    const level = Math.round(Number($('#brushOpacity').value) * 255);
+    maskEditContext.fillStyle = heightLayer ? `rgb(${level},${level},${level})` : '#000';
+    maskEditContext.beginPath(); maskEditContext.arc(x, y, radius, 0, Math.PI * 2); maskEditContext.fill(); maskEditContext.globalAlpha = 1;
+  }
+  if (heightLayer) renderTerrainHeight(heightLayer, maskEditCanvas, { x: x - radius, y: y - radius, width: brushSize, height: brushSize });
 }
 maskEditCanvas.oncontextmenu = (event) => event.preventDefault();
 const maskShortcutKeys = new Set();
@@ -1531,6 +1590,7 @@ async function closeMaskEditor(save) {
   }
   state.maskEditing = null; state.terrainHeightEditing = null; maskEditCanvas.style.display = 'none'; maskEditCanvas.style.opacity = '1'; $('#maskTools').hidden = true; $('#brushSizeControl').hidden = true;
   $('#brushSizeControl span').textContent = 'Opacidade'; $('#brushOpacity').max = '1';
+  $('#terrainBrushUpload').hidden = true; $('#terrainBrushName').textContent = ''; $('#clearTerrainBrush').hidden = true;
   brushCursor.style.display = 'none'; maskHistory = [];
   redraw();
   $('#saveState').textContent = save ? 'Máscara atualizada' : 'Edição cancelada';

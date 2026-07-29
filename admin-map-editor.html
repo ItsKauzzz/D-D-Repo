@@ -178,6 +178,7 @@
   <div id="brushSizeControl" class="brush-size-control" hidden>
     <span>Opacidade</span><input id="brushOpacity" type="range" min="0" max="1" step="0.01" value="1"><input id="brushOpacityValue" class="value-input" type="number" min="0" max="100" value="100">
     <span>Brush</span><input id="brushSize" type="range" min="2" max="300" value="60"><input id="brushSizeValue" class="value-input" type="number" min="2" max="300" value="60">
+    <label id="terrainBrushUpload" class="terrain-brush-upload" hidden>Imagem do brush<input id="terrainBrushInput" type="file" accept="image/*" hidden></label><span id="terrainBrushName"></span><button id="clearTerrainBrush" type="button" hidden>×</button>
   </div>
   <div id="layerContextMenu" class="context-menu" hidden>
     <button data-action="rename">Renomear</button>
@@ -195,12 +196,18 @@
         <label>De navio <span><input id="speedShip" type="number" min="0.01" value="30"> km/h</span></label>
         <label>De aeroplano / balão <span><input id="speedAir" type="number" min="0.01" value="80"> km/h</span></label>
       </fieldset>
-      <fieldset class="speed-settings"><legend>Cores de altura do terreno</legend>
+      <details class="terrain-settings"><summary>Configurações de terreno</summary><fieldset class="speed-settings"><legend>Cores de altura do terreno</legend>
         <label>Água rasa <input id="terrainWaterShallow" type="color" value="#51746f"></label>
         <label>Água média <input id="terrainWaterMedium" type="color" value="#4b6c6a"></label>
         <label>Água profunda <input id="terrainWaterDeep" type="color" value="#405a5b"></label>
         <label>Nível da terra <input id="terrainLandColor" type="color" value="#d7c89d"></label>
-      </fieldset>
+        <label>Fim da terra <input id="terrainCoastLandColor" type="color" value="#65483b"></label>
+        <label>Ondas costeiras <input id="terrainCoastWaveColor" type="color" value="#91c9cf"></label>
+        <label>Thickness terra <input id="terrainCoastLandThickness" type="number" min="0" max="30" value="3"></label>
+        <label>Thickness ondas <input id="terrainCoastWaveThickness" type="number" min="0" max="30" value="2"></label>
+        <label class="check-row"><input id="terrainCoastVariation" type="checkbox" checked> Variação Perlin nos contornos</label>
+        <label>Multiplicador da variação <input id="terrainCoastNoiseMultiplier" type="number" min="0" max="3" step="0.1" value="0.6"></label>
+      </fieldset></details>
     </div>
   </div>
   <div id="objectIconPickerModal" class="modal-backdrop" hidden>
