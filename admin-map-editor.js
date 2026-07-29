@@ -3,6 +3,10 @@ const ctx = canvas.getContext('2d');
 const viewport = document.querySelector('#viewport');
 const stage = document.querySelector('#stage');
 const $ = (selector) => document.querySelector(selector);
+const MAX_TERRAIN_DENSITY = 1000;
+
+$('#density').max = MAX_TERRAIN_DENSITY;
+$('#densityValue').max = MAX_TERRAIN_DENSITY;
 
 const state = {
   layers: [],
@@ -104,7 +108,7 @@ function fit() {
   updateTransform();
 }
 
-function redraw(includeObjects = true) {
+function redraw(includeObjects = true, includeMaskPreview = includeObjects) {
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   // The first layer in the list has the highest visual priority, so paint bottom-up.
@@ -121,7 +125,7 @@ function redraw(includeObjects = true) {
   }
 
   const selected = selectedLayer();
-  if (includeObjects && !state.maskEditing && selected?.mask) {
+  if (includeMaskPreview && !state.maskEditing && selected?.mask) {
     ctx.save();
     ctx.globalAlpha = 0.2;
     ctx.drawImage(selected.mask, 0, 0, canvas.width, canvas.height);
@@ -173,7 +177,7 @@ function renderLayers() {
       const menu = $('#layerContextMenu');
       menu.querySelector('[data-action="toggle"]').textContent = layer.visible ? 'Ocultar' : 'Exibir';
       menu.style.left = `${Math.min(event.clientX, window.innerWidth - 155)}px`;
-      menu.style.top = `${Math.min(event.clientY, window.innerHeight - 90)}px`;
+      menu.style.top = `${Math.min(event.clientY, window.innerHeight - 125)}px`;
       menu.hidden = false;
     });
     button.addEventListener('dragstart', () => button.classList.add('dragging'));
@@ -240,6 +244,7 @@ function selectLayer(id) {
   const layer = selectedLayer();
   $('#layerName').value = layer.name;
   $('#maskName').textContent = layer.maskName || 'Nenhuma máscara selecionada';
+  $('#createMaskBtn').textContent = layer.mask ? '✎ Editar máscara' : '✦ Criar máscara';
   $('#density').value = layer.settings.density;
   $('#scale').value = layer.settings.scale;
   $('#sizeVariation').checked = layer.settings.sizeVariation;
@@ -281,6 +286,7 @@ function selectLayer(id) {
 function renderMaskPreview(layer) {
   const preview = $('#maskPreview');
   preview.replaceChildren();
+  $('#createMaskBtn').textContent = layer.mask ? '✎ Editar máscara' : '✦ Criar máscara';
   if (!layer.mask) return;
   const card = document.createElement('div'); card.className = 'mask-card';
   const image = new Image(); image.src = layer.mask.src; image.alt = layer.maskName;
@@ -422,13 +428,18 @@ async function generate() {
   const { minX, minY, maxX, maxY } = layer.bounds;
   const width = maxX - minX + 1;
   const height = maxY - minY + 1;
-  const averageVariation = layer.settings.sizeVariation ? (layer.settings.sizeMin + layer.settings.sizeMax) / 2 : 1;
-  // Density is a property of the mask, never of the amount or dimensions of
-  // images in the set. More images only change which graphic each point uses.
-  const footprint = Math.max(8, 48 * layer.settings.scale * averageVariation);
-  // 100 is the base occupancy and the control can reach 300 for deliberately
-  // dense compositions. The point budget remains independent of asset count.
-  const attempts = Math.min(250000, Math.round((width * height / (footprint * footprint)) * layer.settings.density / 100));
+  const averageVariationArea = layer.settings.sizeVariation
+    ? (layer.settings.sizeMin ** 2 + layer.settings.sizeMin * layer.settings.sizeMax + layer.settings.sizeMax ** 2) / 3
+    : 1;
+  // More alternatives only change which graphic is chosen. Coverage instead
+  // follows average rendered area, so smaller graphics create more placements.
+  const averageAssetArea = layer.assets.reduce(
+    (total, asset) => total + asset.image.naturalWidth * asset.image.naturalHeight,
+    0,
+  ) / layer.assets.length;
+  const footprintArea = Math.max(1, averageAssetArea * layer.settings.scale ** 2 * averageVariationArea);
+  const density = Math.max(0, Math.min(MAX_TERRAIN_DENSITY, Number(layer.settings.density) || 0));
+  const attempts = Math.min(250000, Math.round((width * height / footprintArea) * density / 100));
   const placements = [];
   let iteration = 0;
 
@@ -778,6 +789,16 @@ $('#brushSize').oninput = (event) => {
   brushCursor.style.width = `${event.target.value}px`; brushCursor.style.height = `${event.target.value}px`;
 };
 bindNumberInput('brushSizeValue', 'brushSize', () => {});
+maskEditCanvas.addEventListener('wheel', (event) => {
+  if (!state.maskEditing || !event.altKey) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const control = $('#brushSize');
+  const direction = event.deltaY < 0 ? 1 : -1;
+  const nextSize = Math.max(Number(control.min), Math.min(Number(control.max), Number(control.value) + direction * 5));
+  control.value = nextSize;
+  control.dispatchEvent(new Event('input'));
+}, { passive: false });
 function paintMask(event) {
   if (!maskDrawing || maskPaintPointerId !== event.pointerId || !(event.buttons & 1)) return;
   if (maskTool === 'fill') {
@@ -875,6 +896,18 @@ $('#layerContextMenu').addEventListener('click', (event) => {
     if (name?.trim()) layer.name = name.trim();
   } else if (action === 'toggle') {
     layer.visible = !layer.visible;
+  } else if (action === 'delete') {
+    if (!window.confirm(`Excluir a camada “${layer.name}”?`)) return;
+    const index = state.layers.indexOf(layer);
+    state.layers.splice(index, 1);
+    if (!state.layers.length) state.layers.push(createLayer());
+    if (layer.id === state.selectedId) {
+      const replacement = state.layers[Math.min(index, state.layers.length - 1)];
+      state.selectedId = replacement.id;
+      $('#layerContextMenu').hidden = true;
+      selectLayer(replacement.id);
+      return;
+    }
   }
   $('#layerContextMenu').hidden = true;
   if (layer.id === state.selectedId) $('#layerName').value = layer.name;
@@ -893,8 +926,8 @@ function serializeAsset(asset) {
   return { name: asset.file.name, source: asset.image.src };
 }
 
-$('#saveProjectBtn').onclick = () => {
-  const project = {
+function serializeProject() {
+  return {
     format: 'teralium-map-project', version: 1,
     canvas: { width: canvas.width, height: canvas.height },
     selectedId: state.selectedId,
@@ -906,6 +939,10 @@ $('#saveProjectBtn').onclick = () => {
       outputSource: layer.output.width ? layer.output.toDataURL('image/png') : null,
     })),
   };
+}
+
+$('#saveProjectBtn').onclick = () => {
+  const project = serializeProject();
   downloadFile('projeto-teralium.json', JSON.stringify(project), 'application/json');
   $('#saveState').textContent = 'Projeto salvo';
 };
@@ -996,12 +1033,91 @@ $('.zoom-controls').addEventListener('pointerdown', (event) => event.stopPropaga
 $('#zoomIn').onclick = () => zoomBy(1.15);
 $('#zoomOut').onclick = () => zoomBy(0.85);
 $('#fitBtn').onclick = fit;
-$('#exportBtn').onclick = () => {
-  redraw();
-  const link = document.createElement('a');
-  link.download = 'mapa-teralium.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+
+function bytesFromDataUrl(source) {
+  const [header, encoded] = source.split(',', 2);
+  if (!header || encoded === undefined) return new Uint8Array();
+  if (!header.includes(';base64')) return new TextEncoder().encode(decodeURIComponent(encoded));
+  const binary = atob(encoded);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+function safeFileName(name, fallback) {
+  const clean = String(name || fallback).replace(/[\\/:*?"<>|\x00-\x1f]/g, '-').trim();
+  return clean || fallback;
+}
+
+function extensionForSource(source, fallback = 'png') {
+  const mime = /^data:([^;,]+)/.exec(source)?.[1];
+  return ({ 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/svg+xml': 'svg' })[mime] || fallback;
+}
+
+const crcTable = Array.from({ length: 256 }, (_, index) => {
+  let value = index;
+  for (let bit = 0; bit < 8; bit++) value = (value & 1) ? 0xEDB88320 ^ (value >>> 1) : value >>> 1;
+  return value >>> 0;
+});
+
+function crc32(bytes) {
+  let crc = 0xFFFFFFFF;
+  for (const byte of bytes) crc = crcTable[(crc ^ byte) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+function makeZip(files) {
+  const encoder = new TextEncoder();
+  const parts = [];
+  const directory = [];
+  let offset = 0;
+  for (const file of files) {
+    const name = encoder.encode(file.name);
+    const data = file.data instanceof Uint8Array ? file.data : encoder.encode(file.data);
+    const crc = crc32(data);
+    const local = new Uint8Array(30 + name.length);
+    const localView = new DataView(local.buffer);
+    localView.setUint32(0, 0x04034B50, true); localView.setUint16(4, 20, true); localView.setUint16(6, 0x800, true);
+    localView.setUint32(14, crc, true); localView.setUint32(18, data.length, true); localView.setUint32(22, data.length, true);
+    localView.setUint16(26, name.length, true); local.set(name, 30);
+    const central = new Uint8Array(46 + name.length);
+    const centralView = new DataView(central.buffer);
+    centralView.setUint32(0, 0x02014B50, true); centralView.setUint16(4, 20, true); centralView.setUint16(6, 20, true);
+    centralView.setUint16(8, 0x800, true); centralView.setUint32(16, crc, true); centralView.setUint32(20, data.length, true);
+    centralView.setUint32(24, data.length, true); centralView.setUint16(28, name.length, true); centralView.setUint32(42, offset, true);
+    central.set(name, 46);
+    parts.push(local, data); directory.push(central); offset += local.length + data.length;
+  }
+  const directorySize = directory.reduce((total, item) => total + item.length, 0);
+  const end = new Uint8Array(22);
+  const endView = new DataView(end.buffer);
+  endView.setUint32(0, 0x06054B50, true); endView.setUint16(8, files.length, true); endView.setUint16(10, files.length, true);
+  endView.setUint32(12, directorySize, true); endView.setUint32(16, offset, true);
+  return new Blob([...parts, ...directory, end], { type: 'application/zip' });
+}
+
+$('#exportBtn').onclick = async () => {
+  $('#exportBtn').disabled = true;
+  $('#saveState').textContent = 'Montando pacote…';
+  try {
+    redraw(true, false);
+    const finalMap = bytesFromDataUrl(canvas.toDataURL('image/png'));
+    redraw();
+    const project = serializeProject();
+    const files = [
+      { name: 'projeto-teralium.json', data: JSON.stringify(project, null, 2) },
+      { name: 'mapa-final.png', data: finalMap },
+    ];
+    for (const layer of state.layers) {
+      if (layer.mask) files.push({ name: `mascaras/${safeFileName(layer.id, 'layer')}-${safeFileName(layer.maskName, 'mascara')}.${extensionForSource(layer.mask.src)}`, data: bytesFromDataUrl(layer.mask.src) });
+      if (layer.image) files.push({ name: `assets/camadas/${safeFileName(layer.id, 'layer')}/imagem.${extensionForSource(layer.image.src)}`, data: bytesFromDataUrl(layer.image.src) });
+      layer.assets.forEach((asset, index) => files.push({ name: `assets/camadas/${safeFileName(layer.id, 'layer')}/${index + 1}-${safeFileName(asset.file.name, 'asset')}`, data: bytesFromDataUrl(asset.image.src) }));
+    }
+    for (const set of state.imageSets) set.assets.forEach((asset, index) => files.push({ name: `assets/conjuntos/${safeFileName(set.name, set.id)}/${index + 1}-${safeFileName(asset.file.name, 'asset')}`, data: bytesFromDataUrl(asset.image.src) }));
+    downloadFile('projeto-teralium.zip', makeZip(files), 'application/zip');
+    $('#saveState').textContent = `Projeto exportado • ${files.length} arquivos`;
+  } finally {
+    redraw();
+    $('#exportBtn').disabled = false;
+  }
 };
 function exportablePois() {
   return state.layers.filter((layer) => layer.visible && layer.type === 'object' && layer.object?.poi && layer.object.x !== null).map((layer) => {

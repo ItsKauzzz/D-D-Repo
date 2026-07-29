@@ -14,7 +14,7 @@
     <button id="openProjectBtn" class="secondary-action">Abrir projeto</button>
     <input id="projectInput" type="file" accept=".json,.teralium" hidden>
     <button id="saveProjectBtn" class="secondary-action">Salvar projeto</button>
-    <button id="exportBtn">Exportar PNG</button>
+    <button id="exportBtn">Exportar projeto</button>
     <button id="exportMapBtn">Exportar mapa</button>
     <button id="previewMapBtn" class="icon-action" title="Pré-visualizar mapa" aria-label="Pré-visualizar mapa">👁</button>
   </header>
@@ -73,7 +73,7 @@
       <div id="assetGrid" class="asset-grid"><p>Adicione árvores, pedras ou qualquer elemento que queira distribuir.</p></div>
     </section>
     <section class="fields terrain-control">
-      <label>Intensidade <input id="densityValue" class="value-input" type="number" min="0" max="300" value="45"><input id="density" type="range" min="0" max="300" value="45"></label>
+      <label>Intensidade <input id="densityValue" class="value-input" type="number" min="0" max="1000" value="45"><input id="density" type="range" min="0" max="1000" value="45"></label>
       <label>Tamanho geral <input id="scaleValue" class="value-input" type="number" min="0" max="2" step="0.05" value="1"><input id="scale" type="range" min="0" max="2" step="0.05" value="1"></label>
       <label class="check-row"><input id="sizeVariation" type="checkbox" checked> Variação de tamanho</label>
       <div id="sizeVariationFields" class="range-field">
@@ -132,6 +132,7 @@
   <div id="layerContextMenu" class="context-menu" hidden>
     <button data-action="rename">Renomear</button>
     <button data-action="toggle">Ocultar</button>
+    <button data-action="delete">Excluir camada</button>
   </div>
   <div id="assetModal" class="modal-backdrop" hidden>
     <div class="asset-modal" role="dialog" aria-modal="true" aria-labelledby="assetModalTitle">

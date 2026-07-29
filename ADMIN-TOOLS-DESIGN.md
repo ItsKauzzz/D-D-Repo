@@ -51,5 +51,8 @@ Os dois painéis laterais são fixos e possuem scroll próprio. Assim, navegar p
 24. O visualizador alterna entre Objetos e Regiões; no primeiro, regiões aparecem no hover, e no segundo formam um overview colorido a 50%.
 25. Regiões são agrupadas por layer/tipo; a exclusão de intersecções e o overview acontecem separadamente dentro de cada grupo.
 26. O outline de hover das regiões possui aproximadamente três pixels para permanecer legível sem cobrir o mapa.
-27. Intensidade usa uma escala de 0 a 300, em que 100 corresponde à ocupação-base e valores superiores permitem composições progressivamente mais densas sem depender do número de gráficos.
+27. Intensidade usa uma escala de 0 a 1000: 100 corresponde à ocupação-base e 1000 cria uma composição extrema. A quantidade não depende do número de gráficos no conjunto, mas compensa a área média renderizada: imagens ou valores de Tamanho geral menores geram mais pontos para preservar a cobertura.
 28. A máscara da camada selecionada aparece sobre o mapa com 20% de opacidade e some durante sua edição e nas exportações.
+29. Exportar projeto gera um ZIP autocontido com o PNG final, o JSON recarregável, todas as máscaras e todos os assets organizados por camada e conjunto.
+30. Camadas podem ser excluídas pelo menu de contexto; máscaras existentes passam a oferecer explicitamente a ação Editar máscara.
+31. Durante a pintura, Alt + scroll ajusta o diâmetro do brush sem alterar o zoom do mapa.
