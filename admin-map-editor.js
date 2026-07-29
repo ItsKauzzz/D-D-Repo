@@ -120,6 +120,14 @@ function redraw(includeObjects = true) {
     if (layer.type === 'object' && layer.object?.x !== null && (includeObjects || !layer.object.poi)) drawMapObject(layer.object);
   }
 
+  const selected = selectedLayer();
+  if (includeObjects && !state.maskEditing && selected?.mask) {
+    ctx.save();
+    ctx.globalAlpha = 0.2;
+    ctx.drawImage(selected.mask, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
 }
 
 function drawMapObject(object) {
@@ -418,7 +426,9 @@ async function generate() {
   // Density is a property of the mask, never of the amount or dimensions of
   // images in the set. More images only change which graphic each point uses.
   const footprint = Math.max(8, 48 * layer.settings.scale * averageVariation);
-  const attempts = Math.min(250000, Math.round((width * height / (footprint * footprint)) * layer.settings.density / 1.7));
+  // Treat density as a true 0–100 occupancy percentage. The previous divisor
+  // saturated the mask around 8–9, making the rest of the slider imperceptible.
+  const attempts = Math.min(250000, Math.round((width * height / (footprint * footprint)) * layer.settings.density / 100));
   const placements = [];
   let iteration = 0;
 
@@ -752,6 +762,7 @@ $('#createMaskBtn').onclick = () => {
   state.drag = false;
   viewport.classList.remove('dragging');
   maskEditCanvas.style.display = 'block';
+  redraw();
   $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
   $('#saveState').textContent = 'Editando máscara';
 };
@@ -830,6 +841,7 @@ async function closeMaskEditor(save) {
   }
   state.maskEditing = null; maskEditCanvas.style.display = 'none'; $('#maskTools').hidden = true; $('#brushSizeControl').hidden = true;
   brushCursor.style.display = 'none'; maskHistory = [];
+  redraw();
   $('#saveState').textContent = save ? 'Máscara atualizada' : 'Edição cancelada';
 }
 $('#finishMask').onclick = () => closeMaskEditor(true);

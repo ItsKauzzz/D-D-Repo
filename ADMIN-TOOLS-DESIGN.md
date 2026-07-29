@@ -51,3 +51,5 @@ Os dois painéis laterais são fixos e possuem scroll próprio. Assim, navegar p
 24. O visualizador alterna entre Objetos e Regiões; no primeiro, regiões aparecem no hover, e no segundo formam um overview colorido a 50%.
 25. Regiões são agrupadas por layer/tipo; a exclusão de intersecções e o overview acontecem separadamente dentro de cada grupo.
 26. O outline de hover das regiões possui aproximadamente três pixels para permanecer legível sem cobrir o mapa.
+27. Intensidade representa ocupação de 0 a 100%, distribuindo a progressão por todo o slider sem saturação antecipada.
+28. A máscara da camada selecionada aparece sobre o mapa com 20% de opacidade e some durante sua edição e nas exportações.
