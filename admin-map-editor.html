@@ -38,7 +38,6 @@
       <p>PRÓXIMOS TIPOS</p>
       <span>Pontos de interesse</span><span>Estradas</span>
     </div>
-    <div class="help"><b>Navegação</b><p>Arraste o mapa para mover. Use a roda do mouse para aplicar zoom.</p></div>
   </aside>
 
   <main id="viewport">
@@ -107,7 +106,7 @@
         </div>
         <label>Nome<input id="objectName" placeholder="Nome do local"></label>
         <label>Tipo<select id="objectType"></select></label>
-        <label>Ícone<select id="objectIconSet"><option value="">Selecione um conjunto</option></select></label>
+        <label>Ícone<select id="objectIconSet" hidden><option value="">Selecione um conjunto</option></select><button id="openObjectIconPicker" type="button" class="icon-picker-trigger"><img alt=""><span>Selecionar conjunto de ícones</span></button></label>
         <div id="objectIconPreview" class="object-thumbnails"></div>
         <label>Galeria<select id="objectGallerySet"><option value="">Sem galeria</option></select></label>
         <div id="objectGalleryPreview" class="object-thumbnails"></div>
@@ -193,6 +192,13 @@
         <label>De navio <span><input id="speedShip" type="number" min="0.01" value="30"> km/h</span></label>
         <label>De aeroplano / balão <span><input id="speedAir" type="number" min="0.01" value="80"> km/h</span></label>
       </fieldset>
+    </div>
+  </div>
+  <div id="objectIconPickerModal" class="modal-backdrop" hidden>
+    <div class="settings-modal icon-picker-modal" role="dialog" aria-modal="true" aria-labelledby="objectIconPickerTitle">
+      <div class="modal-head"><div><p class="panel-label">ÍCONES</p><h2 id="objectIconPickerTitle">Selecionar conjunto</h2></div><button id="closeObjectIconPicker" aria-label="Fechar">×</button></div>
+      <input id="objectIconSearch" class="icon-picker-search" placeholder="Pesquisar conjuntos...">
+      <div id="objectIconPickerList" class="icon-picker-list"></div>
     </div>
   </div>
   <div id="assetModal" class="modal-backdrop" hidden>

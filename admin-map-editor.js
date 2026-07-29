@@ -238,13 +238,35 @@ function redraw(includeObjects = true, showSelection = true, includePaths = true
   if (includePaths) for (const layer of [...state.layers].reverse()) if (layer.visible && layer.type === 'path') drawPathLayer(layer);
 
   const selected = selectedLayer();
-  if (includeObjects && showSelection && !state.maskEditing && selected?.mask) {
-    ctx.save();
-    ctx.globalAlpha = 0.2;
-    ctx.drawImage(selected.mask, 0, 0, canvas.width, canvas.height);
-    ctx.restore();
-  }
+  if (showSelection && !state.maskEditing && selected) drawSelectedLayerHighlight(selected);
 
+}
+
+function drawSelectedLayerHighlight(layer) {
+  const accent = '#b7df72';
+  if (layer.mask) {
+    const outline = document.createElement('canvas'); outline.width = canvas.width; outline.height = canvas.height;
+    const outlineContext = outline.getContext('2d');
+    for (const [x, y] of [[-3, 0], [3, 0], [0, -3], [0, 3], [-2, -2], [2, -2], [-2, 2], [2, 2]]) outlineContext.drawImage(layer.mask, x, y, canvas.width, canvas.height);
+    outlineContext.globalCompositeOperation = 'source-in'; outlineContext.fillStyle = accent; outlineContext.fillRect(0, 0, canvas.width, canvas.height);
+    outlineContext.globalCompositeOperation = 'destination-out'; outlineContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(outline, 0, 0);
+    ctx.save(); ctx.globalAlpha = 0.12; ctx.drawImage(layer.mask, 0, 0, canvas.width, canvas.height); ctx.restore();
+  }
+  if (layer.type === 'path' && layer.path.points.length) {
+    const preset = pathPreset(layer); ctx.save(); ctx.strokeStyle = accent; ctx.lineWidth = preset.stroke + 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
+    layer.path.points.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y)); ctx.stroke(); ctx.restore(); drawPathLayer(layer);
+  }
+  if (layer.type === 'image' && layer.image) { ctx.save(); ctx.strokeStyle = accent; ctx.lineWidth = 4; ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4); ctx.restore(); }
+  if (layer.type === 'object' && layer.object?.x !== null) {
+    const icon = state.imageSets.find((set) => set.id === layer.object.iconSetId)?.assets[0]?.image;
+    if (icon) {
+      const height = 48 * (layer.object.scale ?? 1), width = icon.naturalWidth / icon.naturalHeight * height;
+      const x = layer.object.x + (layer.object.offsetX ?? 0) - width * (layer.object.anchorX ?? 0.5);
+      const y = layer.object.y + (layer.object.offsetY ?? 0) - height * (layer.object.anchorY ?? 1);
+      ctx.save(); ctx.strokeStyle = accent; ctx.lineWidth = 3; ctx.strokeRect(x - 4, y - 4, width + 8, height + 8); ctx.restore();
+    }
+  }
 }
 
 function pathPreset(layer) {
@@ -596,8 +618,40 @@ function fillObjectInspector(object) {
   $('#objectOffsetY').value = object.offsetY ?? 0; $('#objectOffsetYValue').value = object.offsetY ?? 0;
   renderObjectThumbnails(object);
   renderObjectAnchorPreview(object);
+  renderObjectIconTrigger(object);
   $('#objectPosition').textContent = object.x === null ? 'Ainda não posicionado' : `Posição: ${Math.round(object.x)}, ${Math.round(object.y)}`;
 }
+
+function renderObjectIconTrigger(object) {
+  const set = state.imageSets.find((item) => item.id === object.iconSetId);
+  const trigger = $('#openObjectIconPicker');
+  const image = trigger.querySelector('img'); image.src = set?.assets[0]?.image.src || ''; image.hidden = !set?.assets.length;
+  trigger.querySelector('span').textContent = set?.name || 'Selecionar conjunto de ícones';
+}
+
+function renderObjectIconPicker() {
+  const term = $('#objectIconSearch').value.trim().toLowerCase();
+  const sets = state.imageSets.filter((set) => set.name.toLowerCase().includes(term));
+  const list = $('#objectIconPickerList');
+  list.replaceChildren(...sets.map((set) => {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'icon-picker-item';
+    const image = new Image(); image.src = set.assets[0]?.image.src || ''; image.alt = '';
+    const label = document.createElement('span'); label.textContent = `${set.name} (${set.assets.length})`;
+    button.append(image, label); button.onclick = () => {
+      const layer = selectedLayer(); if (layer?.type !== 'object') return;
+      layer.object.iconSetId = set.id; $('#objectIconSet').value = set.id;
+      renderObjectThumbnails(layer.object); renderObjectAnchorPreview(layer.object); renderObjectIconTrigger(layer.object); redraw();
+      $('#objectIconPickerModal').hidden = true;
+    };
+    return button;
+  }));
+  if (!sets.length) list.innerHTML = '<p class="set-empty">Nenhum conjunto encontrado.</p>';
+}
+
+$('#openObjectIconPicker').onclick = () => { $('#objectIconSearch').value = ''; renderObjectIconPicker(); $('#objectIconPickerModal').hidden = false; };
+$('#closeObjectIconPicker').onclick = () => { $('#objectIconPickerModal').hidden = true; };
+$('#objectIconPickerModal').addEventListener('click', (event) => { if (event.target === $('#objectIconPickerModal')) $('#objectIconPickerModal').hidden = true; });
+$('#objectIconSearch').addEventListener('input', renderObjectIconPicker);
 
 function renderObjectAnchorPreview(object) {
   const preview = $('#objectAnchorPreview');
@@ -974,6 +1028,7 @@ function renderImageSets() {
         $('#objectIconSet').value = set.id;
         renderObjectThumbnails(layer.object);
         renderObjectAnchorPreview(layer.object);
+        renderObjectIconTrigger(layer.object);
         redraw();
         $('#assetModal').hidden = true;
         return;
