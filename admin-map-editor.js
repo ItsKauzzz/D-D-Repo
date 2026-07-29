@@ -35,6 +35,8 @@ const state = {
   terrainHeightEditing: null,
   terrainColors: { shallow: '#51746f', medium: '#4b6c6a', deep: '#405a5b', land: '#d7c89d', coastLand: '#65483b', coastWave: '#91c9cf', coastLandThickness: 3, coastWaveThickness: 2, coastVariation: true, coastNoiseMultiplier: 0.6 },
   terrainBrushImage: null,
+  terrainBrushMode: 'hard',
+  mapFilter: 'nearest',
 };
 
 const translations = {
@@ -207,7 +209,7 @@ function fit() {
 }
 
 function redraw(includeObjects = true, showSelection = true, includePaths = true) {
-  ctx.imageSmoothingEnabled = false;
+  ctx.imageSmoothingEnabled = state.mapFilter === 'linear';
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   // Background images retain their explicit layer priority.
   for (const layer of [...state.layers].reverse()) {
@@ -1113,6 +1115,7 @@ $('#assetModal').addEventListener('click', (event) => {
   if (event.target === $('#assetModal')) $('#assetModal').hidden = true;
 });
 $('#projectSettingsBtn').onclick = () => {
+  $('#mapWidthSetting').value = canvas.width; $('#mapHeightSetting').value = canvas.height; $('#mapFilterSetting').value = state.mapFilter;
   $('#distanceScaleKm').value = state.distanceScaleKm;
   $('#speedWalking').value = state.travelSpeeds.walking; $('#speedHorse').value = state.travelSpeeds.horse; $('#speedShip').value = state.travelSpeeds.ship; $('#speedAir').value = state.travelSpeeds.air;
   $('#terrainWaterShallow').value = state.terrainColors.shallow; $('#terrainWaterMedium').value = state.terrainColors.medium; $('#terrainWaterDeep').value = state.terrainColors.deep; $('#terrainLandColor').value = state.terrainColors.land;
@@ -1120,6 +1123,26 @@ $('#projectSettingsBtn').onclick = () => {
   $('#terrainCoastLandThickness').value = state.terrainColors.coastLandThickness; $('#terrainCoastWaveThickness').value = state.terrainColors.coastWaveThickness;
   $('#terrainCoastVariation').checked = state.terrainColors.coastVariation; $('#terrainCoastNoiseMultiplier').value = state.terrainColors.coastNoiseMultiplier;
   $('#projectSettingsModal').hidden = false;
+};
+function applyMapFilter() {
+  const linear = state.mapFilter === 'linear';
+  canvas.style.imageRendering = linear ? 'auto' : 'pixelated';
+  maskEditCanvas.style.imageRendering = linear ? 'auto' : 'pixelated';
+  ctx.imageSmoothingEnabled = linear;
+}
+$('#applyMapSettings').onclick = () => {
+  const width = Math.max(1, Math.round(Number($('#mapWidthSetting').value) || canvas.width));
+  const height = Math.max(1, Math.round(Number($('#mapHeightSetting').value) || canvas.height));
+  state.mapFilter = $('#mapFilterSetting').value;
+  if (width !== canvas.width || height !== canvas.height) {
+    canvas.width = width; canvas.height = height;
+    state.layers.forEach((layer) => {
+      layer.maskPixels = null; layer.maskPath = null; layer.clip = null; layer.bounds = null;
+      if (layer.heightMap) renderTerrainHeight(layer);
+    });
+    stage.style.display = 'block'; $('#emptyState').style.display = 'none'; fit();
+  }
+  applyMapFilter(); redraw(); $('#saveState').textContent = 'Configurações do mapa aplicadas';
 };
 $('#closeProjectSettings').onclick = () => { $('#projectSettingsModal').hidden = true; };
 $('#projectSettingsModal').addEventListener('click', (event) => { if (event.target === $('#projectSettingsModal')) $('#projectSettingsModal').hidden = true; });
@@ -1441,6 +1464,7 @@ function renderTerrainHeight(layer, sourceCanvas = null, dirty = null) {
 
 $('#editTerrainHeight').onclick = () => {
   const layer = selectedLayer(); if (layer?.type !== 'terrain') return;
+  stage.style.display = 'block'; $('#emptyState').style.display = 'none';
   maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
   maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
   if (layer.heightMap) maskEditContext.drawImage(layer.heightMap, 0, 0, canvas.width, canvas.height);
@@ -1449,14 +1473,21 @@ $('#editTerrainHeight').onclick = () => {
   maskEditCanvas.style.display = 'block'; maskEditCanvas.style.opacity = '0';
   $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
   $('#brushSizeControl span').textContent = 'Height'; $('#brushOpacity').max = '0.5'; $('#brushOpacity').value = '0.5'; $('#brushOpacity').dispatchEvent(new Event('input'));
-  $('#terrainBrushUpload').hidden = false; $('#clearTerrainBrush').hidden = !state.terrainBrushImage;
+  $('#terrainBrushPresets').hidden = false; $('#terrainBrushUpload').hidden = false; $('#clearTerrainBrush').hidden = !state.terrainBrushImage;
   renderTerrainHeight(layer, maskEditCanvas); $('#saveState').textContent = 'Editando altura do terreno';
 };
 $('#terrainBrushInput').addEventListener('change', async (event) => {
   const file = event.target.files[0]; if (!file) return;
-  state.terrainBrushImage = await fileImage(file); $('#terrainBrushName').textContent = file.name; $('#clearTerrainBrush').hidden = false; event.target.value = '';
+  state.terrainBrushImage = await fileImage(file); state.terrainBrushMode = 'image'; document.querySelectorAll('[data-terrain-brush]').forEach((item) => item.classList.remove('active')); $('#terrainBrushName').textContent = file.name; $('#clearTerrainBrush').hidden = false; event.target.value = '';
 });
-$('#clearTerrainBrush').onclick = () => { state.terrainBrushImage = null; $('#terrainBrushName').textContent = ''; $('#clearTerrainBrush').hidden = true; };
+$('#clearTerrainBrush').onclick = () => { state.terrainBrushImage = null; state.terrainBrushMode = 'hard'; $('#terrainBrushName').textContent = ''; $('#clearTerrainBrush').hidden = true; document.querySelector('[data-terrain-brush="hard"]').classList.add('active'); };
+document.querySelectorAll('[data-terrain-brush]').forEach((button) => {
+  button.onclick = () => {
+    state.terrainBrushMode = button.dataset.terrainBrush; state.terrainBrushImage = null;
+    document.querySelectorAll('[data-terrain-brush]').forEach((item) => item.classList.toggle('active', item === button));
+    $('#clearTerrainBrush').hidden = true;
+  };
+});
 
 $('#createMaskBtn').onclick = () => {
   const layer = selectedLayer();
@@ -1509,9 +1540,14 @@ function paintMask(event) {
     for (let index = 0; index < brushData.data.length; index += 4) {
       const darkness = 1 - (brushData.data[index] + brushData.data[index + 1] + brushData.data[index + 2]) / 765;
       const value = Math.round(level * darkness * brushData.data[index + 3] / 255);
-      brushData.data[index] = brushData.data[index + 1] = brushData.data[index + 2] = value; brushData.data[index + 3] = 255;
+      brushData.data[index] = brushData.data[index + 1] = brushData.data[index + 2] = value; brushData.data[index + 3] = brushData.data[index + 3] > 0 ? 255 : 0;
     }
     brushContext.putImageData(brushData, 0, 0); maskEditContext.globalCompositeOperation = 'source-over'; maskEditContext.drawImage(brushCanvas, x - radius, y - radius);
+  } else if (heightLayer && state.terrainBrushMode === 'soft') {
+    const level = Math.round(Number($('#brushOpacity').value) * 255);
+    const gradient = maskEditContext.createRadialGradient(x, y, 0, x, y, radius);
+    gradient.addColorStop(0, `rgb(${level},${level},${level})`); gradient.addColorStop(1, 'rgb(0,0,0)');
+    maskEditContext.globalCompositeOperation = 'source-over'; maskEditContext.fillStyle = gradient; maskEditContext.beginPath(); maskEditContext.arc(x, y, radius, 0, Math.PI * 2); maskEditContext.fill();
   } else {
     maskEditContext.globalCompositeOperation = heightLayer ? 'source-over' : maskTool === 'eraser' ? 'destination-out' : 'source-over';
     maskEditContext.globalAlpha = heightLayer ? 1 : Number($('#brushOpacity').value);
@@ -1590,7 +1626,7 @@ async function closeMaskEditor(save) {
   }
   state.maskEditing = null; state.terrainHeightEditing = null; maskEditCanvas.style.display = 'none'; maskEditCanvas.style.opacity = '1'; $('#maskTools').hidden = true; $('#brushSizeControl').hidden = true;
   $('#brushSizeControl span').textContent = 'Opacidade'; $('#brushOpacity').max = '1';
-  $('#terrainBrushUpload').hidden = true; $('#terrainBrushName').textContent = ''; $('#clearTerrainBrush').hidden = true;
+  $('#terrainBrushPresets').hidden = true; $('#terrainBrushUpload').hidden = true; $('#clearTerrainBrush').hidden = true;
   brushCursor.style.display = 'none'; maskHistory = [];
   redraw();
   $('#saveState').textContent = save ? 'Máscara atualizada' : 'Edição cancelada';
@@ -1663,6 +1699,7 @@ function createProjectData() {
     travelSpeeds: state.travelSpeeds,
     descriptionTemplates: state.descriptionTemplates,
     terrainColors: state.terrainColors,
+    mapFilter: state.mapFilter,
     imageSets: state.imageSets.map((set) => ({ id: set.id, name: set.name, assets: set.assets.map(serializeAsset) })),
     layers: state.layers.map((layer) => ({
       id: layer.id, type: layer.type, name: layer.name, visible: layer.visible, parentId: layer.parentId, collapsed: layer.collapsed, selectedAssetIndex: layer.selectedAssetIndex,
@@ -1713,6 +1750,7 @@ $('#projectInput').addEventListener('change', async (event) => {
     state.travelSpeeds = { ...state.travelSpeeds, ...project.travelSpeeds };
     state.descriptionTemplates = project.descriptionTemplates || [];
     state.terrainColors = { ...state.terrainColors, ...project.terrainColors };
+    state.mapFilter = project.mapFilter || 'nearest'; applyMapFilter();
     state.imageSets = await Promise.all(project.imageSets.map(async (set) => ({
       ...set, assets: await Promise.all(set.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source), anchorX: asset.anchorX, anchorY: asset.anchorY }))),
     })));

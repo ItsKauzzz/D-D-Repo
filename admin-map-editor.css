@@ -163,6 +163,9 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .brush-size-control { position: fixed; z-index: 45; left: 50%; bottom: 70px; transform: translateX(-50%); display: grid; grid-template-columns: auto 180px 52px; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid #3c443d; border-radius: 9px; background: #191d1a; box-shadow: 0 8px 25px #000a; color: var(--muted); font-size: 10px; }
 .brush-size-control input { margin: 0; }
 .terrain-brush-upload { padding: 6px 8px; border: 1px solid #465043; border-radius: 6px; color: var(--accent); cursor: pointer; }
+.terrain-brush-presets { display: flex; gap: 4px; }
+.terrain-brush-presets button { width: 28px; height: 28px; padding: 0; border: 1px solid #465043; border-radius: 50%; background: #202521; color: var(--muted); cursor: pointer; }
+.terrain-brush-presets button.active { border-color: var(--accent); color: var(--accent); }
 .brush-size-control > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .brush-size-control > button { border: 0; background: transparent; color: #ff9188; cursor: pointer; }
 .brush-size-control output { text-align: right; }
@@ -188,6 +191,9 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .speed-settings legend { padding: 0 6px; color: var(--muted); font-size: 11px; }
 .speed-settings label { display: flex; align-items: center; justify-content: space-between; color: var(--text); font-size: 11px; }
 .speed-settings input { width: 90px; padding: 7px; border: 1px solid #3b443c; border-radius: 6px; background: #101311; color: var(--text); }
+.map-general-settings { margin-top: 22px; }
+.map-general-settings select { padding: 7px; border: 1px solid #3b443c; border-radius: 6px; background: #101311; color: var(--text); }
+.map-general-settings button { margin-top: 5px; }
 .terrain-settings { margin-top: 20px; border: 1px solid var(--line); border-radius: 9px; }
 .terrain-settings summary { padding: 12px 14px; color: var(--accent); cursor: pointer; }
 .terrain-settings .speed-settings { margin: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
