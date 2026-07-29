@@ -39,7 +39,7 @@ function createLayer(type = 'terrain') {
     bounds: null,
     assets: [],
     image: null,
-    object: type === 'object' ? { name: '', type: 'vila', iconSetId: '', gallerySetId: '', description: '', poi: true, x: null, y: null } : null,
+    object: type === 'object' ? { name: '', type: 'vila', iconSetId: '', gallerySetId: '', description: '', poi: true, x: null, y: null, scale: 1, opacity: 1, offsetX: 0, offsetY: 0 } : null,
     output: document.createElement('canvas'),
     settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, rotation: true, mirror: true, slice: false, imageOffsetX: 0, imageOffsetY: 0, imageOpacity: 1 },
   };
@@ -124,19 +124,24 @@ function drawMapObject(object) {
   const set = state.imageSets.find((item) => item.id === object.iconSetId);
   const icon = set?.assets[0]?.image;
   if (!icon) return;
-  const size = 48;
+  const size = 48 * (object.scale ?? 1);
   const width = icon.naturalWidth / icon.naturalHeight * size;
-  ctx.drawImage(icon, object.x - width / 2, object.y - size, width, size);
-  if (!object.poi || !object.name) return;
+  const x = object.x + (object.offsetX ?? 0);
+  const y = object.y + (object.offsetY ?? 0);
+  ctx.save();
+  ctx.globalAlpha = object.opacity ?? 1;
+  ctx.drawImage(icon, x - width / 2, y - size, width, size);
+  if (!object.poi || !object.name) { ctx.restore(); return; }
   const type = state.poiTypes.find((item) => item.id === object.type);
   ctx.font = '600 15px DM Sans, sans-serif';
   ctx.textAlign = 'center';
   ctx.lineJoin = 'round';
   ctx.lineWidth = 3;
   ctx.strokeStyle = '#111';
-  ctx.strokeText(object.name, object.x, object.y + 18);
+  ctx.strokeText(object.name, x, y + 18);
   ctx.fillStyle = type?.color || '#fff';
-  ctx.fillText(object.name, object.x, object.y + 18);
+  ctx.fillText(object.name, x, y + 18);
+  ctx.restore();
 }
 
 function renderLayers() {
@@ -227,9 +232,9 @@ function selectLayer(id) {
   $('#imageOffsetX').value = layer.settings.imageOffsetX;
   $('#imageOffsetY').value = layer.settings.imageOffsetY;
   $('#imageOpacity').value = layer.settings.imageOpacity;
-  $('#imageOffsetXValue').value = `${layer.settings.imageOffsetX} px`;
-  $('#imageOffsetYValue').value = `${layer.settings.imageOffsetY} px`;
-  $('#imageOpacityValue').value = `${Math.round(layer.settings.imageOpacity * 100)}%`;
+  $('#imageOffsetXValue').value = layer.settings.imageOffsetX;
+  $('#imageOffsetYValue').value = layer.settings.imageOffsetY;
+  $('#imageOpacityValue').value = Math.round(layer.settings.imageOpacity * 100);
   $('#typeBadge').textContent = layer.type === 'image' ? 'Imagem' : layer.type === 'object' ? 'Objeto' : 'Terreno';
   document.querySelectorAll('.terrain-control, .image-control, .object-control').forEach((control) => {
     control.hidden = !control.classList.contains(`${layer.type}-control`);
@@ -240,6 +245,7 @@ function selectLayer(id) {
   $('#generateBtn').hidden = layer.type !== 'terrain';
   $('#footerHint').textContent = layer.type === 'terrain' ? 'A seed mantém o resultado reproduzível.' : 'Arraste a camada para definir sua prioridade.';
   if (layer.type === 'object') fillObjectInspector(layer.object);
+  if (layer.type === 'terrain') renderMaskPreview(layer);
   updateOutputs();
   renderLayers();
   renderAssets();
@@ -247,10 +253,25 @@ function selectLayer(id) {
   redraw();
 }
 
+function renderMaskPreview(layer) {
+  const preview = $('#maskPreview');
+  preview.replaceChildren();
+  if (!layer.mask) return;
+  const card = document.createElement('div'); card.className = 'mask-card';
+  const image = new Image(); image.src = layer.mask.src; image.alt = layer.maskName;
+  const name = document.createElement('small'); name.textContent = layer.maskName;
+  const remove = document.createElement('button'); remove.textContent = '×'; remove.title = 'Remover máscara';
+  remove.onclick = () => {
+    layer.mask = null; layer.maskName = ''; layer.maskPixels = null; layer.clip = null; layer.bounds = null; layer.output.width = 0;
+    $('#maskName').textContent = 'Nenhuma máscara selecionada'; renderMaskPreview(layer); updateReadyState(); redraw();
+  };
+  card.append(image, name, remove); preview.append(card);
+}
+
 function updateOutputs() {
   const layer = selectedLayer();
   $('#densityValue').value = layer.settings.density;
-  $('#scaleValue').value = `${Number(layer.settings.scale).toFixed(2).replace(/\.00$/, '')}×`;
+  $('#scaleValue').value = layer.settings.scale;
   $('#sizeValue').value = `${layer.settings.sizeMin}×–${layer.settings.sizeMax}×`;
   $('#sizeVariationFields').hidden = !layer.settings.sizeVariation;
 }
@@ -279,6 +300,10 @@ function fillObjectInspector(object) {
   $('#objectPoi').checked = object.poi;
   $('#objectX').value = object.x === null ? '' : Math.round(object.x);
   $('#objectY').value = object.y === null ? '' : Math.round(object.y);
+  $('#objectScale').value = object.scale ?? 1; $('#objectScaleValue').value = object.scale ?? 1;
+  $('#objectOpacity').value = object.opacity ?? 1; $('#objectOpacityValue').value = Math.round((object.opacity ?? 1) * 100);
+  $('#objectOffsetX').value = object.offsetX ?? 0; $('#objectOffsetXValue').value = object.offsetX ?? 0;
+  $('#objectOffsetY').value = object.offsetY ?? 0; $('#objectOffsetYValue').value = object.offsetY ?? 0;
   renderObjectThumbnails(object);
   $('#objectPosition').textContent = object.x === null ? 'Ainda não posicionado' : `Posição: ${Math.round(object.x)}, ${Math.round(object.y)}`;
 }
@@ -478,6 +503,7 @@ $('#maskInput').addEventListener('change', async (event) => {
   stage.style.display = 'block';
   $('#emptyState').style.display = 'none';
   $('#maskName').textContent = file.name;
+  renderMaskPreview(layer);
   redraw();
   fit();
   updateReadyState();
@@ -614,10 +640,38 @@ $('#positionObject').onclick = () => {
 ['imageOffsetX', 'imageOffsetY', 'imageOpacity'].forEach((id) => {
   $(`#${id}`).addEventListener('input', (event) => {
     selectedLayer().settings[id] = Number(event.target.value);
-    $(`#${id}Value`).value = id === 'imageOpacity' ? `${Math.round(event.target.value * 100)}%` : `${event.target.value} px`;
+    $(`#${id}Value`).value = id === 'imageOpacity' ? Math.round(event.target.value * 100) : event.target.value;
     redraw();
   });
 });
+const objectVisualBindings = { objectScale: 'scale', objectOpacity: 'opacity', objectOffsetX: 'offsetX', objectOffsetY: 'offsetY' };
+for (const [id, property] of Object.entries(objectVisualBindings)) {
+  $(`#${id}`).addEventListener('input', (event) => {
+    selectedLayer().object[property] = Number(event.target.value);
+    $(`#${id}Value`).value = id === 'objectOpacity' ? Math.round(event.target.value * 100) : event.target.value;
+    redraw();
+  });
+}
+
+function bindNumberInput(valueId, rangeId, applyValue, factor = 1) {
+  $(`#${valueId}`).addEventListener('change', (event) => {
+    const range = $(`#${rangeId}`);
+    const raw = Number(event.target.value) / factor;
+    const value = Math.max(Number(range.min), Math.min(Number(range.max), raw));
+    range.value = value;
+    event.target.value = value * factor;
+    applyValue(value);
+  });
+}
+bindNumberInput('densityValue', 'density', (value) => { selectedLayer().settings.density = value; });
+bindNumberInput('scaleValue', 'scale', (value) => { selectedLayer().settings.scale = value; });
+bindNumberInput('imageOffsetXValue', 'imageOffsetX', (value) => { selectedLayer().settings.imageOffsetX = value; redraw(); });
+bindNumberInput('imageOffsetYValue', 'imageOffsetY', (value) => { selectedLayer().settings.imageOffsetY = value; redraw(); });
+bindNumberInput('imageOpacityValue', 'imageOpacity', (value) => { selectedLayer().settings.imageOpacity = value; redraw(); }, 100);
+bindNumberInput('objectScaleValue', 'objectScale', (value) => { selectedLayer().object.scale = value; redraw(); });
+bindNumberInput('objectOpacityValue', 'objectOpacity', (value) => { selectedLayer().object.opacity = value; redraw(); }, 100);
+bindNumberInput('objectOffsetXValue', 'objectOffsetX', (value) => { selectedLayer().object.offsetX = value; redraw(); });
+bindNumberInput('objectOffsetYValue', 'objectOffsetY', (value) => { selectedLayer().object.offsetY = value; redraw(); });
 $('#sizeVariation').addEventListener('change', (event) => {
   selectedLayer().settings.sizeVariation = event.target.checked;
   updateOutputs();
@@ -630,6 +684,9 @@ const maskEditCanvas = $('#maskEditCanvas');
 const maskEditContext = maskEditCanvas.getContext('2d');
 let maskTool = 'brush';
 let maskDrawing = false;
+let maskPanning = false;
+let maskPanX = 0;
+let maskPanY = 0;
 
 $('#createMaskBtn').onclick = () => {
   const layer = selectedLayer();
@@ -646,15 +703,18 @@ document.querySelectorAll('[data-mask-tool]').forEach((button) => {
     maskTool = button.dataset.maskTool;
     document.querySelectorAll('[data-mask-tool]').forEach((item) => item.classList.toggle('active', item === button));
     $('#brushSizeControl').hidden = maskTool === 'fill';
-    if (maskTool === 'fill') {
-      maskEditContext.globalCompositeOperation = 'source-over';
-      maskEditContext.fillStyle = '#000'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height);
-    }
   };
 });
-$('#brushSize').oninput = (event) => { $('#brushSizeValue').value = `${event.target.value} px`; };
+$('#brushSize').oninput = (event) => { $('#brushSizeValue').value = event.target.value; };
+bindNumberInput('brushSizeValue', 'brushSize', () => {});
 function paintMask(event) {
-  if (!maskDrawing || maskTool === 'fill') return;
+  if (!maskDrawing) return;
+  if (maskTool === 'fill') {
+    maskEditContext.globalCompositeOperation = 'source-over';
+    maskEditContext.fillStyle = '#000'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height);
+    maskDrawing = false;
+    return;
+  }
   const rectangle = maskEditCanvas.getBoundingClientRect();
   const x = (event.clientX - rectangle.left) * canvas.width / rectangle.width;
   const y = (event.clientY - rectangle.top) * canvas.height / rectangle.height;
@@ -662,15 +722,28 @@ function paintMask(event) {
   maskEditContext.fillStyle = '#000';
   maskEditContext.beginPath(); maskEditContext.arc(x, y, Number($('#brushSize').value) / 2, 0, Math.PI * 2); maskEditContext.fill();
 }
-maskEditCanvas.onpointerdown = (event) => { maskDrawing = true; maskEditCanvas.setPointerCapture(event.pointerId); paintMask(event); };
-maskEditCanvas.onpointermove = paintMask;
-maskEditCanvas.onpointerup = () => { maskDrawing = false; };
+maskEditCanvas.oncontextmenu = (event) => event.preventDefault();
+maskEditCanvas.onpointerdown = (event) => {
+  if (event.button === 2) {
+    maskPanning = true; maskPanX = event.clientX; maskPanY = event.clientY;
+  } else if (event.button === 0) {
+    maskDrawing = true; paintMask(event);
+  } else return;
+  maskEditCanvas.setPointerCapture(event.pointerId);
+};
+maskEditCanvas.onpointermove = (event) => {
+  if (maskPanning) {
+    state.x += event.clientX - maskPanX; state.y += event.clientY - maskPanY;
+    maskPanX = event.clientX; maskPanY = event.clientY; updateTransform();
+  } else paintMask(event);
+};
+maskEditCanvas.onpointerup = () => { maskDrawing = false; maskPanning = false; };
 async function closeMaskEditor(save) {
   const layer = state.layers.find((item) => item.id === state.maskEditing);
   if (save && layer) {
     layer.mask = await imageFromSource(maskEditCanvas.toDataURL('image/png'));
     layer.maskName = 'Máscara criada no editor'; layer.maskPixels = null; layer.clip = null; layer.bounds = null; layer.output.width = 0;
-    $('#maskName').textContent = layer.maskName; updateReadyState(); redraw();
+    $('#maskName').textContent = layer.maskName; renderMaskPreview(layer); updateReadyState(); redraw();
   }
   state.maskEditing = null; maskEditCanvas.style.display = 'none'; $('#maskTools').hidden = true; $('#brushSizeControl').hidden = true;
   $('#saveState').textContent = save ? 'Máscara atualizada' : 'Edição cancelada';
@@ -828,7 +901,7 @@ function exportablePois() {
     const iconSet = state.imageSets.find((set) => set.id === object.iconSetId);
     const gallerySet = state.imageSets.find((set) => set.id === object.gallerySetId);
     const type = state.poiTypes.find((item) => item.id === object.type) || state.poiTypes.at(-1);
-    return { ...object, id: layer.id, icon: iconSet?.assets[0]?.image.src || '', gallery: gallerySet?.assets.map((asset) => asset.image.src) || [], typeName: type?.name || object.type, color: type?.color || '#fff' };
+    return { ...object, x: object.x + (object.offsetX ?? 0), y: object.y + (object.offsetY ?? 0), id: layer.id, icon: iconSet?.assets[0]?.image.src || '', gallery: gallerySet?.assets.map((asset) => asset.image.src) || [], typeName: type?.name || object.type, color: type?.color || '#fff' };
   }).filter((poi) => poi.icon);
 }
 
@@ -839,9 +912,9 @@ function createMapHtml() {
   const pois = JSON.stringify(exportablePois()).replace(/</g, '\\u003c');
   const types = JSON.stringify(state.poiTypes).replace(/</g, '\\u003c');
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mapa de Teralium</title><style>
-*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#101311;color:#eef2ee;font-family:Arial,sans-serif}.side{position:fixed;z-index:10;inset:0 auto 0 0;width:280px;padding:22px 16px;background:#171a18;border-right:1px solid #303630;overflow:auto}.side h1{font-size:18px;margin:0 0 18px}.side input,.side select{width:100%;padding:10px;margin-bottom:8px;border:1px solid #343b35;border-radius:7px;background:#0f1210;color:#eef2ee}.poi-list{display:grid;gap:5px;margin-top:12px}.poi-item{padding:10px;border:0;border-radius:7px;background:transparent;color:#eef2ee;text-align:left;cursor:pointer}.poi-item:hover{background:#252b26}.poi-item small{display:block;margin-top:3px;color:#89928b}.view{position:fixed;inset:0 0 0 280px;overflow:hidden;cursor:grab;background-image:linear-gradient(#1b201c 1px,transparent 1px),linear-gradient(90deg,#1b201c 1px,transparent 1px);background-size:24px 24px}.view.dragging{cursor:grabbing}.world{position:absolute;transform-origin:0 0}.map{position:absolute;inset:0;user-select:none;-webkit-user-drag:none}.pin{position:absolute;transform:translate(-50%,-48px);display:grid;justify-items:center;border:0;background:transparent;color:var(--color);cursor:pointer}.pin img{width:48px;height:48px;object-fit:contain}.pin span{margin-top:3px;color:var(--color);font-weight:700;font-size:14px;white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.pin:hover img{filter:drop-shadow(0 0 2px white) drop-shadow(0 0 5px var(--color))}.pin:hover span{color:#fff}.modal{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:25px;background:#050706d9}.modal[hidden]{display:none}.card{position:relative;width:min(620px,100%);max-height:90vh;overflow:auto;padding:25px;border:1px solid #3b433c;border-radius:14px;background:#191d1a}.close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#aaa;font-size:25px;cursor:pointer}.card h2{margin:0;color:var(--poi-color)}.kind{color:#929b94;font-size:11px}.description{line-height:1.6;white-space:pre-wrap}.gallery{display:flex;gap:8px;overflow:auto;margin-top:20px}.gallery img{width:150px;height:100px;object-fit:cover;border-radius:7px;cursor:zoom-in}.lightbox{z-index:40}.lightbox img{max-width:92vw;max-height:90vh}.empty{color:#7f8881;font-size:12px;padding:10px}.hint{position:fixed;right:16px;bottom:16px;padding:8px;border-radius:7px;background:#171a18cc;color:#999;font-size:11px;pointer-events:none}@media(max-width:700px){.side{width:220px}.view{left:220px}}
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#101311;color:#eef2ee;font-family:Arial,sans-serif}.side{position:fixed;z-index:10;inset:0 auto 0 0;width:280px;padding:22px 16px;background:#171a18;border-right:1px solid #303630;overflow:auto}.side h1{font-size:18px;margin:0 0 18px}.side input,.side select{width:100%;padding:10px;margin-bottom:8px;border:1px solid #343b35;border-radius:7px;background:#0f1210;color:#eef2ee}.poi-list{display:grid;gap:5px;margin-top:12px}.poi-item{padding:10px;border:0;border-radius:7px;background:transparent;color:#eef2ee;text-align:left;cursor:pointer}.poi-item:hover{background:#252b26}.poi-item small{display:block;margin-top:3px;color:#89928b}.view{position:fixed;inset:0 0 0 280px;overflow:hidden;cursor:grab;background-image:linear-gradient(#1b201c 1px,transparent 1px),linear-gradient(90deg,#1b201c 1px,transparent 1px);background-size:24px 24px}.view.dragging{cursor:grabbing}.world{position:absolute;transform-origin:0 0}.map{position:absolute;inset:0;user-select:none;-webkit-user-drag:none}.pin{position:absolute;transform:translate(-50%,calc(-48px * var(--scale)));display:grid;justify-items:center;border:0;background:transparent;color:var(--color);cursor:pointer}.pin img{width:calc(48px * var(--scale));height:calc(48px * var(--scale));object-fit:contain}.pin span{margin-top:3px;color:var(--color);font-weight:700;font-size:14px;white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.pin:hover img{filter:drop-shadow(0 0 2px white) drop-shadow(0 0 5px var(--color))}.pin:hover span{color:#fff}.modal{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:25px;background:#050706d9}.modal[hidden]{display:none}.card{position:relative;width:min(620px,100%);max-height:90vh;overflow:auto;padding:25px;border:1px solid #3b433c;border-radius:14px;background:#191d1a}.close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#aaa;font-size:25px;cursor:pointer}.card h2{margin:0;color:var(--poi-color)}.kind{color:#929b94;font-size:11px}.description{line-height:1.6;white-space:pre-wrap}.gallery{display:flex;gap:8px;overflow:auto;margin-top:20px}.gallery img{width:150px;height:100px;object-fit:cover;border-radius:7px;cursor:zoom-in}.lightbox{z-index:40}.lightbox img{max-width:92vw;max-height:90vh}.empty{color:#7f8881;font-size:12px;padding:10px}.hint{position:fixed;right:16px;bottom:16px;padding:8px;border-radius:7px;background:#171a18cc;color:#999;font-size:11px;pointer-events:none}@media(max-width:700px){.side{width:220px}.view{left:220px}}
 </style></head><body><aside class="side"><h1>Pontos de interesse</h1><input id="search" placeholder="Pesquisar..."><select id="filter"><option value="">Todos os tipos</option></select><div id="list" class="poi-list"></div></aside><main id="view" class="view"><div id="world" class="world" style="width:${canvas.width}px;height:${canvas.height}px"><img class="map" src="${image}" alt="Mapa"><div id="pins"></div></div><span class="hint">Arraste para mover • Scroll para zoom</span></main><div id="details" class="modal" hidden><article class="card"><button class="close">×</button><small class="kind"></small><h2></h2><p class="description"></p><div class="gallery"></div></article></div><div id="lightbox" class="modal lightbox" hidden><img alt="Imagem ampliada"></div><script>
-const pois=${pois},types=${types},view=document.querySelector('#view'),world=document.querySelector('#world'),pins=document.querySelector('#pins'),list=document.querySelector('#list'),search=document.querySelector('#search'),filter=document.querySelector('#filter'),details=document.querySelector('#details'),lightbox=document.querySelector('#lightbox');let zoom=1,x=0,y=0,drag=false,lx=0,ly=0;function draw(){world.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')'}function center(p){zoom=1;x=view.clientWidth/2-p.x;y=view.clientHeight/2-p.y;draw()}function openPoi(p){details.style.setProperty('--poi-color',p.color);details.querySelector('h2').textContent=p.name;details.querySelector('.kind').textContent=p.typeName;details.querySelector('.description').textContent=p.description||'Sem descrição.';const gallery=details.querySelector('.gallery');gallery.replaceChildren(...p.gallery.map(src=>{const image=new Image();image.src=src;image.onclick=()=>{lightbox.querySelector('img').src=src;lightbox.hidden=false};return image}));details.hidden=false}for(const type of types)filter.add(new Option(type.name,type.id));for(const p of pois){const pin=document.createElement('button');pin.className='pin';pin.style.cssText='left:'+p.x+'px;top:'+p.y+'px;--color:'+p.color;pin.innerHTML='<img><span></span>';pin.querySelector('img').src=p.icon;pin.querySelector('span').textContent=p.name;pin.onclick=()=>openPoi(p);pins.append(pin)}function renderList(){const term=search.value.toLowerCase();const shown=pois.filter(p=>(!filter.value||p.type===filter.value)&&p.name.toLowerCase().includes(term));list.replaceChildren(...shown.map(p=>{const b=document.createElement('button');b.className='poi-item';b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=p.name;b.querySelector('b').style.color=p.color;b.querySelector('small').textContent=p.typeName;b.onclick=()=>center(p);return b}));if(!shown.length)list.innerHTML='<div class="empty">Nenhum ponto encontrado.</div>'}search.oninput=renderList;filter.onchange=renderList;renderList();function fit(){zoom=Math.min(view.clientWidth/${canvas.width},view.clientHeight/${canvas.height},.95);x=(view.clientWidth-${canvas.width}*zoom)/2;y=(view.clientHeight-${canvas.height}*zoom)/2;draw()}fit();view.onpointerdown=e=>{if(e.target.closest('.pin'))return;drag=true;lx=e.clientX;ly=e.clientY;view.classList.add('dragging');view.setPointerCapture(e.pointerId)};view.onpointermove=e=>{if(!drag)return;x+=e.clientX-lx;y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;draw()};view.onpointerup=()=>{drag=false;view.classList.remove('dragging')};view.onwheel=e=>{e.preventDefault();const r=view.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,old=zoom;zoom=Math.max(.05,Math.min(8,zoom*(e.deltaY<0?1.1:.9)));x=mx-(mx-x)*zoom/old;y=my-(my-y)*zoom/old;draw()};details.querySelector('.close').onclick=()=>details.hidden=true;details.onclick=e=>{if(e.target===details)details.hidden=true};lightbox.onclick=()=>lightbox.hidden=true;
+const pois=${pois},types=${types},view=document.querySelector('#view'),world=document.querySelector('#world'),pins=document.querySelector('#pins'),list=document.querySelector('#list'),search=document.querySelector('#search'),filter=document.querySelector('#filter'),details=document.querySelector('#details'),lightbox=document.querySelector('#lightbox');let zoom=1,x=0,y=0,drag=false,lx=0,ly=0;function draw(){world.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')'}function center(p){zoom=1;x=view.clientWidth/2-p.x;y=view.clientHeight/2-p.y;draw()}function openPoi(p){details.style.setProperty('--poi-color',p.color);details.querySelector('h2').textContent=p.name;details.querySelector('.kind').textContent=p.typeName;details.querySelector('.description').textContent=p.description||'Sem descrição.';const gallery=details.querySelector('.gallery');gallery.replaceChildren(...p.gallery.map(src=>{const image=new Image();image.src=src;image.onclick=()=>{lightbox.querySelector('img').src=src;lightbox.hidden=false};return image}));details.hidden=false}for(const type of types)filter.add(new Option(type.name,type.id));for(const p of pois){const pin=document.createElement('button');pin.className='pin';pin.style.cssText='left:'+p.x+'px;top:'+p.y+'px;--color:'+p.color+';--scale:'+(p.scale||1)+';opacity:'+(p.opacity??1);pin.innerHTML='<img><span></span>';pin.querySelector('img').src=p.icon;pin.querySelector('span').textContent=p.name;pin.onclick=()=>openPoi(p);pins.append(pin)}function renderList(){const term=search.value.toLowerCase();const shown=pois.filter(p=>(!filter.value||p.type===filter.value)&&p.name.toLowerCase().includes(term));list.replaceChildren(...shown.map(p=>{const b=document.createElement('button');b.className='poi-item';b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=p.name;b.querySelector('b').style.color=p.color;b.querySelector('small').textContent=p.typeName;b.onclick=()=>center(p);return b}));if(!shown.length)list.innerHTML='<div class="empty">Nenhum ponto encontrado.</div>'}search.oninput=renderList;filter.onchange=renderList;renderList();function fit(){zoom=Math.min(view.clientWidth/${canvas.width},view.clientHeight/${canvas.height},.95);x=(view.clientWidth-${canvas.width}*zoom)/2;y=(view.clientHeight-${canvas.height}*zoom)/2;draw()}fit();view.onpointerdown=e=>{if(e.target.closest('.pin'))return;drag=true;lx=e.clientX;ly=e.clientY;view.classList.add('dragging');view.setPointerCapture(e.pointerId)};view.onpointermove=e=>{if(!drag)return;x+=e.clientX-lx;y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;draw()};view.onpointerup=()=>{drag=false;view.classList.remove('dragging')};view.onwheel=e=>{e.preventDefault();const r=view.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,old=zoom;zoom=Math.max(.05,Math.min(8,zoom*(e.deltaY<0?1.1:.9)));x=mx-(mx-x)*zoom/old;y=my-(my-y)*zoom/old;draw()};details.querySelector('.close').onclick=()=>details.hidden=true;details.onclick=e=>{if(e.target===details)details.hidden=true};lightbox.onclick=()=>lightbox.hidden=true;
 <\/script></body></html>`;
 }
 

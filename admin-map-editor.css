@@ -2,6 +2,7 @@
 
 :root { color-scheme: dark; --top: 58px; --left: 250px; --right: 320px; --bg: #101311; --panel: #171a18; --line: #2b302c; --text: #edf0ed; --muted: #8c958e; --accent: #b7df72; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { height: 100%; overflow: hidden; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 14px 'DM Sans', sans-serif; }
 button, input { font: inherit; }
@@ -76,6 +77,8 @@ canvas { display: block; background: transparent; }
 .fields { display: grid; gap: 18px; }
 .fields > label, .range-field { font-size: 11px; }
 .fields output { float: right; color: var(--muted); }
+.value-input { float: right; width: 66px; margin: -4px 0 0; padding: 4px 5px; text-align: right; border: 1px solid #333b34; border-radius: 5px; background: #111512; color: var(--muted); font-size: 10px; }
+.value-input:focus { border-color: var(--accent); color: var(--text); outline: 0; }
 input[type='range'] { appearance: none; display: block; width: 100%; height: 5px; margin: 13px 0 3px; border-radius: 99px; outline: none; background: linear-gradient(90deg, var(--accent), #536247); accent-color: var(--accent); cursor: pointer; }
 input[type='range']::-webkit-slider-thumb { appearance: none; width: 15px; height: 15px; border: 3px solid #20261f; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1px #7f9b51, 0 2px 6px #0009; }
 input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px solid #20261f; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1px #7f9b51, 0 2px 6px #0009; }
@@ -99,6 +102,7 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .position-object { padding: 9px; border: 1px solid #536348; border-radius: 7px; background: #283123; color: var(--accent); cursor: pointer; }
 .position-object.active { background: var(--accent); color: #17200d; }
 .object-form > small { text-align: center; color: var(--muted); font-size: 9px; }
+.object-visual-controls { padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
 .object-thumbnails { display: flex; min-height: 0; gap: 5px; overflow-x: auto; }
 .object-thumbnails img { width: 46px; height: 46px; flex: 0 0 46px; object-fit: contain; border: 1px solid #353d36; border-radius: 6px; background: #101311; }
 .coordinate-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -143,6 +147,11 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .editing-asset { position: relative; flex: 0 0 58px; height: 58px; }
 .editing-asset img { width: 100%; height: 100%; object-fit: contain; border-radius: 6px; background: #101311; }
 .editing-asset button { position: absolute; right: 2px; top: 2px; width: 18px; height: 18px; padding: 0; border-radius: 50%; background: #111d; color: white; }
+.mask-preview { margin-top: 10px; }
+.mask-card { position: relative; display: grid; grid-template-columns: 48px 1fr; align-items: center; gap: 9px; padding: 7px; border: 1px solid #343b35; border-radius: 8px; background: #101311; }
+.mask-card img { width: 48px; height: 48px; object-fit: contain; border-radius: 5px; background: #ddd; }
+.mask-card small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.mask-card button { position: absolute; right: 5px; top: 5px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: #2b302c; color: #ccc; cursor: pointer; }
 
 @media (max-width: 850px) {
   :root { --left: 74px; --right: 280px; }

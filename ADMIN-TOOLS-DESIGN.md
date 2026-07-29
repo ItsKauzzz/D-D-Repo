@@ -41,3 +41,6 @@ Os dois painéis laterais são fixos e possuem scroll próprio. Assim, navegar p
 14. O inspector é estritamente específico ao tipo: Imagem oferece offset e opacidade; Objeto oferece metadados, miniaturas e coordenadas manuais; Terreno concentra geração e máscara.
 15. Máscaras podem ser pintadas no próprio viewport com brush, eraser e fill, e permanecem invisíveis fora do modo de edição.
 16. Conjuntos da biblioteca podem ser renomeados e ter imagens adicionadas ou removidas sem precisar recriá-los.
+17. Valores de sliders também aceitam entrada numérica direta para ajustes precisos.
+18. Durante a pintura da máscara, o botão esquerdo pinta/apaga e o botão direito assume o pan; confirmar rasteriza o desenho como PNG reutilizável da camada.
+19. Objetos possuem escala, opacidade e offset próprios, independentes dos controles procedurais de Terreno.
