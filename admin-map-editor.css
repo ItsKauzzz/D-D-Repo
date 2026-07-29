@@ -26,6 +26,8 @@ button, input { font: inherit; }
 .add-layer-menu button:hover { border-color: var(--accent); }
 .add-layer-menu span { color: var(--accent); font-size: 17px; }
 .layer-list { display: grid; gap: 7px; }
+.region-layer-group { display: grid; gap: 5px; padding: 6px; border: 1px solid #303831; border-radius: 9px; background: #121613; }
+.region-layer-group > p { margin: 2px 5px 4px; color: #79827b; font-size: 9px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
 .layer-card { display: grid; grid-template-columns: 30px 1fr auto; gap: 9px; align-items: center; width: 100%; padding: 10px; text-align: left; color: var(--text); border: 1px solid transparent; border-radius: 9px; background: transparent; cursor: pointer; }
 .layer-card.active { border-color: #3d4937; background: #242a24; }
 .layer-card .layer-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; background: #30392c; color: var(--accent); font-size: 17px; }
