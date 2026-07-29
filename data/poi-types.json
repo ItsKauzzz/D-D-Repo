@@ -1,0 +1,10 @@
+[
+  { "id": "vila", "name": "Vila", "color": "#f0c674" },
+  { "id": "cidade", "name": "Cidade", "color": "#7fdbff" },
+  { "id": "capital", "name": "Capital", "color": "#ff8f70" },
+  { "id": "fortaleza", "name": "Fortaleza", "color": "#c7a4ff" },
+  { "id": "ruina", "name": "Ruína", "color": "#b7c0b8" },
+  { "id": "masmorra", "name": "Masmorra", "color": "#ef7f9b" },
+  { "id": "natureza", "name": "Local natural", "color": "#9ed36a" },
+  { "id": "outro", "name": "Outro", "color": "#f1f3ef" }
+]

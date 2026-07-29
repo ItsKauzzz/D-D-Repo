@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Map editor • Admin tools</title>
+  <link rel="stylesheet" href="admin-map-editor.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="admin-tools.html" aria-label="Voltar">←</a>
+    <strong>Map editor</strong>
+    <span id="saveState">Pronto</span>
+    <button id="openProjectBtn" class="secondary-action">Abrir projeto</button>
+    <input id="projectInput" type="file" accept=".json,.teralium" hidden>
+    <button id="saveProjectBtn" class="secondary-action">Salvar projeto</button>
+    <button id="exportBtn">Exportar PNG</button>
+    <button id="exportMapBtn">Exportar mapa</button>
+    <button id="previewMapBtn" class="icon-action" title="Pré-visualizar mapa" aria-label="Pré-visualizar mapa">👁</button>
+  </header>
+
+  <aside class="sidebar left-panel">
+    <div class="layers-heading">
+      <p class="panel-label">CAMADAS</p>
+      <button id="addLayer" title="Adicionar camada">＋</button>
+    </div>
+    <div id="addLayerMenu" class="add-layer-menu" hidden>
+      <button data-layer-type="terrain"><span>⌁</span><b>Terreno</b></button>
+      <button data-layer-type="image"><span>▧</span><b>Imagem</b></button>
+      <button data-layer-type="object"><span>⌖</span><b>Objeto</b></button>
+      <button data-layer-type="region"><span>◒</span><b>Região</b></button>
+    </div>
+    <div id="layerList" class="layer-list"></div>
+    <div class="coming-types">
+      <p>PRÓXIMOS TIPOS</p>
+      <span>Pontos de interesse</span><span>Estradas</span>
+    </div>
+    <div class="help"><b>Navegação</b><p>Arraste o mapa para mover. Use a roda do mouse para aplicar zoom.</p></div>
+  </aside>
+
+  <main id="viewport">
+    <div id="stage"><canvas id="mapCanvas" width="1600" height="1000"></canvas><canvas id="maskEditCanvas" width="1600" height="1000"></canvas><div id="brushCursor" class="brush-cursor"></div></div>
+    <div class="empty-state" id="emptyState">
+      <span>⌁</span><b>Seu mapa começa aqui</b>
+      <small>Envie uma máscara no inspector para criar a primeira camada.</small>
+    </div>
+    <div class="zoom-controls">
+      <button id="zoomOut" aria-label="Diminuir zoom">−</button><output id="zoomValue">70%</output>
+      <button id="zoomIn" aria-label="Aumentar zoom">＋</button><button id="fitBtn">Ajustar</button>
+    </div>
+  </main>
+
+  <aside class="sidebar inspector">
+    <div class="inspector-head">
+      <div><p class="panel-label">INSPECTOR</p><input id="layerName" aria-label="Nome da camada"></div>
+      <span id="typeBadge" class="type-badge">Terreno</span>
+    </div>
+    <section class="terrain-control image-control region-control">
+      <label class="upload" for="maskInput"><span>＋</span><b>Enviar máscara</b><small>PNG com transparência recomendado</small></label>
+      <input id="maskInput" type="file" accept="image/*" hidden>
+      <p class="filename" id="maskName">Nenhuma máscara selecionada</p>
+      <button id="createMaskBtn" class="asset-upload terrain-control region-control">✦ Criar máscara</button>
+      <div id="maskPreview" class="mask-preview terrain-control region-control"></div>
+    </section>
+    <section class="image-control fields" hidden>
+      <label>Offset X <input id="imageOffsetXValue" class="value-input" type="number" min="-2000" max="2000" value="0"><input id="imageOffsetX" type="range" min="-2000" max="2000" value="0"></label>
+      <label>Offset Y <input id="imageOffsetYValue" class="value-input" type="number" min="-2000" max="2000" value="0"><input id="imageOffsetY" type="range" min="-2000" max="2000" value="0"></label>
+      <label>Opacidade <input id="imageOpacityValue" class="value-input" type="number" min="0" max="100" value="100"><input id="imageOpacity" type="range" min="0" max="1" step="0.01" value="1"></label>
+    </section>
+    <section class="terrain-control">
+      <div class="section-title"><b>Imagens do mestre</b><span id="assetCount">0</span></div>
+      <button id="openAssetModal" class="asset-upload">＋ Adicionar imagens</button>
+      <div id="assetGrid" class="asset-grid"><p>Adicione árvores, pedras ou qualquer elemento que queira distribuir.</p></div>
+    </section>
+    <section class="fields terrain-control">
+      <label>Intensidade <input id="densityValue" class="value-input" type="number" min="0" max="300" value="45"><input id="density" type="range" min="0" max="300" value="45"></label>
+      <label>Tamanho geral <input id="scaleValue" class="value-input" type="number" min="0" max="2" step="0.05" value="1"><input id="scale" type="range" min="0" max="2" step="0.05" value="1"></label>
+      <label class="check-row"><input id="sizeVariation" type="checkbox" checked> Variação de tamanho</label>
+      <div id="sizeVariationFields" class="range-field">
+        <div><span>Intervalo</span><output id="sizeValue">0.7×–1.3×</output></div>
+        <label><small>Mín.</small><input id="sizeMin" type="range" min="0" max="2" step="0.05" value="0.7"></label>
+        <label><small>Máx.</small><input id="sizeMax" type="range" min="0" max="2" step="0.05" value="1.3"></label>
+      </div>
+      <label>Seed <div class="seed-row"><input id="seed" value="Teralium-01"><button id="randomSeed" title="Gerar seed">↻</button></div></label>
+    </section>
+    <section class="options terrain-control">
+      <label><input id="rotation" type="checkbox" checked> Rotação aleatória</label>
+      <label><input id="mirror" type="checkbox" checked> Mirror aleatório</label>
+      <label><input id="slice" type="checkbox"> Slice na máscara</label>
+    </section>
+    <section class="object-control" hidden>
+      <div class="object-form">
+        <label>Nome<input id="objectName" placeholder="Nome do local"></label>
+        <label>Tipo<select id="objectType"></select></label>
+        <label>Ícone<select id="objectIconSet"><option value="">Selecione um conjunto</option></select></label>
+        <div id="objectIconPreview" class="object-thumbnails"></div>
+        <label>Galeria<select id="objectGallerySet"><option value="">Sem galeria</option></select></label>
+        <div id="objectGalleryPreview" class="object-thumbnails"></div>
+        <button id="manageObjectSets" class="position-object">＋ Gerenciar conjuntos</button>
+        <label>Descrição<textarea id="objectDescription" rows="6" placeholder="História, detalhes e informações do local..."></textarea></label>
+        <label class="check-row"><input id="objectPoi" type="checkbox" checked> Criar como ponto de interesse</label>
+        <div class="fields object-visual-controls">
+          <label>Tamanho geral <input id="objectScaleValue" class="value-input" type="number" min="0" max="4" step="0.05" value="1"><input id="objectScale" type="range" min="0" max="4" step="0.05" value="1"></label>
+          <label>Opacidade <input id="objectOpacityValue" class="value-input" type="number" min="0" max="100" value="100"><input id="objectOpacity" type="range" min="0" max="1" step="0.01" value="1"></label>
+          <label>Offset X <input id="objectOffsetXValue" class="value-input" type="number" value="0"><input id="objectOffsetX" type="range" min="-500" max="500" value="0"></label>
+          <label>Offset Y <input id="objectOffsetYValue" class="value-input" type="number" value="0"><input id="objectOffsetY" type="range" min="-500" max="500" value="0"></label>
+        </div>
+        <button id="positionObject" class="position-object">⌖ Posicionar no mapa</button>
+        <div class="coordinate-row"><label>X<input id="objectX" type="number"></label><label>Y<input id="objectY" type="number"></label></div>
+        <small id="objectPosition">Ainda não posicionado</small>
+      </div>
+    </section>
+    <section class="region-control" hidden>
+      <div class="object-form">
+        <label>Layer / tipo de região<input id="regionGroup" placeholder="Ex.: Fronteiras políticas"></label>
+        <label>Nome da região<input id="regionName" placeholder="Ex.: Reino do Norte"></label>
+        <label>Cor<input id="regionColor" type="color" value="#6fa86b"></label>
+        <p class="region-note">Regiões desenhadas por último removem automaticamente as intersecções das regiões anteriores.</p>
+      </div>
+    </section>
+    <div class="inspector-footer"><button id="generateBtn" disabled>Gerar preenchimento</button><small id="footerHint">A seed mantém o resultado reproduzível.</small></div>
+  </aside>
+  <div id="maskTools" class="mask-tools" hidden>
+    <button data-mask-tool="brush" class="active" title="Brush">●</button>
+    <button data-mask-tool="eraser" title="Eraser">⌫</button>
+    <button data-mask-tool="fill" title="Fill">▣</button>
+    <span></span>
+    <button id="finishMask" title="Concluir">✓</button>
+    <button id="cancelMask" title="Cancelar">×</button>
+  </div>
+  <div id="brushSizeControl" class="brush-size-control" hidden><span>Brush</span><input id="brushSize" type="range" min="2" max="300" value="60"><input id="brushSizeValue" class="value-input" type="number" min="2" max="300" value="60"></div>
+  <div id="layerContextMenu" class="context-menu" hidden>
+    <button data-action="rename">Renomear</button>
+    <button data-action="toggle">Ocultar</button>
+  </div>
+  <div id="assetModal" class="modal-backdrop" hidden>
+    <div class="asset-modal" role="dialog" aria-modal="true" aria-labelledby="assetModalTitle">
+      <div class="modal-head"><div><p class="panel-label">BIBLIOTECA</p><h2 id="assetModalTitle">Conjuntos de imagens</h2></div><button id="closeAssetModal" aria-label="Fechar">×</button></div>
+      <p class="modal-copy">Reutilize o mesmo conjunto de imagens em diferentes camadas.</p>
+      <div id="setList" class="set-list"></div>
+      <div class="new-set">
+        <h3>Novo conjunto</h3>
+        <input id="setName" placeholder="Ex.: Árvores de pinheiro">
+        <label for="assetInput">Selecionar imagens</label>
+        <input id="assetInput" type="file" accept="image/*" multiple hidden>
+        <span id="newSetFiles">Nenhuma imagem selecionada</span>
+        <div id="editingSetAssets" class="editing-set-assets"></div>
+        <button id="createSetBtn" disabled>Criar conjunto</button>
+      </div>
+    </div>
+  </div>
+  <script src="admin-map-editor.js"></script>
+</body>
+</html>
