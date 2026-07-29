@@ -425,9 +425,13 @@ async function generate() {
   const averageVariation = layer.settings.sizeVariation ? (layer.settings.sizeMin + layer.settings.sizeMax) / 2 : 1;
   // Density is a property of the mask, never of the amount or dimensions of
   // images in the set. More images only change which graphic each point uses.
-  const footprint = Math.max(8, 48 * layer.settings.scale * averageVariation);
-  // 100 is the base occupancy and the control can reach 300 for deliberately
-  // dense compositions. The point budget remains independent of asset count.
+  // Scale the point budget by the rendered footprint: reducing "Tamanho geral"
+  // therefore creates proportionally more spawn points instead of leaving gaps.
+  // Keep only a one-pixel floor to avoid division by zero at the slider limit.
+  const footprint = Math.max(1, 48 * layer.settings.scale * averageVariation);
+  // 100 is the base occupancy; 1000 layers roughly ten passes over the same
+  // footprint and is intended to produce an almost completely filled mask.
+  // The point budget remains independent of asset count.
   const attempts = Math.min(250000, Math.round((width * height / (footprint * footprint)) * layer.settings.density / 100));
   const placements = [];
   let iteration = 0;
