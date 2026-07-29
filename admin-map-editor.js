@@ -656,6 +656,8 @@ $('#objectIconPickerModal').addEventListener('click', (event) => { if (event.tar
 $('#objectIconSearch').addEventListener('input', renderObjectIconPicker);
 
 let editingDescriptionPages = [];
+let activeDescriptionPageIndex = 0;
+let editingTemplateStructureOnly = false;
 function cloneDescriptionPages(pages) { return (pages || []).map((page) => ({ ...page, images: [...(page.images || [])] })); }
 
 function renderDescriptionTemplates() {
@@ -664,20 +666,24 @@ function renderDescriptionTemplates() {
   const buttons = [];
   if (layer?.type === 'object' && layer.object.descriptionPages?.length) {
     const current = document.createElement('button'); current.textContent = `Editar descrição atual (${layer.object.descriptionPages.length} páginas)`;
-    current.onclick = () => openDescriptionEditor(layer.object.detailedTemplateId || '', layer.object.descriptionPages, layer.object.name || 'Descrição'); buttons.push(current);
+    current.onclick = () => openDescriptionEditor(layer.object.detailedTemplateId || '', layer.object.descriptionPages, layer.object.name || 'Descrição', true); buttons.push(current);
   }
   for (const template of state.descriptionTemplates) {
     const button = document.createElement('button'); button.textContent = `${template.name} (${template.pages.length} páginas)`;
-    button.onclick = () => openDescriptionEditor(template.id, template.pages, template.name); buttons.push(button);
+    button.onclick = () => openDescriptionEditor(template.id, template.pages, template.name, false); buttons.push(button);
   }
   list.replaceChildren(...buttons);
   if (!buttons.length) list.innerHTML = '<p class="set-empty">Nenhum template criado ainda.</p>';
 }
 
-function openDescriptionEditor(templateId, pages, name) {
+function openDescriptionEditor(templateId, pages, name, preserveContent = false, structureOnly = false) {
   state.editingDescriptionTemplateId = templateId;
-  editingDescriptionPages = cloneDescriptionPages(pages);
+  editingTemplateStructureOnly = structureOnly;
+  editingDescriptionPages = preserveContent
+    ? cloneDescriptionPages(pages)
+    : (pages || []).map((page) => ({ id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`, title: page.title, content: '', images: [] }));
   if (!editingDescriptionPages.length) editingDescriptionPages.push({ id: crypto.randomUUID?.() || `${Date.now()}`, title: 'Overview', content: '', images: [] });
+  activeDescriptionPageIndex = 0;
   $('#descriptionEditorTitle').textContent = name;
   renderDescriptionPageEditor();
   $('#descriptionTemplateModal').hidden = true; $('#descriptionEditorModal').hidden = false;
@@ -685,17 +691,30 @@ function openDescriptionEditor(templateId, pages, name) {
 
 function renderDescriptionPageEditor() {
   const editor = $('#descriptionPageEditor');
-  editor.replaceChildren(...editingDescriptionPages.map((page, index) => {
+  const navigation = $('#descriptionEditorPages');
+  navigation.replaceChildren(...editingDescriptionPages.map((page, index) => {
+    const button = document.createElement('button'); button.type = 'button'; button.textContent = page.title || `Página ${index + 1}`;
+    button.classList.toggle('active', index === activeDescriptionPageIndex);
+    button.onclick = () => { activeDescriptionPageIndex = index; renderDescriptionPageEditor(); };
+    return button;
+  }));
+  const page = editingDescriptionPages[activeDescriptionPageIndex];
+  if (!page) { editor.replaceChildren(); return; }
+  const card = (() => {
+    const index = activeDescriptionPageIndex;
     const card = document.createElement('section'); card.className = 'description-page-card';
-    const title = document.createElement('input'); title.value = page.title; title.placeholder = 'Título da página'; title.oninput = () => { page.title = title.value; };
+    const title = document.createElement('input'); title.value = page.title; title.placeholder = 'Título da página'; title.oninput = () => { page.title = title.value; navigation.children[index].textContent = title.value || `Página ${index + 1}`; };
     const content = document.createElement('textarea'); content.rows = 8; content.value = page.content; content.placeholder = 'Conteúdo desta página...'; content.oninput = () => { page.content = content.value; };
     const images = document.createElement('div'); images.className = 'description-page-images'; images.replaceChildren(...page.images.map((source) => { const image = new Image(); image.src = source; return image; }));
     const upload = document.createElement('label'); upload.className = 'position-object'; upload.textContent = '＋ Adicionar imagens nesta página';
     const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.multiple = true; input.hidden = true;
     input.onchange = async () => { for (const file of input.files) page.images.push((await fileImage(file)).src); renderDescriptionPageEditor(); }; upload.append(input);
-    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'danger-button position-object'; remove.textContent = 'Excluir página'; remove.onclick = () => { editingDescriptionPages.splice(index, 1); renderDescriptionPageEditor(); };
-    card.append(title, content, images, upload, remove); return card;
-  }));
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'danger-button position-object'; remove.textContent = 'Excluir página'; remove.onclick = () => { editingDescriptionPages.splice(index, 1); activeDescriptionPageIndex = Math.max(0, Math.min(index, editingDescriptionPages.length - 1)); renderDescriptionPageEditor(); };
+    card.append(title);
+    if (!editingTemplateStructureOnly) card.append(content, images, upload);
+    card.append(remove); return card;
+  })();
+  editor.replaceChildren(card);
 }
 
 $('#openDetailedDescription').onclick = () => { renderDescriptionTemplates(); $('#descriptionTemplateModal').hidden = false; };
@@ -703,16 +722,17 @@ $('#closeDescriptionTemplates').onclick = () => { $('#descriptionTemplateModal')
 $('#descriptionTemplateModal').addEventListener('click', (event) => { if (event.target === $('#descriptionTemplateModal')) $('#descriptionTemplateModal').hidden = true; });
 $('#createDescriptionTemplate').onclick = () => {
   const name = $('#newDescriptionTemplateName').value.trim() || `Template ${state.descriptionTemplates.length + 1}`;
-  openDescriptionEditor('', [], name);
+  openDescriptionEditor('', [], name, false, true);
 };
-$('#addDescriptionPage').onclick = () => { editingDescriptionPages.push({ id: crypto.randomUUID?.() || `${Date.now()}`, title: `Página ${editingDescriptionPages.length + 1}`, content: '', images: [] }); renderDescriptionPageEditor(); };
+$('#addDescriptionPage').onclick = () => { editingDescriptionPages.push({ id: crypto.randomUUID?.() || `${Date.now()}`, title: `Página ${editingDescriptionPages.length + 1}`, content: '', images: [] }); activeDescriptionPageIndex = editingDescriptionPages.length - 1; renderDescriptionPageEditor(); };
 $('#closeDescriptionEditor').onclick = () => { $('#descriptionEditorModal').hidden = true; };
 $('#saveDetailedDescription').onclick = () => {
   const layer = selectedLayer(); if (layer?.type !== 'object') return;
   let template = state.descriptionTemplates.find((item) => item.id === state.editingDescriptionTemplateId);
   if (!template) { template = { id: crypto.randomUUID?.() || `${Date.now()}`, name: $('#descriptionEditorTitle').textContent, pages: [] }; state.descriptionTemplates.push(template); }
-  template.pages = cloneDescriptionPages(editingDescriptionPages);
-  layer.object.detailedTemplateId = template.id; layer.object.descriptionPages = cloneDescriptionPages(editingDescriptionPages);
+  template.pages = editingDescriptionPages.map((page) => ({ id: page.id, title: page.title }));
+  layer.object.detailedTemplateId = template.id;
+  layer.object.descriptionPages = editingDescriptionPages.map((page) => ({ id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`, title: page.title, content: editingTemplateStructureOnly ? '' : page.content, images: editingTemplateStructureOnly ? [] : [...page.images] }));
   $('#descriptionEditorModal').hidden = true; $('#saveState').textContent = 'Descrição detalhada salva';
 };
 
