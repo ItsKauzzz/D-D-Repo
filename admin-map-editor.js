@@ -426,8 +426,8 @@ async function generate() {
   // Density is a property of the mask, never of the amount or dimensions of
   // images in the set. More images only change which graphic each point uses.
   const footprint = Math.max(8, 48 * layer.settings.scale * averageVariation);
-  // Treat density as a true 0–100 occupancy percentage. The previous divisor
-  // saturated the mask around 8–9, making the rest of the slider imperceptible.
+  // 100 is the base occupancy and the control can reach 300 for deliberately
+  // dense compositions. The point budget remains independent of asset count.
   const attempts = Math.min(250000, Math.round((width * height / (footprint * footprint)) * layer.settings.density / 100));
   const placements = [];
   let iteration = 0;
