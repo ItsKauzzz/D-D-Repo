@@ -687,6 +687,7 @@ let maskDrawing = false;
 let maskPanning = false;
 let maskPanX = 0;
 let maskPanY = 0;
+let maskPaintPointerId = null;
 
 $('#createMaskBtn').onclick = () => {
   const layer = selectedLayer();
@@ -694,6 +695,8 @@ $('#createMaskBtn').onclick = () => {
   maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
   if (layer.mask) maskEditContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
   state.maskEditing = layer.id;
+  state.drag = false;
+  viewport.classList.remove('dragging');
   maskEditCanvas.style.display = 'block';
   $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
   $('#saveState').textContent = 'Editando máscara';
@@ -708,7 +711,7 @@ document.querySelectorAll('[data-mask-tool]').forEach((button) => {
 $('#brushSize').oninput = (event) => { $('#brushSizeValue').value = event.target.value; };
 bindNumberInput('brushSizeValue', 'brushSize', () => {});
 function paintMask(event) {
-  if (!maskDrawing) return;
+  if (!maskDrawing || maskPaintPointerId !== event.pointerId || !(event.buttons & 1)) return;
   if (maskTool === 'fill') {
     maskEditContext.globalCompositeOperation = 'source-over';
     maskEditContext.fillStyle = '#000'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height);
@@ -724,20 +727,32 @@ function paintMask(event) {
 }
 maskEditCanvas.oncontextmenu = (event) => event.preventDefault();
 maskEditCanvas.onpointerdown = (event) => {
+  event.stopPropagation();
   if (event.button === 2) {
     maskPanning = true; maskPanX = event.clientX; maskPanY = event.clientY;
   } else if (event.button === 0) {
-    maskDrawing = true; paintMask(event);
+    maskDrawing = true; maskPaintPointerId = event.pointerId; paintMask(event);
   } else return;
   maskEditCanvas.setPointerCapture(event.pointerId);
 };
 maskEditCanvas.onpointermove = (event) => {
+  event.stopPropagation();
   if (maskPanning) {
+    if (!(event.buttons & 2)) { maskPanning = false; return; }
     state.x += event.clientX - maskPanX; state.y += event.clientY - maskPanY;
     maskPanX = event.clientX; maskPanY = event.clientY; updateTransform();
-  } else paintMask(event);
+  } else {
+    if (!(event.buttons & 1)) { maskDrawing = false; maskPaintPointerId = null; return; }
+    paintMask(event);
+  }
 };
-maskEditCanvas.onpointerup = () => { maskDrawing = false; maskPanning = false; };
+function stopMaskPointer(event) {
+  event?.stopPropagation();
+  maskDrawing = false; maskPanning = false; maskPaintPointerId = null;
+}
+maskEditCanvas.onpointerup = stopMaskPointer;
+maskEditCanvas.onpointercancel = stopMaskPointer;
+maskEditCanvas.onlostpointercapture = stopMaskPointer;
 async function closeMaskEditor(save) {
   const layer = state.layers.find((item) => item.id === state.maskEditing);
   if (save && layer) {
