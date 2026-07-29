@@ -112,6 +112,7 @@
         <div id="objectGalleryPreview" class="object-thumbnails"></div>
         <button id="manageObjectSets" class="position-object">＋ Gerenciar conjuntos</button>
         <label>Descrição<textarea id="objectDescription" rows="6" placeholder="História, detalhes e informações do local..."></textarea></label>
+        <button id="openDetailedDescription" type="button" class="position-object">Adicionar descrição detalhada</button>
         <label class="check-row"><input id="objectPoi" type="checkbox" checked> Criar como ponto de interesse</label>
         <div class="fields object-visual-controls">
           <label>Tamanho geral <input id="objectScaleValue" class="value-input" type="number" min="0" max="4" step="0.05" value="1"><input id="objectScale" type="range" min="0" max="4" step="0.05" value="1"></label>
@@ -199,6 +200,20 @@
       <div class="modal-head"><div><p class="panel-label">ÍCONES</p><h2 id="objectIconPickerTitle">Selecionar conjunto</h2></div><button id="closeObjectIconPicker" aria-label="Fechar">×</button></div>
       <input id="objectIconSearch" class="icon-picker-search" placeholder="Pesquisar conjuntos...">
       <div id="objectIconPickerList" class="icon-picker-list"></div>
+    </div>
+  </div>
+  <div id="descriptionTemplateModal" class="modal-backdrop" hidden>
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="descriptionTemplateTitle">
+      <div class="modal-head"><div><p class="panel-label">DESCRIÇÃO</p><h2 id="descriptionTemplateTitle">Templates de descrição</h2></div><button id="closeDescriptionTemplates" aria-label="Fechar">×</button></div>
+      <div id="descriptionTemplateList" class="description-template-list"></div>
+      <div class="description-template-create"><input id="newDescriptionTemplateName" placeholder="Nome do novo template"><button id="createDescriptionTemplate" class="position-object">＋ Criar novo</button></div>
+    </div>
+  </div>
+  <div id="descriptionEditorModal" class="modal-backdrop" hidden>
+    <div class="description-editor-modal" role="dialog" aria-modal="true" aria-labelledby="descriptionEditorTitle">
+      <div class="modal-head"><div><p class="panel-label">EDITOR</p><h2 id="descriptionEditorTitle">Descrição detalhada</h2></div><button id="closeDescriptionEditor" aria-label="Fechar">×</button></div>
+      <div id="descriptionPageEditor" class="description-page-editor"></div>
+      <div class="description-editor-actions"><button id="addDescriptionPage" class="position-object">＋ Adicionar página</button><button id="saveDetailedDescription" class="position-object">Salvar descrição</button></div>
     </div>
   </div>
   <div id="assetModal" class="modal-backdrop" hidden>
