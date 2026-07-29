@@ -1410,6 +1410,7 @@ let maskPanX = 0;
 let maskPanY = 0;
 let maskPaintPointerId = null;
 let maskHistory = [];
+let lastTerrainPaintPoint = null;
 const brushCursor = $('#brushCursor');
 
 function perlinCoastNoise(x, y) {
@@ -1489,6 +1490,44 @@ document.querySelectorAll('[data-terrain-brush]').forEach((button) => {
   };
 });
 
+function paintTerrainHeight(layer, x, y, brushSize, renderPreview = true) {
+  const radius = brushSize / 2;
+  const left = Math.max(0, Math.floor(x - radius)), top = Math.max(0, Math.floor(y - radius));
+  const width = Math.min(maskEditCanvas.width, Math.ceil(x + radius)) - left, height = Math.min(maskEditCanvas.height, Math.ceil(y + radius)) - top;
+  if (width <= 0 || height <= 0) return;
+  const target = maskEditContext.getImageData(left, top, width, height);
+  let customPixels = null;
+  if (state.terrainBrushImage) {
+    const brushCanvas = document.createElement('canvas'); brushCanvas.width = width; brushCanvas.height = height;
+    const brushContext = brushCanvas.getContext('2d', { willReadFrequently: true });
+    brushContext.drawImage(state.terrainBrushImage, 0, 0, width, height); customPixels = brushContext.getImageData(0, 0, width, height).data;
+  }
+  const selectedLevel = Number($('#brushOpacity').value) * 255;
+  for (let py = 0; py < height; py++) for (let px = 0; px < width; px++) {
+    const index = (py * width + px) * 4;
+    const normalizedDistance = Math.hypot(left + px + 0.5 - x, top + py + 0.5 - y) / radius;
+    if (!customPixels && normalizedDistance > 1) continue;
+    let falloff;
+    if (customPixels) {
+      const alpha = customPixels[index + 3] / 255;
+      if (alpha <= 0) continue;
+      const darkness = 1 - (customPixels[index] + customPixels[index + 1] + customPixels[index + 2]) / 765;
+      falloff = alpha * darkness;
+    } else if (state.terrainBrushMode === 'soft') {
+      falloff = Math.max(0, 1 - normalizedDistance);
+    } else {
+      // Mostly solid, with a small cosine feather so the continent edge is not pixel-perfect.
+      const edge = Math.max(0, Math.min(1, (1 - normalizedDistance) / 0.16));
+      falloff = edge * edge * (3 - 2 * edge);
+    }
+    const current = target.data[index];
+    const next = maskTool === 'eraser' ? Math.round(current * (1 - falloff)) : Math.max(current, Math.round(selectedLevel * falloff));
+    target.data[index] = target.data[index + 1] = target.data[index + 2] = next; target.data[index + 3] = 255;
+  }
+  maskEditContext.putImageData(target, left, top);
+  if (renderPreview) renderTerrainHeight(layer, maskEditCanvas, { x: left, y: top, width, height });
+}
+
 $('#createMaskBtn').onclick = () => {
   const layer = selectedLayer();
   maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
@@ -1521,6 +1560,14 @@ function paintMask(event) {
   if (!maskDrawing || maskPaintPointerId !== event.pointerId || !(event.buttons & 1)) return;
   const heightLayer = state.terrainHeightEditing ? state.layers.find((layer) => layer.id === state.terrainHeightEditing) : null;
   if (maskTool === 'fill') {
+    if (heightLayer) {
+      const data = maskEditContext.getImageData(0, 0, canvas.width, canvas.height), level = Math.round(Number($('#brushOpacity').value) * 255);
+      for (let index = 0; index < data.data.length; index += 4) {
+        const value = maskTool === 'eraser' ? 0 : Math.max(data.data[index], level);
+        data.data[index] = data.data[index + 1] = data.data[index + 2] = value; data.data[index + 3] = 255;
+      }
+      maskEditContext.putImageData(data, 0, 0); renderTerrainHeight(heightLayer, maskEditCanvas); maskDrawing = false; return;
+    }
     maskEditContext.globalCompositeOperation = 'source-over';
     maskEditContext.globalAlpha = heightLayer ? 1 : Number($('#brushOpacity').value);
     const level = Math.round(Number($('#brushOpacity').value) * 255);
@@ -1533,29 +1580,22 @@ function paintMask(event) {
   const x = (event.clientX - rectangle.left) * canvas.width / rectangle.width;
   const y = (event.clientY - rectangle.top) * canvas.height / rectangle.height;
   const brushSize = Number($('#brushSize').value), radius = brushSize / 2;
-  if (heightLayer && state.terrainBrushImage) {
-    const brushCanvas = document.createElement('canvas'); brushCanvas.width = brushCanvas.height = Math.max(1, Math.round(brushSize));
-    const brushContext = brushCanvas.getContext('2d', { willReadFrequently: true }); brushContext.drawImage(state.terrainBrushImage, 0, 0, brushCanvas.width, brushCanvas.height);
-    const brushData = brushContext.getImageData(0, 0, brushCanvas.width, brushCanvas.height); const level = Number($('#brushOpacity').value) * 255;
-    for (let index = 0; index < brushData.data.length; index += 4) {
-      const darkness = 1 - (brushData.data[index] + brushData.data[index + 1] + brushData.data[index + 2]) / 765;
-      const value = Math.round(level * darkness * brushData.data[index + 3] / 255);
-      brushData.data[index] = brushData.data[index + 1] = brushData.data[index + 2] = value; brushData.data[index + 3] = brushData.data[index + 3] > 0 ? 255 : 0;
-    }
-    brushContext.putImageData(brushData, 0, 0); maskEditContext.globalCompositeOperation = 'source-over'; maskEditContext.drawImage(brushCanvas, x - radius, y - radius);
-  } else if (heightLayer && state.terrainBrushMode === 'soft') {
-    const level = Math.round(Number($('#brushOpacity').value) * 255);
-    const gradient = maskEditContext.createRadialGradient(x, y, 0, x, y, radius);
-    gradient.addColorStop(0, `rgb(${level},${level},${level})`); gradient.addColorStop(1, 'rgb(0,0,0)');
-    maskEditContext.globalCompositeOperation = 'source-over'; maskEditContext.fillStyle = gradient; maskEditContext.beginPath(); maskEditContext.arc(x, y, radius, 0, Math.PI * 2); maskEditContext.fill();
-  } else {
+  if (heightLayer) {
+    if (lastTerrainPaintPoint) {
+      const distance = Math.hypot(x - lastTerrainPaintPoint.x, y - lastTerrainPaintPoint.y), steps = Math.max(1, Math.ceil(distance / Math.max(2, brushSize * 0.22)));
+      for (let step = 1; step <= steps; step++) paintTerrainHeight(heightLayer, lastTerrainPaintPoint.x + (x - lastTerrainPaintPoint.x) * step / steps, lastTerrainPaintPoint.y + (y - lastTerrainPaintPoint.y) * step / steps, brushSize, false);
+      const radius = brushSize / 2, left = Math.min(lastTerrainPaintPoint.x, x) - radius, top = Math.min(lastTerrainPaintPoint.y, y) - radius;
+      renderTerrainHeight(heightLayer, maskEditCanvas, { x: left, y: top, width: Math.abs(x - lastTerrainPaintPoint.x) + brushSize, height: Math.abs(y - lastTerrainPaintPoint.y) + brushSize });
+    } else paintTerrainHeight(heightLayer, x, y, brushSize);
+    lastTerrainPaintPoint = { x, y }; return;
+  }
+  else {
     maskEditContext.globalCompositeOperation = heightLayer ? 'source-over' : maskTool === 'eraser' ? 'destination-out' : 'source-over';
     maskEditContext.globalAlpha = heightLayer ? 1 : Number($('#brushOpacity').value);
     const level = Math.round(Number($('#brushOpacity').value) * 255);
     maskEditContext.fillStyle = heightLayer ? `rgb(${level},${level},${level})` : '#000';
     maskEditContext.beginPath(); maskEditContext.arc(x, y, radius, 0, Math.PI * 2); maskEditContext.fill(); maskEditContext.globalAlpha = 1;
   }
-  if (heightLayer) renderTerrainHeight(heightLayer, maskEditCanvas, { x: x - radius, y: y - radius, width: brushSize, height: brushSize });
 }
 maskEditCanvas.oncontextmenu = (event) => event.preventDefault();
 const maskShortcutKeys = new Set();
@@ -1581,7 +1621,7 @@ maskEditCanvas.onpointerdown = (event) => {
   } else if (event.button === 0) {
     maskHistory.push(maskEditCanvas.toDataURL('image/png'));
     if (maskHistory.length > 20) maskHistory.shift();
-    maskDrawing = true; maskPaintPointerId = event.pointerId; paintMask(event);
+    maskDrawing = true; maskPaintPointerId = event.pointerId; lastTerrainPaintPoint = null; paintMask(event);
   } else return;
   maskEditCanvas.setPointerCapture(event.pointerId);
 };
@@ -1606,6 +1646,7 @@ maskEditCanvas.onpointerenter = (event) => { if (!maskPanning && maskTool !== 'f
 function stopMaskPointer(event) {
   event?.stopPropagation();
   maskDrawing = false; maskPanning = false; maskPaintPointerId = null;
+  lastTerrainPaintPoint = null;
 }
 maskEditCanvas.onpointerup = stopMaskPointer;
 maskEditCanvas.onpointercancel = stopMaskPointer;
