@@ -429,10 +429,15 @@ async function generate() {
   // therefore creates proportionally more spawn points instead of leaving gaps.
   // Keep only a one-pixel floor to avoid division by zero at the slider limit.
   const footprint = Math.max(1, 48 * layer.settings.scale * averageVariation);
+  // Below the default scale, progressively apply an additional boost of up to
+  // 5x. This sits on top of the inverse-square footprint compensation above.
+  const smallScaleBoost = layer.settings.scale < 1
+    ? 1 + (1 - layer.settings.scale) * 4
+    : 1;
   // 100 is the base occupancy; 1000 layers roughly ten passes over the same
   // footprint and is intended to produce an almost completely filled mask.
   // The point budget remains independent of asset count.
-  const attempts = Math.min(250000, Math.round((width * height / (footprint * footprint)) * layer.settings.density / 100));
+  const attempts = Math.min(1250000, Math.round((width * height / (footprint * footprint)) * layer.settings.density / 100 * smallScaleBoost));
   const placements = [];
   let iteration = 0;
 
