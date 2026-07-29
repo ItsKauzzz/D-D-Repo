@@ -32,6 +32,58 @@ const translations = {
   ja: { open: 'プロジェクトを開く', save: 'プロジェクトを保存', export: 'プロジェクトを書き出す', exportMap: 'マップを書き出す', layers: 'レイヤー', inspector: 'インスペクター', uploadMask: 'マスクをアップロード', uploadImage: '画像をアップロード', createMask: '✦ マスクを作成', editMask: '✦ マスクを編集', generate: '塗りつぶしを生成', rename: '名前を変更', hide: '非表示', show: '表示', delete: 'レイヤーを削除', ready: '準備完了', language: 'Language:' },
 };
 
+const phraseTranslations = {
+  en: {
+    'CAMADAS': 'LAYERS', 'INSPECTOR': 'INSPECTOR', 'PRÓXIMOS TIPOS': 'COMING SOON', 'Pontos de interesse': 'Points of interest', 'Estradas': 'Roads',
+    'Navegação': 'Navigation', 'Arraste o mapa para mover. Use a roda do mouse para aplicar zoom.': 'Drag the map to pan. Use the mouse wheel to zoom.', 'Seu mapa começa aqui': 'Your map starts here',
+    'Envie uma máscara no inspector para criar a primeira camada.': 'Upload a mask in the inspector to create the first layer.', 'Ajustar': 'Fit', 'Terreno': 'Terrain', 'Imagem': 'Image', 'Objeto': 'Object', 'Região': 'Region',
+    'Preview e ponto âncora do terreno': 'Terrain preview and anchor point', 'Selecione uma imagem do mestre': 'Select a master image', 'Enviar máscara': 'Upload mask', 'PNG com transparência recomendado': 'Transparent PNG recommended',
+    'Nenhuma máscara selecionada': 'No mask selected', '✦ Criar máscara': '✦ Create mask', '✦ Editar máscara': '✦ Edit mask', 'Imagens do mestre': 'Master images', '＋ Adicionar imagens': '＋ Add images',
+    'Adicione árvores, pedras ou qualquer elemento que queira distribuir.': 'Add trees, rocks, or any element you want to distribute.', 'Intensidade': 'Intensity', 'Tamanho geral': 'General size', 'Variação de tamanho': 'Size variation',
+    'Intervalo': 'Range', 'Mín.': 'Min.', 'Máx.': 'Max.', 'Rotação aleatória': 'Random rotation', 'Mirror aleatório': 'Random mirror', 'Slice na máscara': 'Clip to mask', 'Gerar preenchimento': 'Generate fill',
+    'Preview e ponto âncora': 'Preview and anchor point', 'Selecione um ícone': 'Select an icon', 'Nome': 'Name', 'Tipo': 'Type', 'Ícone': 'Icon', 'Selecione um conjunto': 'Select a set', 'Galeria': 'Gallery', 'Sem galeria': 'No gallery',
+    '＋ Gerenciar conjuntos': '＋ Manage sets', 'Descrição': 'Description', 'Criar como ponto de interesse': 'Create as point of interest', 'Opacidade': 'Opacity', '⌖ Posicionar no mapa': '⌖ Position on map', 'Ainda não posicionado': 'Not positioned yet',
+    'Layer / tipo de região': 'Region layer / type', 'Nome da região': 'Region name', 'Cor': 'Color', 'Regiões desenhadas por último removem automaticamente as intersecções das regiões anteriores.': 'Regions drawn last automatically remove intersections from earlier regions.',
+    'A seed mantém o resultado reproduzível.': 'The seed keeps the result reproducible.', 'Arraste a camada para definir sua prioridade.': 'Drag the layer to set its priority.', 'BIBLIOTECA': 'LIBRARY', 'Conjuntos de imagens': 'Image sets',
+    'Reutilize o mesmo conjunto de imagens em diferentes camadas.': 'Reuse the same image set across different layers.', 'Novo conjunto': 'New set', 'Nenhuma imagem selecionada': 'No image selected', 'Criar conjunto': 'Create set',
+    'Renomear': 'Rename', 'Ocultar': 'Hide', 'Exibir': 'Show', 'Excluir camada': 'Delete layer', 'Brush': 'Brush', 'Offset X': 'X offset', 'Offset Y': 'Y offset', 'Seed': 'Seed', 'Selecionar imagens': 'Select images',
+    'Nome do local': 'Location name', 'História, detalhes e informações do local...': 'History, details, and location information...', 'Ex.: Fronteiras políticas': 'E.g. Political borders', 'Ex.: Reino do Norte': 'E.g. Northern Kingdom', 'Ex.: Árvores de pinheiro': 'E.g. Pine trees',
+  },
+  ja: {
+    'CAMADAS': 'レイヤー', 'INSPECTOR': 'インスペクター', 'PRÓXIMOS TIPOS': '近日追加', 'Pontos de interesse': '地点', 'Estradas': '道路', 'Navegação': 'ナビゲーション',
+    'Arraste o mapa para mover. Use a roda do mouse para aplicar zoom.': 'ドラッグで移動、マウスホイールでズームします。', 'Seu mapa começa aqui': 'ここからマップを作成', 'Envie uma máscara no inspector para criar a primeira camada.': '最初のレイヤーを作るにはマスクをアップロードしてください。',
+    'Ajustar': '全体表示', 'Terreno': '地形', 'Imagem': '画像', 'Objeto': 'オブジェクト', 'Região': '地域', 'Preview e ponto âncora do terreno': '地形プレビューとアンカー', 'Selecione uma imagem do mestre': 'マスター画像を選択',
+    'Enviar máscara': 'マスクをアップロード', 'PNG com transparência recomendado': '透過PNG推奨', 'Nenhuma máscara selecionada': 'マスク未選択', '✦ Criar máscara': '✦ マスクを作成', '✦ Editar máscara': '✦ マスクを編集',
+    'Imagens do mestre': 'マスター画像', '＋ Adicionar imagens': '＋ 画像を追加', 'Adicione árvores, pedras ou qualquer elemento que queira distribuir.': '配置する木、岩、その他の要素を追加します。', 'Intensidade': '密度', 'Tamanho geral': '全体サイズ',
+    'Variação de tamanho': 'サイズのばらつき', 'Intervalo': '範囲', 'Mín.': '最小', 'Máx.': '最大', 'Rotação aleatória': 'ランダム回転', 'Mirror aleatório': 'ランダム反転', 'Slice na máscara': 'マスクで切り抜く', 'Gerar preenchimento': '配置を生成',
+    'Preview e ponto âncora': 'プレビューとアンカー', 'Selecione um ícone': 'アイコンを選択', 'Nome': '名前', 'Tipo': '種類', 'Ícone': 'アイコン', 'Selecione um conjunto': 'セットを選択', 'Galeria': 'ギャラリー', 'Sem galeria': 'ギャラリーなし',
+    '＋ Gerenciar conjuntos': '＋ セットを管理', 'Descrição': '説明', 'Criar como ponto de interesse': '地点として作成', 'Opacidade': '不透明度', '⌖ Posicionar no mapa': '⌖ マップに配置', 'Ainda não posicionado': '未配置',
+    'Layer / tipo de região': '地域レイヤー / 種類', 'Nome da região': '地域名', 'Cor': '色', 'Regiões desenhadas por último removem automaticamente as intersecções das regiões anteriores.': '後から描いた地域は以前の地域との重なりを自動的に削除します。',
+    'A seed mantém o resultado reproduzível.': 'シードにより結果を再現できます。', 'Arraste a camada para definir sua prioridade.': 'レイヤーをドラッグして優先順位を設定します。', 'BIBLIOTECA': 'ライブラリ', 'Conjuntos de imagens': '画像セット',
+    'Reutilize o mesmo conjunto de imagens em diferentes camadas.': '同じ画像セットを複数のレイヤーで再利用できます。', 'Novo conjunto': '新規セット', 'Nenhuma imagem selecionada': '画像未選択', 'Criar conjunto': 'セットを作成',
+    'Renomear': '名前を変更', 'Ocultar': '非表示', 'Exibir': '表示', 'Excluir camada': 'レイヤーを削除', 'Brush': 'ブラシ', 'Offset X': 'Xオフセット', 'Offset Y': 'Yオフセット', 'Seed': 'シード', 'Selecionar imagens': '画像を選択',
+    'Nome do local': '場所の名前', 'História, detalhes e informações do local...': '場所の歴史、詳細、情報...', 'Ex.: Fronteiras políticas': '例：政治的国境', 'Ex.: Reino do Norte': '例：北の王国', 'Ex.: Árvores de pinheiro': '例：松の木',
+  },
+};
+
+const originalNodeText = new WeakMap();
+function translateDocument(root = document.body) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!node.nodeValue.trim()) continue;
+    if (!originalNodeText.has(node)) originalNodeText.set(node, node.nodeValue.trim());
+    const original = originalNodeText.get(node);
+    const translated = state.language === 'pt-BR' ? original : phraseTranslations[state.language]?.[original] || original;
+    const leading = node.nodeValue.match(/^\s*/)[0];
+    const trailing = node.nodeValue.match(/\s*$/)[0];
+    node.nodeValue = `${leading}${translated}${trailing}`;
+  }
+  document.querySelectorAll('[placeholder]').forEach((element) => {
+    element.dataset.originalPlaceholder ||= element.placeholder;
+    element.placeholder = state.language === 'pt-BR' ? element.dataset.originalPlaceholder : phraseTranslations[state.language]?.[element.dataset.originalPlaceholder] || element.dataset.originalPlaceholder;
+  });
+}
+
 function t(key) { return translations[state.language]?.[key] || translations['pt-BR'][key] || key; }
 
 function applyLanguage(language) {
@@ -51,6 +103,7 @@ function applyLanguage(language) {
     $('#createMaskBtn').textContent = layer.mask ? t('editMask') : t('createMask');
     document.querySelector('.upload b').textContent = layer.type === 'image' ? t('uploadImage') : t('uploadMask');
   }
+  translateDocument();
 }
 
 function createLayer(type = 'terrain') {
@@ -66,6 +119,7 @@ function createLayer(type = 'terrain') {
     clip: null,
     bounds: null,
     assets: [],
+    selectedAssetIndex: 0,
     image: null,
     object: type === 'object' ? { name: '', type: 'vila', iconSetId: '', gallerySetId: '', description: '', poi: true, x: null, y: null, scale: 1, opacity: 1, offsetX: 0, offsetY: 0, anchorX: 0.5, anchorY: 1 } : null,
     region: type === 'region' ? { group: 'Regiões', name: `Região ${number}`, color: '#6fa86b', drawnAt: 0 } : null,
@@ -178,7 +232,8 @@ function redraw(includeObjects = true, showSelection = true) {
 }
 
 function drawTerrainPlacement(layer, placement, context) {
-  const asset = layer.assets[placement.assetIndex]?.image || placement.asset;
+  const assetEntry = layer.assets[placement.assetIndex];
+  const asset = assetEntry?.image || placement.asset;
   if (!asset) return;
   const width = asset.naturalWidth * layer.settings.scale * placement.variation;
   const height = asset.naturalHeight * layer.settings.scale * placement.variation;
@@ -186,7 +241,7 @@ function drawTerrainPlacement(layer, placement, context) {
   context.translate(placement.x, placement.y);
   context.rotate(placement.rotation);
   if (placement.mirrored) context.scale(-1, 1);
-  context.drawImage(asset, -width / 2, -height / 2, width, height);
+  context.drawImage(asset, -width * (assetEntry?.anchorX ?? 0.5), -height * (assetEntry?.anchorY ?? 0.5), width, height);
   context.restore();
 }
 
@@ -268,6 +323,7 @@ function renderLayers() {
       group.append(button);
     } else list.append(button);
   }
+  translateDocument(list);
 }
 
 function renderAssets() {
@@ -276,7 +332,7 @@ function renderAssets() {
   grid.replaceChildren();
   layer.assets.forEach((asset, index) => {
     const item = document.createElement('div');
-    item.className = 'asset';
+    item.className = `asset${index === layer.selectedAssetIndex ? ' selected' : ''}`;
     const image = document.createElement('img');
     image.src = asset.image.src;
     image.alt = asset.file.name;
@@ -285,15 +341,50 @@ function renderAssets() {
     remove.ariaLabel = 'Remover';
     remove.onclick = () => {
       layer.assets.splice(index, 1);
+      layer.selectedAssetIndex = Math.max(0, Math.min(layer.selectedAssetIndex, layer.assets.length - 1));
       renderAssets();
+      renderTerrainAnchorPreview(layer);
       updateReadyState();
+    };
+    item.onclick = (event) => {
+      if (event.target === remove) return;
+      layer.selectedAssetIndex = index;
+      renderAssets();
+      renderTerrainAnchorPreview(layer);
     };
     item.append(image, remove);
     grid.append(item);
   });
   if (!layer.assets.length) grid.innerHTML = '<p>Adicione árvores, pedras ou qualquer elemento que queira distribuir.</p>';
   $('#assetCount').textContent = layer.assets.length;
+  renderTerrainAnchorPreview(layer);
+  translateDocument(grid);
 }
+
+function renderTerrainAnchorPreview(layer) {
+  const preview = $('#terrainAnchorPreview');
+  const asset = layer?.type === 'terrain' ? layer.assets[layer.selectedAssetIndex || 0] : null;
+  const image = preview.querySelector('img');
+  image.src = asset?.image.src || '';
+  image.hidden = !asset;
+  preview.querySelector('small').hidden = Boolean(asset);
+  const marker = preview.querySelector('i');
+  marker.hidden = !asset;
+  marker.style.left = `${(asset?.anchorX ?? 0.5) * 100}%`;
+  marker.style.top = `${(asset?.anchorY ?? 0.5) * 100}%`;
+}
+
+$('#terrainAnchorPreview').addEventListener('click', (event) => {
+  const layer = selectedLayer();
+  const asset = layer?.type === 'terrain' ? layer.assets[layer.selectedAssetIndex || 0] : null;
+  if (!asset) return;
+  const rectangle = event.currentTarget.getBoundingClientRect();
+  asset.anchorX = Math.max(0, Math.min(1, (event.clientX - rectangle.left) / rectangle.width));
+  asset.anchorY = Math.max(0, Math.min(1, (event.clientY - rectangle.top) / rectangle.height));
+  renderTerrainAnchorPreview(layer);
+  if (layer.placements.length && layer.settings.slice) generate();
+  else redraw();
+});
 
 function selectLayer(id) {
   state.selectedId = id;
@@ -337,6 +428,7 @@ function selectLayer(id) {
   renderAssets();
   updateReadyState();
   redraw();
+  translateDocument($('.inspector'));
 }
 
 function renderMaskPreview(layer) {
@@ -570,11 +662,12 @@ async function generate() {
         const placement = placements[drawn];
         const width = placement.asset.naturalWidth * layer.settings.scale * placement.variation;
         const height = placement.asset.naturalHeight * layer.settings.scale * placement.variation;
+        const assetEntry = layer.assets[placement.assetIndex];
         outputContext.save();
         outputContext.translate(placement.x, placement.y);
         outputContext.rotate(placement.rotation);
         if (placement.mirrored) outputContext.scale(-1, 1);
-        outputContext.drawImage(placement.asset, -width / 2, -height / 2, width, height);
+        outputContext.drawImage(placement.asset, -width * (assetEntry?.anchorX ?? 0.5), -height * (assetEntry?.anchorY ?? 0.5), width, height);
         outputContext.restore();
       }
       redraw();
@@ -727,13 +820,14 @@ function renderImageSets() {
         return;
       }
       const existing = new Set(layer.assets.map((asset) => asset.image.src));
-      layer.assets.push(...set.assets.filter((asset) => !existing.has(asset.image.src)));
+      layer.assets.push(...set.assets.filter((asset) => !existing.has(asset.image.src)).map((asset) => ({ ...asset })));
       renderAssets(); updateReadyState();
       $('#assetModal').hidden = true;
     };
     list.append(item);
   }
   if (!state.imageSets.length) list.innerHTML = '<div class="set-empty">Nenhum conjunto criado ainda.</div>';
+  translateDocument(list);
 }
 
 function renderEditingSetAssets() {
@@ -1008,7 +1102,7 @@ function downloadFile(name, contents, type) {
 }
 
 function serializeAsset(asset) {
-  return { name: asset.file.name, source: asset.image.src };
+  return { name: asset.file.name, source: asset.image.src, anchorX: asset.anchorX, anchorY: asset.anchorY };
 }
 
 function createProjectData() {
@@ -1018,7 +1112,7 @@ function createProjectData() {
     selectedId: state.selectedId,
     imageSets: state.imageSets.map((set) => ({ id: set.id, name: set.name, assets: set.assets.map(serializeAsset) })),
     layers: state.layers.map((layer) => ({
-      id: layer.id, type: layer.type, name: layer.name, visible: layer.visible,
+      id: layer.id, type: layer.type, name: layer.name, visible: layer.visible, selectedAssetIndex: layer.selectedAssetIndex,
       maskName: layer.maskName, maskSource: layer.mask?.src || null, imageSource: layer.image?.src || null,
       assets: layer.assets.map(serializeAsset), settings: layer.settings, object: layer.object, region: layer.region,
       placements: (layer.placements || []).map(({ x, y, assetIndex, variation, rotation, mirrored }) => ({ x, y, assetIndex, variation, rotation, mirrored })),
@@ -1061,16 +1155,16 @@ $('#projectInput').addEventListener('change', async (event) => {
     if (project.format !== 'teralium-map-project') throw new Error('Formato inválido');
     canvas.width = project.canvas.width; canvas.height = project.canvas.height;
     state.imageSets = await Promise.all(project.imageSets.map(async (set) => ({
-      ...set, assets: await Promise.all(set.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source) }))),
+      ...set, assets: await Promise.all(set.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source), anchorX: asset.anchorX, anchorY: asset.anchorY }))),
     })));
     state.layers = await Promise.all(project.layers.map(async (saved) => {
       const layer = createLayer(saved.type);
-      Object.assign(layer, { id: saved.id, name: saved.name, visible: saved.visible, maskName: saved.maskName, settings: { ...layer.settings, ...saved.settings } });
+      Object.assign(layer, { id: saved.id, name: saved.name, visible: saved.visible, maskName: saved.maskName, selectedAssetIndex: saved.selectedAssetIndex || 0, settings: { ...layer.settings, ...saved.settings } });
       if (saved.object) layer.object = saved.object;
       if (saved.region) layer.region = saved.region;
       if (saved.maskSource) layer.mask = await imageFromSource(saved.maskSource);
       if (saved.imageSource) layer.image = await imageFromSource(saved.imageSource);
-      layer.assets = await Promise.all(saved.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source) })));
+      layer.assets = await Promise.all(saved.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source), anchorX: asset.anchorX, anchorY: asset.anchorY })));
       layer.placements = saved.placements || [];
       if (saved.outputSource) {
         const output = await imageFromSource(saved.outputSource);

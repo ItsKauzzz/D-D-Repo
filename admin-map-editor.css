@@ -75,6 +75,7 @@ canvas { display: block; background: transparent; image-rendering: pixelated; im
 .asset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 10px; }
 .asset-grid p { grid-column: 1 / -1; color: var(--muted); font-size: 10px; line-height: 1.4; }
 .asset { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 7px; background: #242925; }
+.asset.selected { outline: 2px solid var(--accent); outline-offset: 1px; }
 .asset img { width: 100%; height: 100%; object-fit: contain; }
 .asset button { position: absolute; right: 2px; top: 2px; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: #111b; color: white; cursor: pointer; }
 .fields { display: grid; gap: 18px; }
