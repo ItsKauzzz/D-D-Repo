@@ -116,13 +116,16 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .object-anchor-field i { position: absolute; width: 14px; height: 14px; border: 3px solid #fff; border-radius: 50%; background: var(--accent); box-shadow: 0 1px 5px #000; transform: translate(-50%, -50%); pointer-events: none; }
 .object-anchor-field small { position: absolute; color: var(--muted); pointer-events: none; }
 .object-anchor-field output { display: block; margin-top: 6px; color: var(--muted); font-size: 9px; text-align: center; }
+.path-preset-editor { display: grid; gap: 9px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+.path-preset-editor label { display: grid; grid-template-columns: 1fr 80px; align-items: center; }
+.path-preset-editor input { margin-top: 0 !important; }
 .coordinate-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .mask-tools { position: fixed; z-index: 45; left: calc(var(--left) + 18px); top: calc(var(--top) + 50%); transform: translateY(-50%); display: grid; gap: 5px; padding: 6px; border: 1px solid #3c443d; border-radius: 10px; background: #191d1a; box-shadow: 0 10px 28px #000b; }
 .mask-tools[hidden], .brush-size-control[hidden] { display: none; }
 .mask-tools button { width: 34px; height: 34px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
 .mask-tools button:hover, .mask-tools button.active { border-color: #536448; background: #2a3227; color: var(--accent); }
 .mask-tools span { height: 1px; background: var(--line); }
-.brush-size-control { position: fixed; z-index: 45; left: 50%; bottom: 70px; transform: translateX(-50%); display: grid; grid-template-columns: auto 180px 52px; align-items: center; gap: 10px; padding: 7px 12px; border: 1px solid #3c443d; border-radius: 9px; background: #191d1a; box-shadow: 0 8px 25px #000a; color: var(--muted); font-size: 10px; }
+.brush-size-control { position: fixed; z-index: 45; left: 50%; bottom: 70px; transform: translateX(-50%); display: grid; grid-template-columns: auto 180px 52px; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid #3c443d; border-radius: 9px; background: #191d1a; box-shadow: 0 8px 25px #000a; color: var(--muted); font-size: 10px; }
 .brush-size-control input { margin: 0; }
 .brush-size-control output { text-align: right; }
 .inspector-footer { position: fixed; z-index: 12; right: 0; bottom: 0; width: var(--right); padding: 14px 20px; border-top: 1px solid var(--line); background: #171a18; }

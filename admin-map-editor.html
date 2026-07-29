@@ -29,6 +29,7 @@
       <button data-layer-type="image"><span>▧</span><b>Imagem</b></button>
       <button data-layer-type="object"><span>⌖</span><b>Objeto</b></button>
       <button data-layer-type="region"><span>◒</span><b>Região</b></button>
+      <button data-layer-type="path"><span>〰</span><b>Caminhos</b></button>
     </div>
     <div id="layerList" class="layer-list"></div>
     <div class="coming-types">
@@ -130,6 +131,24 @@
         <p class="region-note">Regiões desenhadas por último removem automaticamente as intersecções das regiões anteriores.</p>
       </div>
     </section>
+    <section class="path-control" hidden>
+      <div class="object-form">
+        <label>Nome<input id="pathName" placeholder="Nome do caminho"></label>
+        <label>Descrição<textarea id="pathDescription" rows="5" placeholder="Descrição do caminho..."></textarea></label>
+        <label>Galeria<select id="pathGallerySet"><option value="">Sem galeria</option></select></label>
+        <label class="check-row"><input id="pathShowOnMap" type="checkbox" checked> Mostrar no mapa</label>
+        <label>Preset visual<select id="pathPreset"></select></label>
+        <div class="path-preset-editor">
+          <input id="pathPresetName" placeholder="Nome do preset">
+          <label>Stroke<input id="pathStroke" type="number" min="1" max="100" value="8"></label>
+          <label>Cor<input id="pathColor" type="color" value="#c99b57"></label>
+          <label class="check-row"><input id="pathDashed" type="checkbox"> Tracejado / pontilhado</label>
+          <button id="savePathPreset" type="button" class="position-object">Salvar como preset</button>
+        </div>
+        <button id="drawPath" class="position-object">〰 Desenhar caminho</button>
+        <small id="pathDistance">Distância: 0 km</small>
+      </div>
+    </section>
     <div class="inspector-footer"><button id="generateBtn" disabled>Gerar preenchimento</button><small id="footerHint">A seed mantém o resultado reproduzível.</small></div>
   </aside>
   <div id="maskTools" class="mask-tools" hidden>
@@ -140,7 +159,10 @@
     <button id="finishMask" title="Concluir">✓</button>
     <button id="cancelMask" title="Cancelar">×</button>
   </div>
-  <div id="brushSizeControl" class="brush-size-control" hidden><span>Brush</span><input id="brushSize" type="range" min="2" max="300" value="60"><input id="brushSizeValue" class="value-input" type="number" min="2" max="300" value="60"></div>
+  <div id="brushSizeControl" class="brush-size-control" hidden>
+    <span>Opacidade</span><input id="brushOpacity" type="range" min="0" max="1" step="0.01" value="1"><input id="brushOpacityValue" class="value-input" type="number" min="0" max="100" value="100">
+    <span>Brush</span><input id="brushSize" type="range" min="2" max="300" value="60"><input id="brushSizeValue" class="value-input" type="number" min="2" max="300" value="60">
+  </div>
   <div id="layerContextMenu" class="context-menu" hidden>
     <button data-action="rename">Renomear</button>
     <button data-action="toggle">Ocultar</button>
