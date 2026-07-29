@@ -103,6 +103,7 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .position-object { padding: 9px; border: 1px solid #536348; border-radius: 7px; background: #283123; color: var(--accent); cursor: pointer; }
 .position-object.active { background: var(--accent); color: #17200d; }
 .object-form > small { text-align: center; color: var(--muted); font-size: 9px; }
+.region-note { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .object-visual-controls { padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
 .object-thumbnails { display: flex; min-height: 0; gap: 5px; overflow-x: auto; }
 .object-thumbnails img { width: 46px; height: 46px; flex: 0 0 46px; object-fit: contain; border: 1px solid #353d36; border-radius: 6px; background: #101311; }

@@ -28,11 +28,12 @@
       <button data-layer-type="terrain"><span>⌁</span><b>Terreno</b></button>
       <button data-layer-type="image"><span>▧</span><b>Imagem</b></button>
       <button data-layer-type="object"><span>⌖</span><b>Objeto</b></button>
+      <button data-layer-type="region"><span>◒</span><b>Região</b></button>
     </div>
     <div id="layerList" class="layer-list"></div>
     <div class="coming-types">
       <p>PRÓXIMOS TIPOS</p>
-      <span>Regiões</span><span>Pontos de interesse</span><span>Estradas</span>
+      <span>Pontos de interesse</span><span>Estradas</span>
     </div>
     <div class="help"><b>Navegação</b><p>Arraste o mapa para mover. Use a roda do mouse para aplicar zoom.</p></div>
   </aside>
@@ -54,12 +55,12 @@
       <div><p class="panel-label">INSPECTOR</p><input id="layerName" aria-label="Nome da camada"></div>
       <span id="typeBadge" class="type-badge">Terreno</span>
     </div>
-    <section class="terrain-control image-control">
+    <section class="terrain-control image-control region-control">
       <label class="upload" for="maskInput"><span>＋</span><b>Enviar máscara</b><small>PNG com transparência recomendado</small></label>
       <input id="maskInput" type="file" accept="image/*" hidden>
       <p class="filename" id="maskName">Nenhuma máscara selecionada</p>
-      <button id="createMaskBtn" class="asset-upload terrain-control">✦ Criar máscara</button>
-      <div id="maskPreview" class="mask-preview terrain-control"></div>
+      <button id="createMaskBtn" class="asset-upload terrain-control region-control">✦ Criar máscara</button>
+      <div id="maskPreview" class="mask-preview terrain-control region-control"></div>
     </section>
     <section class="image-control fields" hidden>
       <label>Offset X <input id="imageOffsetXValue" class="value-input" type="number" min="-2000" max="2000" value="0"><input id="imageOffsetX" type="range" min="-2000" max="2000" value="0"></label>
@@ -107,6 +108,13 @@
         <button id="positionObject" class="position-object">⌖ Posicionar no mapa</button>
         <div class="coordinate-row"><label>X<input id="objectX" type="number"></label><label>Y<input id="objectY" type="number"></label></div>
         <small id="objectPosition">Ainda não posicionado</small>
+      </div>
+    </section>
+    <section class="region-control" hidden>
+      <div class="object-form">
+        <label>Nome da região<input id="regionName" placeholder="Ex.: Reino do Norte"></label>
+        <label>Cor<input id="regionColor" type="color" value="#6fa86b"></label>
+        <p class="region-note">Regiões desenhadas por último removem automaticamente as intersecções das regiões anteriores.</p>
       </div>
     </section>
     <div class="inspector-footer"><button id="generateBtn" disabled>Gerar preenchimento</button><small id="footerHint">A seed mantém o resultado reproduzível.</small></div>

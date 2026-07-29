@@ -30,7 +30,7 @@ function createLayer(type = 'terrain') {
   return {
     id: crypto.randomUUID?.() || `${Date.now()}-${number}`,
     type,
-    name: type === 'image' ? `Imagem ${number}` : type === 'object' ? `Objeto ${number}` : (number === 1 ? 'Cobertura vegetal' : `Terreno ${number}`),
+    name: type === 'image' ? `Imagem ${number}` : type === 'object' ? `Objeto ${number}` : type === 'region' ? `Região ${number}` : (number === 1 ? 'Cobertura vegetal' : `Terreno ${number}`),
     visible: true,
     mask: null,
     maskName: '',
@@ -40,6 +40,7 @@ function createLayer(type = 'terrain') {
     assets: [],
     image: null,
     object: type === 'object' ? { name: '', type: 'vila', iconSetId: '', gallerySetId: '', description: '', poi: true, x: null, y: null, scale: 1, opacity: 1, offsetX: 0, offsetY: 0 } : null,
+    region: type === 'region' ? { name: `Região ${number}`, color: '#6fa86b', drawnAt: 0 } : null,
     output: document.createElement('canvas'),
     settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, rotation: true, mirror: true, slice: false, imageOffsetX: 0, imageOffsetY: 0, imageOpacity: 1 },
   };
@@ -151,7 +152,7 @@ function renderLayers() {
   for (const layer of state.layers) {
     const button = document.createElement('button');
     button.className = `layer-card${layer.id === state.selectedId ? ' active' : ''}${layer.visible ? '' : ' is-hidden'}`;
-    const layerMeta = layer.type === 'image' ? ['▧', 'Imagem'] : layer.type === 'object' ? ['⌖', 'Objeto'] : ['⌁', 'Terreno'];
+    const layerMeta = layer.type === 'image' ? ['▧', 'Imagem'] : layer.type === 'object' ? ['⌖', 'Objeto'] : layer.type === 'region' ? ['◒', 'Região'] : ['⌁', 'Terreno'];
     button.innerHTML = `<span class="layer-icon">${layerMeta[0]}</span><div><b></b><small>${layerMeta[1]}</small></div><span class="visibility" title="Alternar visibilidade">◉</span>`;
     button.draggable = true;
     button.dataset.layerId = layer.id;
@@ -236,17 +237,21 @@ function selectLayer(id) {
   $('#imageOffsetXValue').value = layer.settings.imageOffsetX;
   $('#imageOffsetYValue').value = layer.settings.imageOffsetY;
   $('#imageOpacityValue').value = Math.round(layer.settings.imageOpacity * 100);
-  $('#typeBadge').textContent = layer.type === 'image' ? 'Imagem' : layer.type === 'object' ? 'Objeto' : 'Terreno';
-  document.querySelectorAll('.terrain-control, .image-control, .object-control').forEach((control) => {
+  $('#typeBadge').textContent = layer.type === 'image' ? 'Imagem' : layer.type === 'object' ? 'Objeto' : layer.type === 'region' ? 'Região' : 'Terreno';
+  document.querySelectorAll('.terrain-control, .image-control, .object-control, .region-control').forEach((control) => {
     control.hidden = !control.classList.contains(`${layer.type}-control`);
   });
   const upload = document.querySelector('.upload');
   upload.querySelector('b').textContent = layer.type === 'image' ? 'Enviar imagem' : 'Enviar máscara';
-  upload.querySelector('small').textContent = layer.type === 'image' ? 'Background ou elemento visual' : 'PNG com transparência recomendado';
+  upload.querySelector('small').textContent = layer.type === 'image' ? 'Background ou elemento visual' : 'PNG preto com transparência recomendado';
   $('#generateBtn').hidden = layer.type !== 'terrain';
   $('#footerHint').textContent = layer.type === 'terrain' ? 'A seed mantém o resultado reproduzível.' : 'Arraste a camada para definir sua prioridade.';
   if (layer.type === 'object') fillObjectInspector(layer.object);
-  if (layer.type === 'terrain') renderMaskPreview(layer);
+  if (layer.type === 'region') {
+    $('#regionName').value = layer.region.name;
+    $('#regionColor').value = layer.region.color;
+  }
+  if (layer.type === 'terrain' || layer.type === 'region') renderMaskPreview(layer);
   updateOutputs();
   renderLayers();
   renderAssets();
@@ -267,6 +272,22 @@ function renderMaskPreview(layer) {
     $('#maskName').textContent = 'Nenhuma máscara selecionada'; renderMaskPreview(layer); updateReadyState(); redraw();
   };
   card.append(image, name, remove); preview.append(card);
+}
+
+async function applyRegionPriority(activeLayer) {
+  if (!activeLayer.mask) return;
+  activeLayer.region.drawnAt = Date.now();
+  for (const layer of state.layers) {
+    if (layer === activeLayer || layer.type !== 'region' || !layer.mask) continue;
+    const surface = document.createElement('canvas');
+    surface.width = canvas.width; surface.height = canvas.height;
+    const surfaceContext = surface.getContext('2d');
+    surfaceContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
+    surfaceContext.globalCompositeOperation = 'destination-out';
+    surfaceContext.drawImage(activeLayer.mask, 0, 0, canvas.width, canvas.height);
+    layer.mask = await imageFromSource(surface.toDataURL('image/png'));
+    layer.maskPixels = null; layer.clip = null; layer.bounds = null;
+  }
 }
 
 function updateOutputs() {
@@ -382,9 +403,10 @@ async function generate() {
   const { minX, minY, maxX, maxY } = layer.bounds;
   const width = maxX - minX + 1;
   const height = maxY - minY + 1;
-  const averageAssetSize = layer.assets.reduce((sum, asset) => sum + Math.max(asset.image.naturalWidth, asset.image.naturalHeight), 0) / layer.assets.length;
   const averageVariation = layer.settings.sizeVariation ? (layer.settings.sizeMin + layer.settings.sizeMax) / 2 : 1;
-  const footprint = Math.max(8, averageAssetSize * layer.settings.scale * averageVariation);
+  // Density is a property of the mask, never of the amount or dimensions of
+  // images in the set. More images only change which graphic each point uses.
+  const footprint = Math.max(8, 48 * layer.settings.scale * averageVariation);
   const attempts = Math.min(250000, Math.round((width * height / (footprint * footprint)) * layer.settings.density / 1.7));
   const placements = [];
   let iteration = 0;
@@ -505,6 +527,7 @@ $('#maskInput').addEventListener('change', async (event) => {
   stage.style.display = 'block';
   $('#emptyState').style.display = 'none';
   $('#maskName').textContent = file.name;
+  if (layer.type === 'region') await applyRegionPriority(layer);
   renderMaskPreview(layer);
   redraw();
   fit();
@@ -614,6 +637,15 @@ for (const [elementId, property] of Object.entries(objectBindings)) {
     redraw();
   });
 }
+$('#regionName').addEventListener('input', (event) => {
+  const layer = selectedLayer(); if (layer.type !== 'region') return;
+  layer.region.name = event.target.value; layer.name = event.target.value || 'Região';
+  $('#layerName').value = layer.name; renderLayers();
+});
+$('#regionColor').addEventListener('input', (event) => {
+  const layer = selectedLayer(); if (layer.type !== 'region') return;
+  layer.region.color = event.target.value;
+});
 $('#positionObject').onclick = () => {
   state.placingObject = true;
   $('#positionObject').classList.add('active');
@@ -776,6 +808,7 @@ async function closeMaskEditor(save) {
   if (save && layer) {
     layer.mask = await imageFromSource(maskEditCanvas.toDataURL('image/png'));
     layer.maskName = 'Máscara criada no editor'; layer.maskPixels = null; layer.clip = null; layer.bounds = null; layer.output.width = 0;
+    if (layer.type === 'region') await applyRegionPriority(layer);
     $('#maskName').textContent = layer.maskName; renderMaskPreview(layer); updateReadyState(); redraw();
   }
   state.maskEditing = null; maskEditCanvas.style.display = 'none'; $('#maskTools').hidden = true; $('#brushSizeControl').hidden = true;
@@ -840,7 +873,7 @@ $('#saveProjectBtn').onclick = () => {
     layers: state.layers.map((layer) => ({
       id: layer.id, type: layer.type, name: layer.name, visible: layer.visible,
       maskName: layer.maskName, maskSource: layer.mask?.src || null, imageSource: layer.image?.src || null,
-      assets: layer.assets.map(serializeAsset), settings: layer.settings, object: layer.object,
+      assets: layer.assets.map(serializeAsset), settings: layer.settings, object: layer.object, region: layer.region,
       outputSource: layer.output.width ? layer.output.toDataURL('image/png') : null,
     })),
   };
@@ -864,6 +897,7 @@ $('#projectInput').addEventListener('change', async (event) => {
       const layer = createLayer(saved.type);
       Object.assign(layer, { id: saved.id, name: saved.name, visible: saved.visible, maskName: saved.maskName, settings: { ...layer.settings, ...saved.settings } });
       if (saved.object) layer.object = saved.object;
+      if (saved.region) layer.region = saved.region;
       if (saved.maskSource) layer.mask = await imageFromSource(saved.maskSource);
       if (saved.imageSource) layer.image = await imageFromSource(saved.imageSource);
       layer.assets = await Promise.all(saved.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source) })));
@@ -950,16 +984,31 @@ function exportablePois() {
   }).filter((poi) => poi.icon);
 }
 
+function exportableRegions() {
+  return state.layers.filter((layer) => layer.visible && layer.type === 'region' && layer.mask).map((layer) => {
+    const scratch = document.createElement('canvas'); scratch.width = canvas.width; scratch.height = canvas.height;
+    const regionContext = scratch.getContext('2d', { willReadFrequently: true });
+    regionContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
+    const pixels = regionContext.getImageData(0, 0, canvas.width, canvas.height).data;
+    let totalX = 0, totalY = 0, count = 0;
+    for (let y = 0; y < canvas.height; y += 4) for (let x = 0; x < canvas.width; x += 4) {
+      if (pixels[(y * canvas.width + x) * 4 + 3] > 32) { totalX += x; totalY += y; count++; }
+    }
+    return { id: layer.id, name: layer.region.name, color: layer.region.color, mask: layer.mask.src, centerX: count ? totalX / count : canvas.width / 2, centerY: count ? totalY / count : canvas.height / 2 };
+  });
+}
+
 function createMapHtml() {
   redraw(false);
   const image = canvas.toDataURL('image/png');
   redraw(true);
   const pois = JSON.stringify(exportablePois()).replace(/</g, '\\u003c');
+  const regions = JSON.stringify(exportableRegions()).replace(/</g, '\\u003c');
   const types = JSON.stringify(state.poiTypes).replace(/</g, '\\u003c');
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mapa de Teralium</title><style>
-*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#101311;color:#eef2ee;font-family:Arial,sans-serif}.side{position:fixed;z-index:10;inset:0 auto 0 0;width:280px;padding:22px 16px;background:#171a18;border-right:1px solid #303630;overflow:auto}.side h1{font-size:18px;margin:0 0 18px}.side input,.side select{width:100%;padding:10px;margin-bottom:8px;border:1px solid #343b35;border-radius:7px;background:#0f1210;color:#eef2ee}.mode-toggle{width:100%;margin:2px 0 8px;padding:10px;border:1px solid #46513f;border-radius:7px;background:#252d23;color:#b7df72;cursor:pointer}.mode-toggle.active{background:#b7df72;color:#17200d}.poi-list{display:grid;gap:5px;margin-top:12px}.poi-item{padding:10px;border:0;border-radius:7px;background:transparent;color:#eef2ee;text-align:left;cursor:pointer}.poi-item:hover{background:#252b26}.poi-item small{display:block;margin-top:3px;color:#89928b}.view{position:fixed;inset:0 0 0 280px;overflow:hidden;cursor:grab;background-image:linear-gradient(#1b201c 1px,transparent 1px),linear-gradient(90deg,#1b201c 1px,transparent 1px);background-size:24px 24px}.view.dragging{cursor:grabbing}.world{position:absolute;transform-origin:center center;transform-style:preserve-3d}.map{position:absolute;inset:0;user-select:none;-webkit-user-drag:none;image-rendering:pixelated;image-rendering:crisp-edges}.pin{position:absolute;transform:translate(-50%,calc(-48px * var(--scale)));display:grid;justify-items:center;border:0;background:transparent;color:var(--color);cursor:pointer}.pin img{width:calc(48px * var(--scale));height:calc(48px * var(--scale));object-fit:contain;image-rendering:pixelated;image-rendering:crisp-edges}.view.three .pin{transform:translate(-50%,calc(-48px * var(--scale))) rotateZ(calc(var(--yaw) * -1deg)) rotateX(calc(var(--tilt) * -1deg));transform-origin:50% 100%}.pin span{margin-top:3px;color:var(--color);font-weight:700;font-size:14px;white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.pin:hover img{filter:drop-shadow(0 0 2px white) drop-shadow(0 0 5px var(--color))}.pin:hover span{color:#fff}.modal{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:25px;background:#050706d9}.modal[hidden]{display:none}.card{position:relative;width:min(620px,100%);max-height:90vh;overflow:auto;padding:25px;border:1px solid #3b433c;border-radius:14px;background:#191d1a}.close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#aaa;font-size:25px;cursor:pointer}.card h2{margin:0;color:var(--poi-color)}.kind{color:#929b94;font-size:11px}.description{line-height:1.6;white-space:pre-wrap}.gallery{display:flex;gap:8px;overflow:auto;margin-top:20px}.gallery img{width:150px;height:100px;object-fit:cover;border-radius:7px;cursor:zoom-in}.lightbox{z-index:40}.lightbox img{max-width:92vw;max-height:90vh}.empty{color:#7f8881;font-size:12px;padding:10px}.hint{position:fixed;right:16px;bottom:16px;padding:8px;border-radius:7px;background:#171a18cc;color:#999;font-size:11px;pointer-events:none}@media(max-width:700px){.side{width:220px}.view{left:220px}}
-</style></head><body><aside class="side"><h1>Pontos de interesse</h1><input id="search" placeholder="Pesquisar..."><select id="filter"><option value="">Todos os tipos</option></select><button id="mode3d" class="mode-toggle">◈ Perspectiva 3D</button><div id="list" class="poi-list"></div></aside><main id="view" class="view"><div id="world" class="world" style="width:${canvas.width}px;height:${canvas.height}px"><img class="map" src="${image}" alt="Mapa"><div id="pins"></div></div><span class="hint">Arraste para mover • Scroll para zoom</span></main><div id="details" class="modal" hidden><article class="card"><button class="close">×</button><small class="kind"></small><h2></h2><p class="description"></p><div class="gallery"></div></article></div><div id="lightbox" class="modal lightbox" hidden><img alt="Imagem ampliada"></div><script>
-const pois=${pois},types=${types},view=document.querySelector('#view'),world=document.querySelector('#world'),pins=document.querySelector('#pins'),list=document.querySelector('#list'),search=document.querySelector('#search'),filter=document.querySelector('#filter'),details=document.querySelector('#details'),lightbox=document.querySelector('#lightbox'),mode3d=document.querySelector('#mode3d');let zoom=1,x=0,y=0,drag=false,orbit=false,lx=0,ly=0,three=false,yaw=0,tilt=55;function draw(){world.style.transform=three?'translate('+x+'px,'+y+'px) scale('+zoom+') perspective(1200px) rotateX('+tilt+'deg) rotateZ('+yaw+'deg)':'translate('+x+'px,'+y+'px) scale('+zoom+')';world.style.setProperty('--yaw',yaw);world.style.setProperty('--tilt',tilt);view.classList.toggle('three',three)}function center(p){zoom=1;x=view.clientWidth/2-p.x;y=view.clientHeight/2-p.y;draw()}function openPoi(p){details.style.setProperty('--poi-color',p.color);details.querySelector('h2').textContent=p.name;details.querySelector('.kind').textContent=p.typeName;details.querySelector('.description').textContent=p.description||'Sem descrição.';const gallery=details.querySelector('.gallery');gallery.replaceChildren(...p.gallery.map(src=>{const image=new Image();image.src=src;image.onclick=()=>{lightbox.querySelector('img').src=src;lightbox.hidden=false};return image}));details.hidden=false}for(const type of types)filter.add(new Option(type.name,type.id));for(const p of pois){const pin=document.createElement('button');pin.className='pin';pin.style.cssText='left:'+p.x+'px;top:'+p.y+'px;--color:'+p.color+';--scale:'+(p.scale||1)+';opacity:'+(p.opacity??1);pin.innerHTML='<img><span></span>';pin.querySelector('img').src=p.icon;pin.querySelector('span').textContent=p.name;pin.onclick=()=>openPoi(p);pins.append(pin)}function renderList(){const term=search.value.toLowerCase();const shown=pois.filter(p=>(!filter.value||p.type===filter.value)&&p.name.toLowerCase().includes(term));list.replaceChildren(...shown.map(p=>{const b=document.createElement('button');b.className='poi-item';b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=p.name;b.querySelector('b').style.color=p.color;b.querySelector('small').textContent=p.typeName;b.onclick=()=>center(p);return b}));if(!shown.length)list.innerHTML='<div class="empty">Nenhum ponto encontrado.</div>'}search.oninput=renderList;filter.onchange=renderList;renderList();function fit(){zoom=Math.min(view.clientWidth/${canvas.width},view.clientHeight/${canvas.height},.95);x=(view.clientWidth-${canvas.width}*zoom)/2;y=(view.clientHeight-${canvas.height}*zoom)/2;draw()}fit();mode3d.onclick=()=>{three=!three;mode3d.classList.toggle('active',three);mode3d.textContent=three?'◇ Voltar ao mapa 2D':'◈ Perspectiva 3D';draw()};view.oncontextmenu=e=>e.preventDefault();view.onpointerdown=e=>{if(e.target.closest('.pin'))return;if(three&&e.button===2)orbit=true;else if(e.button===0)drag=true;else return;lx=e.clientX;ly=e.clientY;view.classList.add('dragging');view.setPointerCapture(e.pointerId)};view.onpointermove=e=>{if(!drag&&!orbit)return;if(orbit){yaw+=(e.clientX-lx)*.3;tilt=Math.max(20,Math.min(78,tilt-(e.clientY-ly)*.25))}else{x+=e.clientX-lx;y+=e.clientY-ly}lx=e.clientX;ly=e.clientY;draw()};view.onpointerup=()=>{drag=false;orbit=false;view.classList.remove('dragging')};view.onwheel=e=>{e.preventDefault();const r=view.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,old=zoom;zoom=Math.max(.05,Math.min(8,zoom*(e.deltaY<0?1.1:.9)));x=mx-(mx-x)*zoom/old;y=my-(my-y)*zoom/old;draw()};details.querySelector('.close').onclick=()=>details.hidden=true;details.onclick=e=>{if(e.target===details)details.hidden=true};lightbox.onclick=()=>lightbox.hidden=true;
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#101311;color:#eef2ee;font-family:Arial,sans-serif}.side{position:fixed;z-index:10;inset:0 auto 0 0;width:280px;padding:22px 16px;background:#171a18;border-right:1px solid #303630;overflow:auto}.side h1{font-size:18px;margin:0 0 18px}.side input,.side select{width:100%;padding:10px;margin-bottom:8px;border:1px solid #343b35;border-radius:7px;background:#0f1210;color:#eef2ee}.poi-list{display:grid;gap:5px;margin-top:12px}.poi-item{padding:10px;border:0;border-radius:7px;background:transparent;color:#eef2ee;text-align:left;cursor:pointer}.poi-item:hover{background:#252b26}.poi-item small{display:block;margin-top:3px;color:#89928b}.view{position:fixed;inset:0 0 0 280px;overflow:hidden;cursor:grab;background-image:linear-gradient(#1b201c 1px,transparent 1px),linear-gradient(90deg,#1b201c 1px,transparent 1px);background-size:24px 24px}.view.dragging{cursor:grabbing}.world{position:absolute;transform-origin:0 0}.map{position:absolute;inset:0;user-select:none;-webkit-user-drag:none;image-rendering:pixelated}.pin{position:absolute;transform:translate(-50%,calc(-48px * var(--scale)));display:grid;justify-items:center;border:0;background:transparent;color:var(--color);cursor:pointer}.pin img{width:calc(48px * var(--scale));height:calc(48px * var(--scale));object-fit:contain;image-rendering:pixelated}.pin span{margin-top:3px;color:var(--color);font-weight:700;font-size:14px;white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.pin:hover img{filter:drop-shadow(0 0 2px white) drop-shadow(0 0 5px var(--color))}.pin:hover span{color:#fff}.view-tools{position:fixed;z-index:12;left:296px;top:50%;transform:translateY(-50%);display:grid;gap:4px;padding:5px;border:1px solid #3a423b;border-radius:9px;background:#181c19dd;box-shadow:0 8px 25px #0009}.view-tools button{width:38px;height:38px;padding:0;border:0;border-radius:6px;background:transparent;color:#879088;cursor:pointer}.view-tools button.active{background:#30392c;color:#b7df72}.region-layer{position:absolute;inset:0;display:none;pointer-events:none}.region-layer canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}.region-layer .fill,.region-layer .outline{display:none}.region-layer.hovered .outline{display:block}.region-layer span{position:absolute;transform:translate(-50%,-50%);font-weight:700;font-size:18px;color:var(--color);white-space:nowrap;-webkit-text-stroke:1px #111;paint-order:stroke fill}.region-layer.hovered{display:block}.regions-mode .region-layer{display:block;opacity:.5}.regions-mode .region-layer .fill{display:block}.regions-mode .region-layer .outline{display:none}.regions-mode #pins{display:none}.modal{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:25px;background:#050706d9}.modal[hidden]{display:none}.card{position:relative;width:min(620px,100%);max-height:90vh;overflow:auto;padding:25px;border:1px solid #3b433c;border-radius:14px;background:#191d1a}.close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#aaa;font-size:25px;cursor:pointer}.card h2{margin:0;color:var(--poi-color)}.kind{color:#929b94;font-size:11px}.description{line-height:1.6;white-space:pre-wrap}.gallery{display:flex;gap:8px;overflow:auto;margin-top:20px}.gallery img{width:150px;height:100px;object-fit:cover;border-radius:7px;cursor:zoom-in}.lightbox{z-index:40}.lightbox img{max-width:92vw;max-height:90vh}.empty{color:#7f8881;font-size:12px;padding:10px}.hint{position:fixed;right:16px;bottom:16px;padding:8px;border-radius:7px;background:#171a18cc;color:#999;font-size:11px;pointer-events:none}@media(max-width:700px){.side{width:220px}.view{left:220px}.view-tools{left:236px}}
+</style></head><body><aside class="side"><h1>Pontos de interesse</h1><input id="search" placeholder="Pesquisar..."><select id="filter"><option value="">Todos os tipos</option></select><div id="list" class="poi-list"></div></aside><nav class="view-tools" aria-label="Modo do mapa"><button data-mode="objects" class="active" title="Objetos">⌖</button><button data-mode="regions" title="Regiões">◒</button></nav><main id="view" class="view"><div id="world" class="world" style="width:${canvas.width}px;height:${canvas.height}px"><img class="map" src="${image}" alt="Mapa"><div id="regionLayers"></div><div id="pins"></div></div><span class="hint">Arraste para mover • Scroll para zoom</span></main><div id="details" class="modal" hidden><article class="card"><button class="close">×</button><small class="kind"></small><h2></h2><p class="description"></p><div class="gallery"></div></article></div><div id="lightbox" class="modal lightbox" hidden><img alt="Imagem ampliada"></div><script>
+const pois=${pois},regions=${regions},types=${types},view=document.querySelector('#view'),world=document.querySelector('#world'),pins=document.querySelector('#pins'),regionLayers=document.querySelector('#regionLayers'),list=document.querySelector('#list'),search=document.querySelector('#search'),filter=document.querySelector('#filter'),details=document.querySelector('#details'),lightbox=document.querySelector('#lightbox');let zoom=1,x=0,y=0,drag=false,lx=0,ly=0,mode='objects';const regionViews=[];function draw(){world.style.transform='translate('+x+'px,'+y+'px) scale('+zoom+')'}function center(p){zoom=1;x=view.clientWidth/2-p.x;y=view.clientHeight/2-p.y;draw()}function fit(){zoom=Math.min(view.clientWidth/${canvas.width},view.clientHeight/${canvas.height},.95);x=(view.clientWidth-${canvas.width}*zoom)/2;y=(view.clientHeight-${canvas.height}*zoom)/2;draw()}function openPoi(p){details.style.setProperty('--poi-color',p.color);details.querySelector('h2').textContent=p.name;details.querySelector('.kind').textContent=p.typeName;details.querySelector('.description').textContent=p.description||'Sem descrição.';const gallery=details.querySelector('.gallery');gallery.replaceChildren(...p.gallery.map(src=>{const image=new Image();image.src=src;image.onclick=()=>{lightbox.querySelector('img').src=src;lightbox.hidden=false};return image}));details.hidden=false}for(const type of types)filter.add(new Option(type.name,type.id));for(const p of pois){const pin=document.createElement('button');pin.className='pin';pin.style.cssText='left:'+p.x+'px;top:'+p.y+'px;--color:'+p.color+';--scale:'+(p.scale||1)+';opacity:'+(p.opacity??1);pin.innerHTML='<img><span></span>';pin.querySelector('img').src=p.icon;pin.querySelector('span').textContent=p.name;pin.onclick=()=>openPoi(p);pins.append(pin)}for(const region of regions){const layer=document.createElement('div');layer.className='region-layer';layer.style.setProperty('--color',region.color);const surface=document.createElement('canvas'),outline=document.createElement('canvas');surface.className='fill';outline.className='outline';surface.width=outline.width=${canvas.width};surface.height=outline.height=${canvas.height};const label=document.createElement('span');label.textContent=region.name;label.style.cssText='left:'+region.centerX+'px;top:'+region.centerY+'px';layer.append(surface,outline,label);regionLayers.append(layer);const image=new Image();image.onload=()=>{const c=surface.getContext('2d',{willReadFrequently:true});c.drawImage(image,0,0);const alpha=c.getImageData(0,0,surface.width,surface.height).data;c.globalCompositeOperation='source-in';c.fillStyle=region.color;c.fillRect(0,0,surface.width,surface.height);const o=outline.getContext('2d');o.drawImage(surface,-1,0);o.drawImage(surface,1,0);o.drawImage(surface,0,-1);o.drawImage(surface,0,1);o.globalCompositeOperation='destination-out';o.drawImage(image,0,0);regionViews.push({layer,alpha})};image.src=region.mask}function renderList(){const term=search.value.toLowerCase();const shown=pois.filter(p=>(!filter.value||p.type===filter.value)&&p.name.toLowerCase().includes(term));list.replaceChildren(...shown.map(p=>{const b=document.createElement('button');b.className='poi-item';b.innerHTML='<b></b><small></small>';b.querySelector('b').textContent=p.name;b.querySelector('b').style.color=p.color;b.querySelector('small').textContent=p.typeName;b.onclick=()=>center(p);return b}));if(!shown.length)list.innerHTML='<div class="empty">Nenhum ponto encontrado.</div>'}function hoverRegion(e){if(mode!=='objects'||drag)return;const r=view.getBoundingClientRect(),mx=Math.floor((e.clientX-r.left-x)/zoom),my=Math.floor((e.clientY-r.top-y)/zoom);let found=null;if(mx>=0&&my>=0&&mx<${canvas.width}&&my<${canvas.height})for(const item of regionViews)if(item.alpha[(my*${canvas.width}+mx)*4+3]>32)found=item;for(const item of regionViews)item.layer.classList.toggle('hovered',item===found)}document.querySelectorAll('[data-mode]').forEach(button=>button.onclick=()=>{mode=button.dataset.mode;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===button));view.classList.toggle('regions-mode',mode==='regions');for(const item of regionViews)item.layer.classList.remove('hovered')});search.oninput=renderList;filter.onchange=renderList;renderList();fit();addEventListener('resize',fit);view.onpointerdown=e=>{if(e.target.closest('.pin'))return;if(e.button!==0)return;drag=true;lx=e.clientX;ly=e.clientY;view.classList.add('dragging');view.setPointerCapture(e.pointerId)};view.onpointermove=e=>{hoverRegion(e);if(!drag)return;x+=e.clientX-lx;y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;draw()};view.onpointerup=()=>{drag=false;view.classList.remove('dragging')};view.onwheel=e=>{e.preventDefault();const r=view.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,old=zoom;zoom=Math.max(.05,Math.min(8,zoom*(e.deltaY<0?1.1:.9)));x=mx-(mx-x)*zoom/old;y=my-(my-y)*zoom/old;draw()};details.querySelector('.close').onclick=()=>details.hidden=true;details.onclick=e=>{if(e.target===details)details.hidden=true};lightbox.onclick=()=>lightbox.hidden=true;
 <\/script></body></html>`;
 }
 
