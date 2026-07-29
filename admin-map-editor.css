@@ -115,6 +115,7 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .object-anchor-field img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
 .object-anchor-field i { position: absolute; width: 14px; height: 14px; border: 3px solid #fff; border-radius: 50%; background: var(--accent); box-shadow: 0 1px 5px #000; transform: translate(-50%, -50%); pointer-events: none; }
 .object-anchor-field small { position: absolute; color: var(--muted); pointer-events: none; }
+.object-anchor-field output { display: block; margin-top: 6px; color: var(--muted); font-size: 9px; text-align: center; }
 .coordinate-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .mask-tools { position: fixed; z-index: 45; left: calc(var(--left) + 18px); top: calc(var(--top) + 50%); transform: translateY(-50%); display: grid; gap: 5px; padding: 6px; border: 1px solid #3c443d; border-radius: 10px; background: #191d1a; box-shadow: 0 10px 28px #000b; }
 .mask-tools[hidden], .brush-size-control[hidden] { display: none; }

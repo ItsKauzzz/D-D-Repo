@@ -47,7 +47,7 @@ const phraseTranslations = {
     'A seed mantém o resultado reproduzível.': 'The seed keeps the result reproducible.', 'Arraste a camada para definir sua prioridade.': 'Drag the layer to set its priority.', 'BIBLIOTECA': 'LIBRARY', 'Conjuntos de imagens': 'Image sets',
     'Reutilize o mesmo conjunto de imagens em diferentes camadas.': 'Reuse the same image set across different layers.', 'Novo conjunto': 'New set', 'Nenhuma imagem selecionada': 'No image selected', 'Criar conjunto': 'Create set',
     'Renomear': 'Rename', 'Ocultar': 'Hide', 'Exibir': 'Show', 'Excluir camada': 'Delete layer', 'Brush': 'Brush', 'Offset X': 'X offset', 'Offset Y': 'Y offset', 'Seed': 'Seed', 'Selecionar imagens': 'Select images',
-    'Nome do local': 'Location name', 'História, detalhes e informações do local...': 'History, details, and location information...', 'Ex.: Fronteiras políticas': 'E.g. Political borders', 'Ex.: Reino do Norte': 'E.g. Northern Kingdom', 'Ex.: Árvores de pinheiro': 'E.g. Pine trees',
+    'Nome do local': 'Location name', 'História, detalhes e informações do local...': 'History, details, and location information...', 'Ex.: Fronteiras políticas': 'E.g. Political borders', 'Ex.: Reino do Norte': 'E.g. Northern Kingdom', 'Ex.: Árvores de pinheiro': 'E.g. Pine trees', 'Âncora': 'Anchor',
   },
   ja: {
     'CAMADAS': 'レイヤー', 'INSPECTOR': 'インスペクター', 'PRÓXIMOS TIPOS': '近日追加', 'Pontos de interesse': '地点', 'Estradas': '道路', 'Navegação': 'ナビゲーション',
@@ -62,7 +62,7 @@ const phraseTranslations = {
     'A seed mantém o resultado reproduzível.': 'シードにより結果を再現できます。', 'Arraste a camada para definir sua prioridade.': 'レイヤーをドラッグして優先順位を設定します。', 'BIBLIOTECA': 'ライブラリ', 'Conjuntos de imagens': '画像セット',
     'Reutilize o mesmo conjunto de imagens em diferentes camadas.': '同じ画像セットを複数のレイヤーで再利用できます。', 'Novo conjunto': '新規セット', 'Nenhuma imagem selecionada': '画像未選択', 'Criar conjunto': 'セットを作成',
     'Renomear': '名前を変更', 'Ocultar': '非表示', 'Exibir': '表示', 'Excluir camada': 'レイヤーを削除', 'Brush': 'ブラシ', 'Offset X': 'Xオフセット', 'Offset Y': 'Yオフセット', 'Seed': 'シード', 'Selecionar imagens': '画像を選択',
-    'Nome do local': '場所の名前', 'História, detalhes e informações do local...': '場所の歴史、詳細、情報...', 'Ex.: Fronteiras políticas': '例：政治的国境', 'Ex.: Reino do Norte': '例：北の王国', 'Ex.: Árvores de pinheiro': '例：松の木',
+    'Nome do local': '場所の名前', 'História, detalhes e informações do local...': '場所の歴史、詳細、情報...', 'Ex.: Fronteiras políticas': '例：政治的国境', 'Ex.: Reino do Norte': '例：北の王国', 'Ex.: Árvores de pinheiro': '例：松の木', 'Âncora': 'アンカー',
   },
 };
 
@@ -102,6 +102,8 @@ function applyLanguage(language) {
   if (layer) {
     $('#createMaskBtn').textContent = layer.mask ? t('editMask') : t('createMask');
     document.querySelector('.upload b').textContent = layer.type === 'image' ? t('uploadImage') : t('uploadMask');
+    if (layer.type === 'terrain') renderTerrainAnchorPreview(layer);
+    if (layer.type === 'object') renderObjectAnchorPreview(layer.object);
   }
   translateDocument();
 }
@@ -116,6 +118,7 @@ function createLayer(type = 'terrain') {
     mask: null,
     maskName: '',
     maskPixels: null,
+    maskPath: null,
     clip: null,
     bounds: null,
     assets: [],
@@ -207,7 +210,10 @@ function redraw(includeObjects = true, showSelection = true) {
   state.layers.forEach((layer, layerIndex) => {
     if (!layer.visible) return;
     if (layer.type === 'terrain') {
-      if (layer.placements?.length && !layer.settings.slice) layer.placements.forEach((placement) => depthEntries.push({ y: placement.y, layerIndex, layer, placement }));
+      if (layer.placements?.length) {
+        if (layer.settings.slice && layer.mask && !layer.maskPath) prepareMask(layer);
+        layer.placements.forEach((placement) => depthEntries.push({ y: placement.y, layerIndex, layer, placement }));
+      }
       else if (layer.output.width) depthEntries.push({ y: -Infinity, layerIndex, layer });
     }
     if (layer.type === 'object' && layer.object?.x !== null && (includeObjects || !layer.object.poi)) {
@@ -238,6 +244,7 @@ function drawTerrainPlacement(layer, placement, context) {
   const width = asset.naturalWidth * layer.settings.scale * placement.variation;
   const height = asset.naturalHeight * layer.settings.scale * placement.variation;
   context.save();
+  if (layer.settings.slice && layer.maskPath) context.clip(layer.maskPath);
   context.translate(placement.x, placement.y);
   context.rotate(placement.rotation);
   if (placement.mirrored) context.scale(-1, 1);
@@ -370,17 +377,17 @@ function renderTerrainAnchorPreview(layer) {
   preview.querySelector('small').hidden = Boolean(asset);
   const marker = preview.querySelector('i');
   marker.hidden = !asset;
-  marker.style.left = `${(asset?.anchorX ?? 0.5) * 100}%`;
-  marker.style.top = `${(asset?.anchorY ?? 0.5) * 100}%`;
+  positionAnchorMarker(preview, image, marker, asset?.anchorX ?? 0.5, asset?.anchorY ?? 0.5);
+  $('#terrainAnchorCoordinates').textContent = asset ? anchorCoordinateLabel(asset.image, asset.anchorX ?? 0.5, asset.anchorY ?? 0.5) : `${anchorWord()}: —`;
 }
 
 $('#terrainAnchorPreview').addEventListener('click', (event) => {
   const layer = selectedLayer();
   const asset = layer?.type === 'terrain' ? layer.assets[layer.selectedAssetIndex || 0] : null;
   if (!asset) return;
-  const rectangle = event.currentTarget.getBoundingClientRect();
-  asset.anchorX = Math.max(0, Math.min(1, (event.clientX - rectangle.left) / rectangle.width));
-  asset.anchorY = Math.max(0, Math.min(1, (event.clientY - rectangle.top) / rectangle.height));
+  const anchor = roundedAnchorFromClick(event.currentTarget, event.currentTarget.querySelector('img'), event);
+  asset.anchorX = anchor.x;
+  asset.anchorY = anchor.y;
   renderTerrainAnchorPreview(layer);
   if (layer.placements.length && layer.settings.slice) generate();
   else redraw();
@@ -440,7 +447,7 @@ function renderMaskPreview(layer) {
   const name = document.createElement('small'); name.textContent = layer.maskName;
   const remove = document.createElement('button'); remove.textContent = '×'; remove.title = 'Remover máscara';
   remove.onclick = () => {
-    layer.mask = null; layer.maskName = ''; layer.maskPixels = null; layer.clip = null; layer.bounds = null; layer.output.width = 0;
+    layer.mask = null; layer.maskName = ''; layer.maskPixels = null; layer.maskPath = null; layer.clip = null; layer.bounds = null; layer.output.width = 0;
     layer.placements = [];
     $('#maskName').textContent = 'Nenhuma máscara selecionada'; $('#createMaskBtn').textContent = t('createMask'); renderMaskPreview(layer); updateReadyState(); redraw();
   };
@@ -459,7 +466,7 @@ async function applyRegionPriority(activeLayer) {
     surfaceContext.globalCompositeOperation = 'destination-out';
     surfaceContext.drawImage(activeLayer.mask, 0, 0, canvas.width, canvas.height);
     layer.mask = await imageFromSource(surface.toDataURL('image/png'));
-    layer.maskPixels = null; layer.clip = null; layer.bounds = null;
+    layer.maskPixels = null; layer.maskPath = null; layer.clip = null; layer.bounds = null;
   }
 }
 
@@ -513,19 +520,53 @@ function renderObjectAnchorPreview(object) {
   preview.querySelector('small').hidden = Boolean(icon);
   const marker = preview.querySelector('i');
   marker.hidden = !icon;
-  marker.style.left = `${(object.anchorX ?? 0.5) * 100}%`;
-  marker.style.top = `${(object.anchorY ?? 1) * 100}%`;
+  positionAnchorMarker(preview, image, marker, object.anchorX ?? 0.5, object.anchorY ?? 1);
+  $('#objectAnchorCoordinates').textContent = icon ? anchorCoordinateLabel(icon, object.anchorX ?? 0.5, object.anchorY ?? 1) : `${anchorWord()}: —`;
 }
 
 $('#objectAnchorPreview').addEventListener('click', (event) => {
   const layer = selectedLayer();
   if (layer?.type !== 'object' || !event.currentTarget.querySelector('img').src) return;
-  const rectangle = event.currentTarget.getBoundingClientRect();
-  layer.object.anchorX = Math.max(0, Math.min(1, (event.clientX - rectangle.left) / rectangle.width));
-  layer.object.anchorY = Math.max(0, Math.min(1, (event.clientY - rectangle.top) / rectangle.height));
+  const anchor = roundedAnchorFromClick(event.currentTarget, event.currentTarget.querySelector('img'), event);
+  layer.object.anchorX = anchor.x;
+  layer.object.anchorY = anchor.y;
   renderObjectAnchorPreview(layer.object);
   redraw();
 });
+
+function containedImageBox(preview, image) {
+  const style = getComputedStyle(preview);
+  const availableWidth = preview.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  const availableHeight = preview.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+  const scale = Math.min(availableWidth / image.naturalWidth, availableHeight / image.naturalHeight);
+  const width = image.naturalWidth * scale;
+  const height = image.naturalHeight * scale;
+  return { left: (preview.clientWidth - width) / 2, top: (preview.clientHeight - height) / 2, width, height };
+}
+
+function roundedAnchorFromClick(preview, image, event) {
+  const rectangle = preview.getBoundingClientRect();
+  const box = containedImageBox(preview, image);
+  const normalizedX = Math.max(0, Math.min(1, (event.clientX - rectangle.left - box.left) / box.width));
+  const normalizedY = Math.max(0, Math.min(1, (event.clientY - rectangle.top - box.top) / box.height));
+  return {
+    x: Math.round(normalizedX * image.naturalWidth) / image.naturalWidth,
+    y: Math.round(normalizedY * image.naturalHeight) / image.naturalHeight,
+  };
+}
+
+function positionAnchorMarker(preview, image, marker, anchorX, anchorY) {
+  if (!image.naturalWidth || !image.naturalHeight) return;
+  const box = containedImageBox(preview, image);
+  marker.style.left = `${box.left + box.width * anchorX}px`;
+  marker.style.top = `${box.top + box.height * anchorY}px`;
+}
+
+function anchorCoordinateLabel(image, anchorX, anchorY) {
+  return `${anchorWord()}: X ${Math.round(image.naturalWidth * anchorX)}, Y ${Math.round(image.naturalHeight * anchorY)}`;
+}
+
+function anchorWord() { return state.language === 'pt-BR' ? 'Âncora' : phraseTranslations[state.language]?.['Âncora'] || 'Âncora'; }
 
 function renderObjectThumbnails(object) {
   for (const [elementId, setId] of [['objectIconPreview', object.iconSetId], ['objectGalleryPreview', object.gallerySetId]]) {
@@ -573,6 +614,18 @@ function prepareMask(layer) {
     }
   }
   layer.maskPixels = pixels;
+  layer.maskPath = new Path2D();
+  for (let y = 0; y < canvas.height; y++) {
+    let runStart = -1;
+    for (let x = 0; x <= canvas.width; x++) {
+      const inside = x < canvas.width && clipData.data[(y * canvas.width + x) * 4 + 3] > 0;
+      if (inside && runStart < 0) runStart = x;
+      if (!inside && runStart >= 0) {
+        layer.maskPath.rect(runStart, y, x - runStart, 1);
+        runStart = -1;
+      }
+    }
+  }
   layer.clip = document.createElement('canvas');
   layer.clip.width = canvas.width;
   layer.clip.height = canvas.height;
@@ -730,6 +783,7 @@ $('#maskInput').addEventListener('change', async (event) => {
   }
   layer.mask = image;
   layer.maskPixels = null;
+  layer.maskPath = null;
   layer.clip = null;
   layer.bounds = null;
   layer.output.width = 0;
@@ -1042,7 +1096,7 @@ async function closeMaskEditor(save) {
   const layer = state.layers.find((item) => item.id === state.maskEditing);
   if (save && layer) {
     layer.mask = await imageFromSource(maskEditCanvas.toDataURL('image/png'));
-    layer.maskName = 'Máscara criada no editor'; layer.maskPixels = null; layer.clip = null; layer.bounds = null; layer.output.width = 0; layer.placements = [];
+    layer.maskName = 'Máscara criada no editor'; layer.maskPixels = null; layer.maskPath = null; layer.clip = null; layer.bounds = null; layer.output.width = 0; layer.placements = [];
     if (layer.type === 'region') await applyRegionPriority(layer);
     $('#maskName').textContent = layer.maskName; $('#createMaskBtn').textContent = t('editMask'); renderMaskPreview(layer); updateReadyState(); redraw();
   }
