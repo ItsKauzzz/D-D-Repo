@@ -133,6 +133,13 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .description-page-editor { display: grid; align-content: start; gap: 12px; }
 .description-page-card { display: grid; gap: 8px; padding: 13px; border: 1px solid #353d36; border-radius: 9px; background: #111512; }
 .description-page-card input, .description-page-card textarea { width: 100%; padding: 9px; border: 1px solid #363d37; border-radius: 6px; background: #0d100e; color: var(--text); }
+.description-content-editor { display: grid; gap: 5px; }
+.description-mode-toolbar { display: flex; justify-content: flex-end; gap: 4px; }
+.description-mode-toolbar button { min-width: 30px; padding: 4px 7px; border: 1px solid transparent; border-radius: 5px; background: #202521; color: var(--muted); cursor: pointer; }
+.description-mode-toolbar button.active { border-color: var(--accent); color: var(--accent); }
+.description-visual-editor { min-height: 190px; padding: 10px; overflow-y: auto; border: 1px solid #363d37; border-radius: 6px; outline: 0; background: #0d100e; color: var(--text); line-height: 1.55; }
+.description-visual-editor:focus { border-color: var(--accent); }
+.description-html-editor { min-height: 190px; resize: vertical; font-family: monospace; }
 .description-page-images { display: flex; gap: 6px; overflow-x: auto; }
 .description-page-images img { width: 90px; height: 65px; object-fit: cover; border-radius: 6px; }
 .description-editor-actions { display: flex; justify-content: flex-end; gap: 8px; }
