@@ -45,7 +45,7 @@ Os dois painéis laterais são fixos e possuem scroll próprio. Assim, navegar p
 18. Durante a pintura da máscara, o botão esquerdo pinta/apaga e o botão direito assume o pan; confirmar rasteriza o desenho como PNG reutilizável da camada.
 19. Objetos possuem escala, opacidade e offset próprios, independentes dos controles procedurais de Terreno.
 20. A pintura de máscara mantém histórico local para `Ctrl+Z` e mostra o raio exato do brush junto ao cursor.
-21. Ícones usam amostragem nearest-neighbor para preservar pixels e bordas em qualquer zoom.
+21. Ícones, mapas e contornos usam interpolação linear para manter bordas suaves em qualquer zoom.
 22. A intensidade de Terreno define a quantidade total de pontos; aumentar o conjunto apenas alterna os gráficos usados nesses mesmos pontos.
 23. Regiões usam máscaras exclusivas: a região desenhada mais recentemente remove sua intersecção das anteriores.
 24. O visualizador alterna entre Objetos e Regiões; no primeiro, regiões aparecem no hover, e no segundo formam um overview colorido a 50%.
