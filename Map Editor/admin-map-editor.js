@@ -144,6 +144,8 @@ document.addEventListener('click', (event) => {
 const closeAppMenus = () => document.querySelectorAll('.app-menu-dropdown').forEach((menu) => { menu.hidden = true; menu.previousElementSibling.classList.remove('active'); });
 $('#menuManagePoiTypes').onclick = () => { closeAppMenus(); $('#managePoiTypes').click(); };
 $('#menuManageSets').onclick = () => { closeAppMenus(); $('#manageObjectSets').click(); };
+$('#menuImportSets').onclick = () => { closeAppMenus(); $('#setPackageInput').click(); };
+$('#menuExportSets').onclick = () => { closeAppMenus(); openExportSetsModal(); };
 $('#menuExportProject').onclick = () => { closeAppMenus(); $('#exportBtn').click(); };
 $('#menuExportMap').onclick = () => { closeAppMenus(); $('#exportMapBtn').click(); };
 $('#menuExportPng').onclick = () => { closeAppMenus(); redraw(true, false); downloadFile('mapa-render-final.png', dataUrlBytes(canvas.toDataURL('image/png')), 'image/png'); redraw(); };
@@ -1386,6 +1388,90 @@ function renderEditingSetAssets() {
     item.append(image, remove); return item;
   }));
 }
+
+const SET_PACKAGE_FORMAT = 'atlasmith-image-sets';
+
+function selectedExportSetIds() {
+  return [...document.querySelectorAll('#exportSetList input:checked')].map((input) => input.value);
+}
+
+function updateExportSetsButton() {
+  $('#confirmExportSets').disabled = !selectedExportSetIds().length;
+}
+
+function renderExportSetList() {
+  const list = $('#exportSetList');
+  list.replaceChildren(...state.imageSets.map((set) => {
+    const label = document.createElement('label'); label.className = 'export-set-option';
+    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = set.id;
+    const name = document.createElement('b'); name.textContent = set.name;
+    const count = document.createElement('small'); count.textContent = `${set.assets.length} imagem(ns)`;
+    checkbox.onchange = updateExportSetsButton;
+    label.append(checkbox, name, count); return label;
+  }));
+  if (!state.imageSets.length) list.innerHTML = '<div class="set-empty">Nenhum conjunto disponível para exportar.</div>';
+  updateExportSetsButton();
+}
+
+function openExportSetsModal() {
+  renderExportSetList();
+  $('#exportSetsModal').hidden = false;
+}
+
+async function portableAssetSource(asset) {
+  if (asset.image.src.startsWith('data:')) return asset.image.src;
+  if (!asset.image.complete) await new Promise((resolve, reject) => { asset.image.addEventListener('load', resolve, { once: true }); asset.image.addEventListener('error', reject, { once: true }); });
+  const width = asset.image.naturalWidth, height = asset.image.naturalHeight;
+  if (!width || !height) throw new Error(`Não foi possível carregar ${asset.file.name}`);
+  const portableCanvas = document.createElement('canvas'); portableCanvas.width = width; portableCanvas.height = height;
+  portableCanvas.getContext('2d').drawImage(asset.image, 0, 0);
+  return portableCanvas.toDataURL('image/png');
+}
+
+async function exportImageSets(setIds) {
+  const selected = state.imageSets.filter((set) => setIds.includes(set.id));
+  const sets = await Promise.all(selected.map(async (set) => ({
+    id: set.id,
+    name: set.name,
+    assets: await Promise.all(set.assets.map(async (asset) => ({ ...serializeAsset(asset), source: await portableAssetSource(asset) }))),
+  })));
+  const packageData = { format: SET_PACKAGE_FORMAT, version: 1, exportedAt: new Date().toISOString(), sets };
+  downloadFile('atlasmith-conjuntos.atlasmith-sets', JSON.stringify(packageData, null, 2), 'application/json');
+}
+
+$('#selectAllExportSets').onclick = () => { document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = true; }); updateExportSetsButton(); };
+$('#clearExportSets').onclick = () => { document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = false; }); updateExportSetsButton(); };
+$('#closeExportSets').onclick = () => { $('#exportSetsModal').hidden = true; };
+$('#exportSetsModal').addEventListener('click', (event) => { if (event.target === $('#exportSetsModal')) $('#exportSetsModal').hidden = true; });
+$('#confirmExportSets').onclick = async () => {
+  const button = $('#confirmExportSets'); button.disabled = true; button.textContent = 'Preparando…';
+  try { await exportImageSets(selectedExportSetIds()); $('#exportSetsModal').hidden = true; $('#saveState').textContent = 'Conjuntos exportados'; }
+  catch (error) { window.alert(`Não foi possível exportar: ${error.message}`); }
+  finally { button.textContent = 'Exportar selecionados'; updateExportSetsButton(); }
+};
+
+$('#setPackageInput').addEventListener('change', async (event) => {
+  const file = event.target.files[0]; if (!file) return;
+  try {
+    const packageData = JSON.parse(await file.text());
+    if (packageData.format !== SET_PACKAGE_FORMAT || packageData.version !== 1 || !Array.isArray(packageData.sets)) throw new Error('Pacote de conjuntos inválido ou incompatível');
+    const importedSets = await Promise.all(packageData.sets.map(async (set) => {
+      if (!set.id || !set.name || !Array.isArray(set.assets) || !set.assets.length || set.assets.some((asset) => typeof asset.source !== 'string' || !asset.source.startsWith('data:image/'))) throw new Error('Um conjunto do pacote está incompleto');
+      return {
+        id: String(set.id), name: String(set.name),
+        assets: await Promise.all(set.assets.map(async (asset) => ({ file: { name: String(asset.name || 'imagem.png') }, image: await imageFromSource(asset.source), anchorX: asset.anchorX ?? 0.5, anchorY: asset.anchorY ?? 0.5 }))),
+      };
+    }));
+    for (const imported of importedSets) {
+      const existingIndex = state.imageSets.findIndex((set) => set.id === imported.id);
+      if (existingIndex >= 0) state.imageSets[existingIndex] = imported;
+      else state.imageSets.push(imported);
+    }
+    populateObjectOptions(); renderImageSets();
+    $('#saveState').textContent = `${importedSets.length} conjunto(s) importado(s)`;
+  } catch (error) { window.alert(`Não foi possível importar: ${error.message}`); }
+  finally { event.target.value = ''; }
+});
 
 const objectBindings = {
   objectName: 'name', objectType: 'type', objectIconSet: 'iconSetId',

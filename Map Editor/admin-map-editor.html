@@ -3,23 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Map editor • Admin tools</title>
+  <title>Atlasmith</title>
   <link rel="stylesheet" href="admin-map-editor.css">
 </head>
 <body>
   <header class="topbar">
-    <a href="admin-tools.html" aria-label="Voltar">←</a>
-    <strong>Map editor</strong>
-    <span id="saveState">Pronto</span>
+    <a class="home-action" href="admin-tools.html" aria-label="Home">⌂ <span>Home</span></a>
     <div class="app-menu"><button type="button" class="app-menu-trigger">File</button><div class="app-menu-dropdown" hidden>
       <button id="menuOpenProject" type="button">Abrir</button><button id="menuSaveProject" type="button">Salvar</button><button id="menuSaveAsProject" type="button">Salvar como</button>
       <hr><button id="menuExportPng" type="button">Exportar como PNG</button><button id="menuExportProject" type="button">Exportar projeto completo</button><button id="menuExportMap" type="button">Exportar mapa</button>
     </div></div>
     <div class="app-menu"><button type="button" class="app-menu-trigger">Manage</button><div class="app-menu-dropdown" hidden>
       <button id="menuManagePoiTypes" type="button">Tipos de objeto</button><button id="menuManageSets" type="button">Conjuntos de imagens</button>
+      <hr><button id="menuImportSets" type="button">Importar conjuntos</button><button id="menuExportSets" type="button">Exportar conjuntos</button>
     </div></div>
+    <strong class="app-name">Atlasmith</strong>
+    <span id="saveState">Pronto</span>
     <button id="openProjectBtn" class="secondary-action legacy-top-action" hidden>Abrir projeto</button>
     <input id="projectInput" type="file" accept=".json,.teralium,.zip" hidden>
+    <input id="setPackageInput" type="file" accept=".json,.atlasmith-sets" hidden>
     <button id="saveProjectBtn" class="secondary-action legacy-top-action" hidden>Salvar projeto</button>
     <button id="exportBtn" class="legacy-top-action" hidden>Exportar projeto</button>
     <button id="exportMapBtn" class="legacy-top-action" hidden>Exportar mapa</button>
@@ -261,6 +263,15 @@
       <div class="modal-head"><div><p class="panel-label">EDITOR</p><h2 id="descriptionEditorTitle">Descrição detalhada</h2></div><button id="closeDescriptionEditor" aria-label="Fechar">×</button></div>
       <div class="description-editor-layout"><nav id="descriptionEditorPages" class="description-editor-pages"></nav><div id="descriptionPageEditor" class="description-page-editor"></div></div>
       <div class="description-editor-actions"><button id="addDescriptionPage" class="position-object">＋ Adicionar página</button><button id="saveDetailedDescription" class="position-object">Salvar descrição</button></div>
+    </div>
+  </div>
+  <div id="exportSetsModal" class="modal-backdrop" hidden>
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="exportSetsTitle">
+      <div class="modal-head"><div><p class="panel-label">BIBLIOTECA</p><h2 id="exportSetsTitle">Exportar conjuntos</h2></div><button id="closeExportSets" aria-label="Fechar">×</button></div>
+      <p class="modal-copy">Selecione os conjuntos que deseja compartilhar em um pacote portátil.</p>
+      <div class="export-set-actions"><button id="selectAllExportSets" type="button">Selecionar todos</button><button id="clearExportSets" type="button">Limpar</button></div>
+      <div id="exportSetList" class="export-set-list"></div>
+      <button id="confirmExportSets" type="button" class="position-object" disabled>Exportar selecionados</button>
     </div>
   </div>
   <div id="assetModal" class="modal-backdrop" hidden>

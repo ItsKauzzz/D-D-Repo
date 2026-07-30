@@ -2,7 +2,7 @@
 
 ## Map editor (Admin tools)
 
-O projeto do editor administrativo fica isolado em `Map Editor/`. Abra `Map Editor/admin-tools.html` para acessar as ferramentas. O editor inclui conjuntos predefinidos, agrupados pela nomenclatura dos arquivos de `Map Editor/Assets/Icons`, e brushes de terreno fornecidos em `Map Editor/Assets/Brushes`.
+O **Atlasmith**, editor administrativo de mapas, fica isolado em `Map Editor/`. Abra `Map Editor/admin-tools.html` para acessar as ferramentas. O editor inclui conjuntos predefinidos, agrupados pela nomenclatura dos arquivos de `Map Editor/Assets/Icons`, e brushes de terreno fornecidos em `Map Editor/Assets/Brushes`. Pelo menu **Manage**, conjuntos podem ser importados ou exportados em pacotes portáteis `.atlasmith-sets`.
 
 ## Compatibilidade futura com Electron
 
