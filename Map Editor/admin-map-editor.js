@@ -46,7 +46,7 @@ const state = {
       bundled: true,
       assets: fileNames.map((fileName) => {
         const image = new Image();
-        image.src = `Assets/Icons/${fileName}`;
+        image.src = window.BUNDLED_ICON_DATA?.[fileName] || `Assets/Icons/${fileName}`;
         return { file: { name: fileName }, image, anchorX: 0.5, anchorY: 0.5 };
       }),
     })),
