@@ -28,6 +28,10 @@
     <button id="previewMapBtn" class="icon-action" title="Pré-visualizar mapa" aria-label="Pré-visualizar mapa">👁</button>
     <button id="projectSettingsBtn" class="icon-action" title="Configurações do projeto" aria-label="Configurações do projeto">⚙</button>
   </header>
+  <div id="taskProgress" class="task-progress" hidden role="status" aria-live="polite">
+    <div><span id="taskProgressLabel">Processando…</span><strong id="taskProgressPercent">0%</strong></div>
+    <progress id="taskProgressBar" max="100" value="0"></progress>
+  </div>
 
   <aside class="sidebar left-panel">
     <div class="layers-heading">

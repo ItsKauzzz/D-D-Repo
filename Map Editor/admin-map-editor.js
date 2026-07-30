@@ -5,6 +5,24 @@ const stage = document.querySelector('#stage');
 const $ = (selector) => document.querySelector(selector);
 document.addEventListener('contextmenu', (event) => event.preventDefault());
 
+let progressDepth = 0;
+function showTaskProgress(label, percent = 0) {
+  progressDepth++;
+  updateTaskProgress(label, percent);
+  $('#taskProgress').hidden = false;
+}
+function updateTaskProgress(label, percent) {
+  const value = Math.max(0, Math.min(100, Math.round(percent)));
+  $('#taskProgressLabel').textContent = label;
+  $('#taskProgressPercent').textContent = `${value}%`;
+  $('#taskProgressBar').value = value;
+}
+function hideTaskProgress() {
+  progressDepth = Math.max(0, progressDepth - 1);
+  if (!progressDepth) $('#taskProgress').hidden = true;
+}
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+
 const bundledIconFiles = ["anchor_1.png", "anchor_2.png", "architecture_1.png", "beacon_1.png", "book_1.png", "bridge_1.png", "bridge_2.png", "bush_1.png", "bush_2.png", "cactus_1.png", "cactus_2.png", "camp_1.png", "camp_2.png", "camp_3.png", "camp_4.png", "castle.png", "castle_2.png", "castle_3.png", "castle_4.png", "castle_8.png", "cave_1.png", "cave_2.png", "cave_3.png", "chest.png", "chest_1.png", "church_1.png", "church_2.png", "coins_1.png", "crystal_1.png", "farm_1.png", "farm_2.png", "farm_3.png", "farm_4.png", "farms_1.png", "flag_1.png", "fortress_1.png", "fountain_1.png", "gate_1.png", "graveyard_1.png", "hot_springs_1.png", "house_1.png", "house_2.png", "house_3.png", "house_4.png", "house_5.png", "house_6.png", "house_7.png", "house_8.png", "island_1.png", "kraken_1.png", "log_1.png", "mannor_1.png", "map_1.png", "market_1.png", "mill_1.png", "mine_1.png", "mine_2.png", "mine_3.png", "monastery_1.png", "monastery_2.png", "monolith_1.png", "monolith_2.png", "mountain_2.png", "mountain_3.png", "mountain_4.png", "mountain_5.png", "mountain_8.png", "mountain_9.png", "port_1.png", "portal_1.png", "portal_2.png", "pound_1.png", "pound_2.png", "rocks_1.png", "rocks_2.png", "rocks_3.png", "rocks_4.png", "rocks_5.png", "rocks_6.png", "rocks_7.png", "rocks_8.png", "rocks_9.png", "rune_1.png", "rune_2.png", "ship_1.png", "shipwreck_1.png", "shop_1.png", "shop_2.png", "sign_1.png", "skulls_1.png", "small_castle_1.png", "stadium_1.png", "statue_1.png", "swamp.png", "tower_1.png", "tower_2.png", "tower_3.png", "tower_4.png", "tower_5.png", "tower_6.png", "tree_1.png", "tree_10.png", "tree_2.png", "tree_3.png", "tree_4.png", "tree_5.png", "tree_6.png", "tree_7.png", "tree_8.png", "tree_9.png", "village_1.png", "village_2.png", "vulcano_1.png", "waterfall_1.png", "well_1.png", "windmill_1.png", "windmill_2.png", "windmill_3.png", "windmill_4.png"];
 
 const state = {
@@ -148,7 +166,11 @@ $('#menuImportSets').onclick = () => { closeAppMenus(); $('#setPackageInput').cl
 $('#menuExportSets').onclick = () => { closeAppMenus(); openExportSetsModal(); };
 $('#menuExportProject').onclick = () => { closeAppMenus(); $('#exportBtn').click(); };
 $('#menuExportMap').onclick = () => { closeAppMenus(); $('#exportMapBtn').click(); };
-$('#menuExportPng').onclick = () => { closeAppMenus(); redraw(true, false); downloadFile('mapa-render-final.png', dataUrlBytes(canvas.toDataURL('image/png')), 'image/png'); redraw(); };
+$('#menuExportPng').onclick = async () => {
+  closeAppMenus(); showTaskProgress('Mesclando chunks e exportando PNG', 0);
+  try { redraw(true, false); await nextFrame(); updateTaskProgress('Codificando PNG final', 55); downloadFile('mapa-render-final.png', await canvasChunkBlob(canvas), 'image/png'); updateTaskProgress('PNG exportado', 100); }
+  finally { redraw(); hideTaskProgress(); }
+};
 $('#menuOpenProject').onclick = async () => {
   closeAppMenus();
   if (!window.showOpenFilePicker) { $('#openProjectBtn').click(); return; }
@@ -160,13 +182,16 @@ $('#menuOpenProject').onclick = async () => {
   } catch (error) { if (error.name !== 'AbortError') window.alert(`Não foi possível abrir: ${error.message}`); }
 };
 async function saveProjectToHandle(saveAs = false) {
+  showTaskProgress('Salvando projeto', 0);
   try {
     let handle = saveAs ? null : state.projectFileHandle;
     if (!handle && window.showSaveFilePicker) handle = await window.showSaveFilePicker({ suggestedName: 'projeto-teralium.json', types: [{ description: 'Projeto Teralium', accept: { 'application/json': ['.json', '.teralium'] } }] });
     if (!handle) { $('#saveProjectBtn').click(); return; }
-    const writable = await handle.createWritable(); await writable.write(JSON.stringify(createProjectData())); await writable.close();
+    await maskChunkSaveChain; updateTaskProgress('Serializando projeto', 35); await nextFrame();
+    const writable = await handle.createWritable(); await writable.write(JSON.stringify(createProjectData())); updateTaskProgress('Gravando projeto', 80); await writable.close();
     state.projectFileHandle = handle; $('#saveState').textContent = 'Projeto salvo';
   } catch (error) { if (error.name !== 'AbortError') window.alert(`Não foi possível salvar: ${error.message}`); }
+  finally { hideTaskProgress(); }
 }
 $('#menuSaveProject').onclick = () => { closeAppMenus(); saveProjectToHandle(false); };
 $('#menuSaveAsProject').onclick = () => { closeAppMenus(); saveProjectToHandle(true); };
@@ -613,7 +638,7 @@ function renderMaskPreview(layer) {
   preview.replaceChildren();
   if (!layer.mask) return;
   const card = document.createElement('div'); card.className = 'mask-card';
-  const image = new Image(); image.src = layer.mask.src; image.alt = layer.maskName;
+  const image = new Image(); image.src = layer.maskExportSource || layer.mask.src || layer.maskBaseSource || layer.maskChunks?.values().next().value?.source || ''; image.alt = layer.maskName;
   const name = document.createElement('small'); name.textContent = layer.maskName;
   const remove = document.createElement('button'); remove.textContent = '×'; remove.title = 'Remover máscara';
   remove.onclick = () => {
@@ -629,7 +654,7 @@ function renderGroundMaskPreview(layer) {
   preview.replaceChildren();
   if (!layer?.heightMap) return;
   const card = document.createElement('div'); card.className = 'mask-card';
-  const image = new Image(); image.src = layer.heightMap.src; image.alt = `Máscara original de ${layer.name}`;
+  const image = new Image(); image.src = layer.heightMapExportSource || layer.heightMap.src || layer.heightMapBaseSource || layer.heightChunks?.values().next().value?.source || ''; image.alt = `Máscara original de ${layer.name}`;
   const label = document.createElement('small'); label.textContent = 'Máscara original • preto e branco';
   card.append(image, label); preview.append(card);
 }
@@ -1067,6 +1092,7 @@ async function generate(layer = selectedLayer()) {
   const token = ++state.generationToken;
   $('#saveState').textContent = 'Calculando…';
   $('#generateBtn').disabled = true;
+  showTaskProgress('Calculando distribuição do terreno', 0);
   layer.output.width = canvas.width;
   layer.output.height = canvas.height;
   layer.placements = [];
@@ -1128,6 +1154,7 @@ async function generate(layer = selectedLayer()) {
           mirrored: layer.settings.mirror && random() > 0.5,
         });
       }
+      updateTaskProgress('Calculando distribuição do terreno', attempts ? iteration / attempts * 55 : 55);
       if (iteration < attempts) requestAnimationFrame(calculateBatch);
       else resolve();
     }
@@ -1155,6 +1182,7 @@ async function generate(layer = selectedLayer()) {
         outputContext.restore();
       }
       redraw();
+      updateTaskProgress('Renderizando terreno', placements.length ? 55 + drawn / placements.length * 45 : 100);
       if (drawn < placements.length) requestAnimationFrame(drawBatch);
       else resolve();
     }
@@ -1173,6 +1201,7 @@ async function generate(layer = selectedLayer()) {
     $('#saveState').textContent = 'Atualizado';
     updateReadyState();
   }
+  hideTaskProgress();
 }
 
 $('#addLayer').onclick = () => {
@@ -1655,12 +1684,46 @@ let maskPanX = 0;
 let maskPanY = 0;
 let maskPaintPointerId = null;
 let maskHistory = [];
+const MASK_CHUNK_SIZE = 512;
+let strokeDirtyChunks = new Set();
+let strokeChunkSnapshots = new Map();
+let maskChunkSaveChain = Promise.resolve();
 let lastTerrainPaintPoint = null;
 let lastTerrainHeightLevel = '';
 let heightLevelPopupTimer = 0;
 let brushRepetitionTimer = 0;
 let lastMaskPointerEvent = null;
 const brushCursor = $('#brushCursor');
+
+function maskChunkBounds(key) {
+  const [column, row] = key.split(':').map(Number);
+  const x = column * MASK_CHUNK_SIZE, y = row * MASK_CHUNK_SIZE;
+  return { key, x, y, width: Math.min(MASK_CHUNK_SIZE, canvas.width - x), height: Math.min(MASK_CHUNK_SIZE, canvas.height - y) };
+}
+
+function markMaskChunksDirty(x, y, width, height) {
+  const left = Math.max(0, Math.floor(x)), top = Math.max(0, Math.floor(y));
+  const right = Math.min(canvas.width - 1, Math.ceil(x + width) - 1), bottom = Math.min(canvas.height - 1, Math.ceil(y + height) - 1);
+  if (right < left || bottom < top) return;
+  for (let row = Math.floor(top / MASK_CHUNK_SIZE); row <= Math.floor(bottom / MASK_CHUNK_SIZE); row++) for (let column = Math.floor(left / MASK_CHUNK_SIZE); column <= Math.floor(right / MASK_CHUNK_SIZE); column++) {
+    const key = `${column}:${row}`;
+    if (!strokeChunkSnapshots.has(key)) {
+      const bounds = maskChunkBounds(key);
+      strokeChunkSnapshots.set(key, { ...bounds, pixels: maskEditContext.getImageData(bounds.x, bounds.y, bounds.width, bounds.height) });
+    }
+    strokeDirtyChunks.add(key);
+  }
+}
+
+function canvasChunkBlob(chunkCanvas) {
+  return new Promise((resolve, reject) => chunkCanvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Não foi possível salvar o chunk')), 'image/png'));
+}
+
+function blobDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob);
+  });
+}
 
 function showTerrainHeightLevel(value, force = false) {
   if (!state.terrainHeightEditing) return;
@@ -1945,33 +2008,66 @@ let maskCommitTimer = 0;
 let maskCommitRevision = 0;
 function scheduleMaskCommit() {
   clearTimeout(maskCommitTimer);
-  maskCommitTimer = setTimeout(() => commitMaskEdits(), 180);
+  maskCommitTimer = setTimeout(() => maskDrawing ? scheduleMaskCommit() : commitMaskEdits(), 180);
 }
 
 async function commitMaskEdits() {
   clearTimeout(maskCommitTimer); maskCommitTimer = 0;
   const layer = state.layers.find((item) => item.id === state.maskEditing);
-  if (!layer) return;
+  if (!layer || !strokeDirtyChunks.size) return maskChunkSaveChain;
   const revision = ++maskCommitRevision;
-  const source = maskEditCanvas.toDataURL('image/png');
-  const image = await imageFromSource(source);
-  if (revision !== maskCommitRevision) return;
-  if (state.terrainHeightEditing) {
-    layer.heightMap = image; renderTerrainHeight(layer, maskEditCanvas);
-    $('#saveState').textContent = 'Terreno atualizado automaticamente'; return;
+  const heightMode = Boolean(state.terrainHeightEditing);
+  const keys = [...strokeDirtyChunks];
+  strokeDirtyChunks = new Set();
+  const captured = keys.map((key) => {
+    const bounds = maskChunkBounds(key);
+    return { ...bounds, pixels: maskEditContext.getImageData(bounds.x, bounds.y, bounds.width, bounds.height) };
+  });
+  const targetProperty = heightMode ? 'heightMap' : 'mask';
+  const chunksProperty = heightMode ? 'heightChunks' : 'maskChunks';
+  if (!(layer[targetProperty] instanceof HTMLCanvasElement)) {
+    const merged = document.createElement('canvas'); merged.width = canvas.width; merged.height = canvas.height;
+    const mergedContext = merged.getContext('2d');
+    if (layer[targetProperty]) {
+      layer[`${targetProperty}BaseSource`] = layer[targetProperty].src || null;
+      mergedContext.drawImage(layer[targetProperty], 0, 0, canvas.width, canvas.height);
+    } else { mergedContext.fillStyle = '#fff'; mergedContext.fillRect(0, 0, canvas.width, canvas.height); }
+    layer[targetProperty] = merged;
   }
-  layer.mask = image; layer.maskName = 'Máscara criada no editor';
+  const mergedContext = layer[targetProperty].getContext('2d');
+  captured.forEach((chunk) => mergedContext.putImageData(chunk.pixels, chunk.x, chunk.y));
+  layer[chunksProperty] ||= new Map();
   layer.maskPixels = null; layer.maskPath = null; layer.clip = null; layer.bounds = null;
-  $('#maskName').textContent = layer.maskName; renderMaskPreview(layer); updateReadyState();
-  if (layer.type === 'region') await applyRegionPriority(layer);
-  if (layer.type === 'terrain' && layer.assets.length) await generate(layer);
-  else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
+  if (!heightMode) { layer.maskName = 'Máscara criada no editor'; $('#maskName').textContent = layer.maskName; updateReadyState(); }
+  $('#saveState').textContent = `Salvando ${captured.length} chunk(s)…`;
+  maskChunkSaveChain = maskChunkSaveChain.then(async () => {
+    showTaskProgress('Salvando alterações da máscara', 0);
+    try {
+      for (let index = 0; index < captured.length; index++) {
+        const chunk = captured[index];
+        const chunkCanvas = document.createElement('canvas'); chunkCanvas.width = chunk.width; chunkCanvas.height = chunk.height;
+        chunkCanvas.getContext('2d').putImageData(chunk.pixels, 0, 0);
+        const source = await blobDataUrl(await canvasChunkBlob(chunkCanvas));
+        layer[chunksProperty].set(chunk.key, { x: chunk.x, y: chunk.y, width: chunk.width, height: chunk.height, source });
+        updateTaskProgress('Salvando alterações da máscara', (index + 1) / captured.length * 100);
+        await nextFrame();
+      }
+      if (revision === maskCommitRevision) {
+        if (heightMode) { renderTerrainHeight(layer, layer.heightMap); $('#saveState').textContent = 'Terreno atualizado automaticamente'; }
+        else if (layer.type === 'region') await applyRegionPriority(layer);
+        else if (layer.type === 'terrain' && layer.assets.length) await generate(layer);
+        else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
+      }
+    } finally { hideTaskProgress(); }
+  });
+  return maskChunkSaveChain;
 }
 
 function paintMask(event) {
   if (!maskDrawing || maskPaintPointerId !== event.pointerId || !(event.buttons & 1)) return;
   const heightLayer = state.terrainHeightEditing ? state.layers.find((layer) => layer.id === state.terrainHeightEditing) : null;
   if (maskTool === 'fill') {
+    markMaskChunksDirty(0, 0, canvas.width, canvas.height);
     if (heightLayer) {
       const data = maskEditContext.getImageData(0, 0, canvas.width, canvas.height);
       const level = 255 - Math.round(Math.max(0, Math.min(100, Number($('#brushOpacity').value))) / 100 * 255);
@@ -1990,6 +2086,8 @@ function paintMask(event) {
   const x = (event.clientX - rectangle.left) * canvas.width / rectangle.width;
   const y = (event.clientY - rectangle.top) * canvas.height / rectangle.height;
   const brushSize = Number($('#brushSize').value), radius = brushSize / 2;
+  const dirtyRadius = state.terrainBrushImage ? brushSize * Math.SQRT2 / 2 : radius;
+  markMaskChunksDirty(x - dirtyRadius, y - dirtyRadius, dirtyRadius * 2, dirtyRadius * 2);
   if (heightLayer) {
     if (lastTerrainPaintPoint) {
       const distance = Math.hypot(x - lastTerrainPaintPoint.x, y - lastTerrainPaintPoint.y);
@@ -2045,8 +2143,7 @@ maskEditCanvas.onpointerdown = (event) => {
     brushCursor.style.display = 'none';
     maskPanning = true; maskPanX = event.clientX; maskPanY = event.clientY;
   } else if (event.button === 0) {
-    maskHistory.push(maskEditCanvas.toDataURL('image/png'));
-    if (maskHistory.length > 20) maskHistory.shift();
+    strokeDirtyChunks = new Set(); strokeChunkSnapshots = new Map();
     maskDrawing = true; maskPaintPointerId = event.pointerId; lastTerrainPaintPoint = null;
     lastMaskPointerEvent = { pointerId: event.pointerId, buttons: 1, clientX: event.clientX, clientY: event.clientY };
     paintMask(event); scheduleBrushRepetition();
@@ -2078,7 +2175,10 @@ function stopMaskPointer(event) {
   maskDrawing = false; maskPanning = false; maskPaintPointerId = null;
   lastTerrainPaintPoint = null;
   stopBrushRepetition();
-  if (painted && state.maskEditing) commitMaskEdits();
+  if (painted && state.maskEditing) {
+    if (strokeChunkSnapshots.size) { maskHistory.push([...strokeChunkSnapshots.values()]); if (maskHistory.length > 20) maskHistory.shift(); }
+    commitMaskEdits();
+  }
 }
 maskEditCanvas.onpointerup = stopMaskPointer;
 maskEditCanvas.onpointercancel = stopMaskPointer;
@@ -2101,10 +2201,9 @@ document.addEventListener('keydown', async (event) => {
   event.preventDefault();
   const snapshot = maskHistory.pop();
   if (!snapshot) return;
-  const image = await imageFromSource(snapshot);
   maskEditContext.globalCompositeOperation = 'source-over';
-  maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
-  maskEditContext.drawImage(image, 0, 0);
+  strokeDirtyChunks = new Set(); strokeChunkSnapshots = new Map();
+  snapshot.forEach((chunk) => { maskEditContext.putImageData(chunk.pixels, chunk.x, chunk.y); strokeDirtyChunks.add(chunk.key); });
   if (state.terrainHeightEditing) renderTerrainHeight(state.layers.find((layer) => layer.id === state.terrainHeightEditing), maskEditCanvas);
   scheduleMaskCommit(); $('#saveState').textContent = `Desfazer • ${maskHistory.length} restante(s)`;
 });
@@ -2151,10 +2250,32 @@ function serializeAsset(asset) {
   return { name: asset.file.name, source: asset.image.src, anchorX: asset.anchorX, anchorY: asset.anchorY };
 }
 
+function serializedChunks(chunks) { return chunks instanceof Map ? [...chunks.values()] : []; }
+
+async function drawableDataUrl(drawable) {
+  if (!drawable) return null;
+  if (drawable.src?.startsWith('data:')) return drawable.src;
+  if (drawable instanceof HTMLCanvasElement) return blobDataUrl(await canvasChunkBlob(drawable));
+  return portableAssetSource({ image: drawable, file: { name: 'imagem.png' } });
+}
+
+async function canvasFromChunks(chunks, fallbackSource = null) {
+  if (!chunks?.length) return fallbackSource ? imageFromSource(fallbackSource) : null;
+  const merged = document.createElement('canvas'); merged.width = canvas.width; merged.height = canvas.height;
+  const context = merged.getContext('2d');
+  if (fallbackSource) context.drawImage(await imageFromSource(fallbackSource), 0, 0, canvas.width, canvas.height);
+  else { context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height); }
+  for (let index = 0; index < chunks.length; index++) {
+    const chunk = chunks[index]; context.drawImage(await imageFromSource(chunk.source), chunk.x, chunk.y, chunk.width, chunk.height);
+    updateTaskProgress('Abrindo chunks do projeto', (index + 1) / chunks.length * 100); await nextFrame();
+  }
+  return merged;
+}
+
 function createProjectData() {
   const maskObjects = state.layers.flatMap((layer) => [
-    layer.mask ? { id: `${layer.id}:mask`, layerId: layer.id, kind: 'distribution', name: layer.maskName || `${layer.name} mask`, source: layer.mask.src } : null,
-    layer.heightMap ? { id: `${layer.id}:height`, layerId: layer.id, kind: layer.type === 'ground' ? 'ground-base' : 'heightmap', name: layer.maskName || `${layer.name} height`, source: layer.heightMap.src } : null,
+    layer.mask ? { id: `${layer.id}:mask`, layerId: layer.id, kind: 'distribution', name: layer.maskName || `${layer.name} mask`, source: layer.mask.src || layer.maskBaseSource || null, chunks: serializedChunks(layer.maskChunks) } : null,
+    layer.heightMap ? { id: `${layer.id}:height`, layerId: layer.id, kind: layer.type === 'ground' ? 'ground-base' : 'heightmap', name: layer.maskName || `${layer.name} height`, source: layer.heightMap.src || layer.heightMapBaseSource || null, chunks: serializedChunks(layer.heightChunks) } : null,
   ].filter(Boolean));
   return {
     format: 'teralium-map-project', version: 2,
@@ -2183,10 +2304,13 @@ function createProjectData() {
   };
 }
 
-$('#saveProjectBtn').onclick = () => {
-  const project = createProjectData();
-  downloadFile('projeto-teralium.json', JSON.stringify(project), 'application/json');
-  $('#saveState').textContent = 'Projeto salvo';
+$('#saveProjectBtn').onclick = async () => {
+  showTaskProgress('Salvando projeto', 0);
+  try {
+    await maskChunkSaveChain; updateTaskProgress('Serializando projeto', 40); await nextFrame();
+    const project = createProjectData(); updateTaskProgress('Preparando download', 85);
+    downloadFile('projeto-teralium.json', JSON.stringify(project), 'application/json'); $('#saveState').textContent = 'Projeto salvo';
+  } finally { hideTaskProgress(); }
 };
 
 $('#openProjectBtn').onclick = () => { state.projectFileHandle = null; $('#projectInput').click(); };
@@ -2210,6 +2334,7 @@ function projectJsonFromZip(buffer) {
 $('#projectInput').addEventListener('change', async (event) => {
   const file = event.target.files[0];
   if (!file) return;
+  showTaskProgress('Abrindo projeto', 0);
   try {
     $('#saveState').textContent = 'Abrindo…';
     const projectText = file.name.toLowerCase().endsWith('.zip') ? projectJsonFromZip(await file.arrayBuffer()) : await file.text();
@@ -2240,8 +2365,17 @@ $('#projectInput').addEventListener('change', async (event) => {
       const heightMapObject = project.maskObjects?.find((item) => item.id === saved.heightMapObjectId);
       const maskSource = maskObject?.source || saved.maskSource;
       const heightMapSource = heightMapObject?.source || saved.heightMapSource;
-      if (maskSource) layer.mask = await imageFromSource(maskSource);
-      if (heightMapSource) { layer.heightMap = await imageFromSource(heightMapSource); renderTerrainHeight(layer); }
+      if (maskSource || maskObject?.chunks?.length) {
+        layer.mask = await canvasFromChunks(maskObject?.chunks, maskSource);
+        layer.maskBaseSource = maskSource || null;
+        layer.maskChunks = new Map((maskObject?.chunks || []).map((chunk) => [`${Math.floor(chunk.x / MASK_CHUNK_SIZE)}:${Math.floor(chunk.y / MASK_CHUNK_SIZE)}`, chunk]));
+      }
+      if (heightMapSource || heightMapObject?.chunks?.length) {
+        layer.heightMap = await canvasFromChunks(heightMapObject?.chunks, heightMapSource);
+        layer.heightMapBaseSource = heightMapSource || null;
+        layer.heightChunks = new Map((heightMapObject?.chunks || []).map((chunk) => [`${Math.floor(chunk.x / MASK_CHUNK_SIZE)}:${Math.floor(chunk.y / MASK_CHUNK_SIZE)}`, chunk]));
+        renderTerrainHeight(layer);
+      }
       if (saved.imageSource) layer.image = await imageFromSource(saved.imageSource);
       layer.assets = await Promise.all(saved.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source), anchorX: asset.anchorX, anchorY: asset.anchorY })));
       layer.placements = saved.placements || [];
@@ -2260,6 +2394,7 @@ $('#projectInput').addEventListener('change', async (event) => {
     $('#saveState').textContent = 'Erro ao abrir';
     window.alert(`Não foi possível abrir o projeto: ${error.message}`);
   }
+  hideTaskProgress();
   event.target.value = '';
 });
 
@@ -2366,24 +2501,30 @@ function safeFileName(name, fallback) {
   return (name || fallback).replace(/[^a-z0-9._-]+/gi, '-');
 }
 
-$('#exportBtn').onclick = () => {
+$('#exportBtn').onclick = async () => {
   $('#saveState').textContent = 'Exportando projeto…';
-  redraw(true, false);
-  const project = createProjectData();
-  const files = [
-    { name: 'projeto-teralium.json', bytes: JSON.stringify(project, null, 2) },
-    { name: 'mapa-render-final.png', bytes: dataUrlBytes(canvas.toDataURL('image/png')) },
-  ];
-  state.layers.forEach((layer, index) => {
-    if (layer.mask) files.push({ name: `mascaras/${index + 1}-${safeFileName(layer.maskName, layer.name)}.png`, bytes: dataUrlBytes(layer.mask.src) });
-    if (layer.heightMap) files.push({ name: `${layer.type === 'ground' ? 'ground-base' : 'alturas'}/${index + 1}-${safeFileName(layer.name, 'terreno')}.png`, bytes: dataUrlBytes(layer.heightMap.src) });
-    if (layer.image) files.push({ name: `assets/camadas/${index + 1}-${safeFileName(layer.name, 'imagem')}.png`, bytes: dataUrlBytes(layer.image.src) });
-    layer.assets.forEach((asset, assetIndex) => files.push({ name: `assets/camadas/${index + 1}/${assetIndex + 1}-${safeFileName(asset.file.name, 'asset')}`, bytes: dataUrlBytes(asset.image.src) }));
-  });
-  state.imageSets.forEach((set, setIndex) => set.assets.forEach((asset, assetIndex) => files.push({ name: `assets/biblioteca/${setIndex + 1}-${safeFileName(set.name, 'conjunto')}/${assetIndex + 1}-${safeFileName(asset.file.name, 'asset')}`, bytes: dataUrlBytes(asset.image.src) })));
-  downloadFile('projeto-teralium.zip', zipProject(files), 'application/zip');
-  redraw();
-  $('#saveState').textContent = 'Projeto exportado';
+  showTaskProgress('Preparando exportação', 0);
+  try {
+    await maskChunkSaveChain; redraw(true, false); await nextFrame();
+    const project = createProjectData();
+    const files = [{ name: 'projeto-teralium.json', bytes: JSON.stringify(project, null, 2) }, { name: 'mapa-render-final.png', bytes: new Uint8Array(await (await canvasChunkBlob(canvas)).arrayBuffer()) }];
+    for (let index = 0; index < state.layers.length; index++) {
+      const layer = state.layers[index];
+      updateTaskProgress('Mesclando chunks das camadas', 10 + (index + 1) / Math.max(1, state.layers.length) * 65);
+      if (layer.mask) files.push({ name: `mascaras/${index + 1}-${safeFileName(layer.maskName, layer.name)}.png`, bytes: dataUrlBytes(await drawableDataUrl(layer.mask)) });
+      if (layer.heightMap) files.push({ name: `${layer.type === 'ground' ? 'ground-base' : 'alturas'}/${index + 1}-${safeFileName(layer.name, 'terreno')}.png`, bytes: dataUrlBytes(await drawableDataUrl(layer.heightMap)) });
+      if (layer.image) files.push({ name: `assets/camadas/${index + 1}-${safeFileName(layer.name, 'imagem')}.png`, bytes: dataUrlBytes(await drawableDataUrl(layer.image)) });
+      for (let assetIndex = 0; assetIndex < layer.assets.length; assetIndex++) files.push({ name: `assets/camadas/${index + 1}/${assetIndex + 1}-${safeFileName(layer.assets[assetIndex].file.name, 'asset')}`, bytes: dataUrlBytes(await portableAssetSource(layer.assets[assetIndex])) });
+      await nextFrame();
+    }
+    for (let setIndex = 0; setIndex < state.imageSets.length; setIndex++) for (let assetIndex = 0; assetIndex < state.imageSets[setIndex].assets.length; assetIndex++) {
+      const asset = state.imageSets[setIndex].assets[assetIndex];
+      files.push({ name: `assets/biblioteca/${setIndex + 1}-${safeFileName(state.imageSets[setIndex].name, 'conjunto')}/${assetIndex + 1}-${safeFileName(asset.file.name, 'asset')}`, bytes: dataUrlBytes(await portableAssetSource(asset)) });
+    }
+    updateTaskProgress('Compactando projeto', 85); await nextFrame();
+    downloadFile('projeto-teralium.zip', zipProject(files), 'application/zip'); updateTaskProgress('Projeto exportado', 100);
+    $('#saveState').textContent = 'Projeto exportado';
+  } finally { redraw(); hideTaskProgress(); }
 };
 function exportablePois() {
   return state.layers.filter((layer) => layer.visible && layer.type === 'object' && layer.object?.poi && layer.object.x !== null).map((layer) => {
@@ -2405,7 +2546,7 @@ function exportableRegions() {
     for (let y = 0; y < canvas.height; y += 4) for (let x = 0; x < canvas.width; x += 4) {
       if (pixels[(y * canvas.width + x) * 4 + 3] > 32) { totalX += x; totalY += y; count++; }
     }
-    return { id: layer.id, group: layer.region.group || 'Regiões', name: layer.region.name, color: layer.region.color, fillMode: layer.region.fillMode || 'fill', outlineThickness: layer.region.outlineThickness ?? 3, outlineDashed: Boolean(layer.region.outlineDashed), outlineGap: layer.region.outlineGap ?? 12, defaultOverview: Boolean(layer.region.defaultOverview), mask: layer.mask.src, centerX: count ? totalX / count : canvas.width / 2, centerY: count ? totalY / count : canvas.height / 2 };
+    return { id: layer.id, group: layer.region.group || 'Regiões', name: layer.region.name, color: layer.region.color, fillMode: layer.region.fillMode || 'fill', outlineThickness: layer.region.outlineThickness ?? 3, outlineDashed: Boolean(layer.region.outlineDashed), outlineGap: layer.region.outlineGap ?? 12, defaultOverview: Boolean(layer.region.defaultOverview), mask: layer.maskExportSource || layer.mask.src, centerX: count ? totalX / count : canvas.width / 2, centerY: count ? totalY / count : canvas.height / 2 };
   });
 }
 
@@ -2435,8 +2576,21 @@ const pois=${pois},regions=${regions},paths=${paths},types=${types},travelSpeeds
 <\/script></body></html>`;
 }
 
-$('#exportMapBtn').onclick = () => downloadFile('mapa-teralium.html', createMapHtml(), 'text/html');
-$('#previewMapBtn').onclick = () => {
+async function prepareMergedLayerSources(label) {
+  const layers = state.layers.filter((layer) => layer.mask instanceof HTMLCanvasElement);
+  showTaskProgress(label, 0);
+  try {
+    await maskChunkSaveChain;
+    for (let index = 0; index < layers.length; index++) {
+      layers[index].maskExportSource = await drawableDataUrl(layers[index].mask);
+      updateTaskProgress(label, (index + 1) / Math.max(1, layers.length) * 100); await nextFrame();
+    }
+  } finally { hideTaskProgress(); }
+}
+
+$('#exportMapBtn').onclick = async () => { await prepareMergedLayerSources('Mesclando máscaras do mapa'); downloadFile('mapa-teralium.html', createMapHtml(), 'text/html'); };
+$('#previewMapBtn').onclick = async () => {
+  await prepareMergedLayerSources('Preparando pré-visualização');
   const url = URL.createObjectURL(new Blob([createMapHtml()], { type: 'text/html' }));
   window.open(url, '_blank');
   setTimeout(() => URL.revokeObjectURL(url), 60000);
