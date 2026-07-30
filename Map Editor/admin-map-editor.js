@@ -5,6 +5,8 @@ const stage = document.querySelector('#stage');
 const $ = (selector) => document.querySelector(selector);
 document.addEventListener('contextmenu', (event) => event.preventDefault());
 
+const bundledIconFiles = ["anchor_1.png", "anchor_2.png", "architecture_1.png", "beacon_1.png", "book_1.png", "bridge_1.png", "bridge_2.png", "bush_1.png", "bush_2.png", "cactus_1.png", "cactus_2.png", "camp_1.png", "camp_2.png", "camp_3.png", "camp_4.png", "castle.png", "castle_2.png", "castle_3.png", "castle_4.png", "castle_8.png", "cave_1.png", "cave_2.png", "cave_3.png", "chest.png", "chest_1.png", "church_1.png", "church_2.png", "coins_1.png", "crystal_1.png", "farm_1.png", "farm_2.png", "farm_3.png", "farm_4.png", "farms_1.png", "flag_1.png", "fortress_1.png", "fountain_1.png", "gate_1.png", "graveyard_1.png", "hot_springs_1.png", "house_1.png", "house_2.png", "house_3.png", "house_4.png", "house_5.png", "house_6.png", "house_7.png", "house_8.png", "island_1.png", "kraken_1.png", "log_1.png", "mannor_1.png", "map_1.png", "market_1.png", "mill_1.png", "mine_1.png", "mine_2.png", "mine_3.png", "monastery_1.png", "monastery_2.png", "monolith_1.png", "monolith_2.png", "mountain_2.png", "mountain_3.png", "mountain_4.png", "mountain_5.png", "mountain_8.png", "mountain_9.png", "port_1.png", "portal_1.png", "portal_2.png", "pound_1.png", "pound_2.png", "rocks_1.png", "rocks_2.png", "rocks_3.png", "rocks_4.png", "rocks_5.png", "rocks_6.png", "rocks_7.png", "rocks_8.png", "rocks_9.png", "rune_1.png", "rune_2.png", "ship_1.png", "shipwreck_1.png", "shop_1.png", "shop_2.png", "sign_1.png", "skulls_1.png", "small_castle_1.png", "stadium_1.png", "statue_1.png", "swamp.png", "tower_1.png", "tower_2.png", "tower_3.png", "tower_4.png", "tower_5.png", "tower_6.png", "tree_1.png", "tree_10.png", "tree_2.png", "tree_3.png", "tree_4.png", "tree_5.png", "tree_6.png", "tree_7.png", "tree_8.png", "tree_9.png", "village_1.png", "village_2.png", "vulcano_1.png", "waterfall_1.png", "well_1.png", "windmill_1.png", "windmill_2.png", "windmill_3.png", "windmill_4.png"];
+
 const state = {
   layers: [],
   selectedId: null,
@@ -15,7 +17,21 @@ const state = {
   lastX: 0,
   lastY: 0,
   generationToken: 0,
-  imageSets: [],
+  imageSets: Object.entries(bundledIconFiles.reduce((groups, fileName) => {
+      const name = fileName.replace(/_\d+(?=\.png$)/, '').replace(/\.png$/, '');
+      (groups[name] ||= []).push(fileName);
+      return groups;
+    }, {}))
+    .map(([name, fileNames]) => ({
+      id: `preset-${name}`,
+      name: name.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
+      bundled: true,
+      assets: fileNames.map((fileName) => {
+        const image = new Image();
+        image.src = `Assets/Icons/${fileName}`;
+        return { file: { name: fileName }, image, anchorX: 0.5, anchorY: 0.5 };
+      }),
+    })),
   contextLayerId: null,
   placingObject: false,
   poiTypes: [
@@ -128,6 +144,8 @@ document.addEventListener('click', (event) => {
 const closeAppMenus = () => document.querySelectorAll('.app-menu-dropdown').forEach((menu) => { menu.hidden = true; menu.previousElementSibling.classList.remove('active'); });
 $('#menuManagePoiTypes').onclick = () => { closeAppMenus(); $('#managePoiTypes').click(); };
 $('#menuManageSets').onclick = () => { closeAppMenus(); $('#manageObjectSets').click(); };
+$('#menuImportSets').onclick = () => { closeAppMenus(); $('#setPackageInput').click(); };
+$('#menuExportSets').onclick = () => { closeAppMenus(); openExportSetsModal(); };
 $('#menuExportProject').onclick = () => { closeAppMenus(); $('#exportBtn').click(); };
 $('#menuExportMap').onclick = () => { closeAppMenus(); $('#exportMapBtn').click(); };
 $('#menuExportPng').onclick = () => { closeAppMenus(); redraw(true, false); downloadFile('mapa-render-final.png', dataUrlBytes(canvas.toDataURL('image/png')), 'image/png'); redraw(); };
@@ -540,6 +558,7 @@ $('#terrainAnchorPreview').addEventListener('click', (event) => {
 });
 
 function selectLayer(id) {
+  if (state.maskEditing && state.maskEditing !== id) closeMaskEditor();
   state.selectedId = id;
   const layer = selectedLayer();
   $('#layerName').value = layer.name;
@@ -567,7 +586,7 @@ function selectLayer(id) {
   });
   const upload = document.querySelector('.upload');
   upload.querySelector('b').textContent = layer.type === 'image' ? t('uploadImage') : t('uploadMask');
-  upload.querySelector('small').textContent = layer.type === 'image' ? 'Background ou elemento visual' : 'PNG preto com transparência recomendado';
+  upload.querySelector('small').textContent = layer.type === 'image' ? 'Background ou elemento visual' : 'PNG em tons de cinza • branco vazio, preto com intensidade máxima';
   $('#generateBtn').hidden = layer.type !== 'terrain';
   $('#footerHint').textContent = layer.type === 'terrain' ? 'A seed mantém o resultado reproduzível.' : 'Arraste a camada para definir sua prioridade.';
   if (layer.type === 'object') fillObjectInspector(layer.object);
@@ -1007,7 +1026,7 @@ function prepareMask(layer) {
     for (let x = 0; x < canvas.width; x++) {
       const index = (y * canvas.width + x) * 4;
       const darkness = 1 - (pixels[index] + pixels[index + 1] + pixels[index + 2]) / 765;
-      if (pixels[index + 3] > 16 && darkness > 0.2) {
+      if (pixels[index + 3] > 0 && darkness > 0) {
         clipData.data[index] = 255;
         clipData.data[index + 1] = 255;
         clipData.data[index + 2] = 255;
@@ -1037,8 +1056,7 @@ function prepareMask(layer) {
   layer.bounds = minX <= maxX ? { minX, minY, maxX, maxY } : null;
 }
 
-async function generate() {
-  const layer = selectedLayer();
+async function generate(layer = selectedLayer()) {
   if (!layer.mask || !layer.assets.length) return;
   if (!layer.maskPixels) prepareMask(layer);
   if (!layer.bounds) {
@@ -1099,7 +1117,7 @@ async function generate() {
         const alpha = layer.maskPixels[pixel + 3] / 255;
         const darkness = 1 - (layer.maskPixels[pixel] + layer.maskPixels[pixel + 1] + layer.maskPixels[pixel + 2]) / 765;
         const coverage = alpha * darkness;
-        if (coverage < 0.2 || random() > coverage) continue;
+        if (coverage <= 0 || random() > coverage) continue;
         const assetIndex = Math.floor(random() * layer.assets.length);
         placements.push({
           x, y,
@@ -1324,7 +1342,8 @@ function renderImageSets() {
   for (const set of state.imageSets) {
     const item = document.createElement('div');
     item.className = 'image-set';
-    item.innerHTML = '<div><b></b><small></small></div><button class="edit-set" title="Editar">✎</button><button class="use-set">Usar</button>';
+    item.innerHTML = '<img class="set-thumbnail" alt=""><div><b></b><small></small></div><button class="edit-set" title="Editar">✎</button><button class="use-set">Usar</button>';
+    const thumbnail = item.querySelector('.set-thumbnail'); thumbnail.src = set.assets[0]?.image.src || ''; thumbnail.alt = set.name;
     item.querySelector('b').textContent = set.name;
     item.querySelector('small').textContent = `${set.assets.length} imagem(ns)`;
     item.querySelector('.edit-set').onclick = () => {
@@ -1370,6 +1389,90 @@ function renderEditingSetAssets() {
     item.append(image, remove); return item;
   }));
 }
+
+const SET_PACKAGE_FORMAT = 'atlasmith-image-sets';
+
+function selectedExportSetIds() {
+  return [...document.querySelectorAll('#exportSetList input:checked')].map((input) => input.value);
+}
+
+function updateExportSetsButton() {
+  $('#confirmExportSets').disabled = !selectedExportSetIds().length;
+}
+
+function renderExportSetList() {
+  const list = $('#exportSetList');
+  list.replaceChildren(...state.imageSets.map((set) => {
+    const label = document.createElement('label'); label.className = 'export-set-option';
+    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = set.id;
+    const name = document.createElement('b'); name.textContent = set.name;
+    const count = document.createElement('small'); count.textContent = `${set.assets.length} imagem(ns)`;
+    checkbox.onchange = updateExportSetsButton;
+    label.append(checkbox, name, count); return label;
+  }));
+  if (!state.imageSets.length) list.innerHTML = '<div class="set-empty">Nenhum conjunto disponível para exportar.</div>';
+  updateExportSetsButton();
+}
+
+function openExportSetsModal() {
+  renderExportSetList();
+  $('#exportSetsModal').hidden = false;
+}
+
+async function portableAssetSource(asset) {
+  if (asset.image.src.startsWith('data:')) return asset.image.src;
+  if (!asset.image.complete) await new Promise((resolve, reject) => { asset.image.addEventListener('load', resolve, { once: true }); asset.image.addEventListener('error', reject, { once: true }); });
+  const width = asset.image.naturalWidth, height = asset.image.naturalHeight;
+  if (!width || !height) throw new Error(`Não foi possível carregar ${asset.file.name}`);
+  const portableCanvas = document.createElement('canvas'); portableCanvas.width = width; portableCanvas.height = height;
+  portableCanvas.getContext('2d').drawImage(asset.image, 0, 0);
+  return portableCanvas.toDataURL('image/png');
+}
+
+async function exportImageSets(setIds) {
+  const selected = state.imageSets.filter((set) => setIds.includes(set.id));
+  const sets = await Promise.all(selected.map(async (set) => ({
+    id: set.id,
+    name: set.name,
+    assets: await Promise.all(set.assets.map(async (asset) => ({ ...serializeAsset(asset), source: await portableAssetSource(asset) }))),
+  })));
+  const packageData = { format: SET_PACKAGE_FORMAT, version: 1, exportedAt: new Date().toISOString(), sets };
+  downloadFile('atlasmith-conjuntos.atlasmith-sets', JSON.stringify(packageData, null, 2), 'application/json');
+}
+
+$('#selectAllExportSets').onclick = () => { document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = true; }); updateExportSetsButton(); };
+$('#clearExportSets').onclick = () => { document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = false; }); updateExportSetsButton(); };
+$('#closeExportSets').onclick = () => { $('#exportSetsModal').hidden = true; };
+$('#exportSetsModal').addEventListener('click', (event) => { if (event.target === $('#exportSetsModal')) $('#exportSetsModal').hidden = true; });
+$('#confirmExportSets').onclick = async () => {
+  const button = $('#confirmExportSets'); button.disabled = true; button.textContent = 'Preparando…';
+  try { await exportImageSets(selectedExportSetIds()); $('#exportSetsModal').hidden = true; $('#saveState').textContent = 'Conjuntos exportados'; }
+  catch (error) { window.alert(`Não foi possível exportar: ${error.message}`); }
+  finally { button.textContent = 'Exportar selecionados'; updateExportSetsButton(); }
+};
+
+$('#setPackageInput').addEventListener('change', async (event) => {
+  const file = event.target.files[0]; if (!file) return;
+  try {
+    const packageData = JSON.parse(await file.text());
+    if (packageData.format !== SET_PACKAGE_FORMAT || packageData.version !== 1 || !Array.isArray(packageData.sets)) throw new Error('Pacote de conjuntos inválido ou incompatível');
+    const importedSets = await Promise.all(packageData.sets.map(async (set) => {
+      if (!set.id || !set.name || !Array.isArray(set.assets) || !set.assets.length || set.assets.some((asset) => typeof asset.source !== 'string' || !asset.source.startsWith('data:image/'))) throw new Error('Um conjunto do pacote está incompleto');
+      return {
+        id: String(set.id), name: String(set.name),
+        assets: await Promise.all(set.assets.map(async (asset) => ({ file: { name: String(asset.name || 'imagem.png') }, image: await imageFromSource(asset.source), anchorX: asset.anchorX ?? 0.5, anchorY: asset.anchorY ?? 0.5 }))),
+      };
+    }));
+    for (const imported of importedSets) {
+      const existingIndex = state.imageSets.findIndex((set) => set.id === imported.id);
+      if (existingIndex >= 0) state.imageSets[existingIndex] = imported;
+      else state.imageSets.push(imported);
+    }
+    populateObjectOptions(); renderImageSets();
+    $('#saveState').textContent = `${importedSets.length} conjunto(s) importado(s)`;
+  } catch (error) { window.alert(`Não foi possível importar: ${error.message}`); }
+  finally { event.target.value = ''; }
+});
 
 const objectBindings = {
   objectName: 'name', objectType: 'type', objectIconSet: 'iconSetId',
@@ -1651,7 +1754,7 @@ function openTerrainHeightEditor(layer) {
   renderTerrainHeight(layer, maskEditCanvas); $('#saveState').textContent = 'Editando altura do terreno';
 }
 
-$('#editGroundHeight').onclick = () => openTerrainHeightEditor(selectedLayer());
+$('#editGroundHeight').onclick = () => state.maskEditing === selectedLayer()?.id ? closeMaskEditor() : openTerrainHeightEditor(selectedLayer());
 $('#groundMaskInput').addEventListener('change', async (event) => {
   const file = event.target.files[0];
   const layer = selectedLayer();
@@ -1690,10 +1793,12 @@ $('#terrainBrushRotation').addEventListener('input', (event) => setTerrainBrushR
 $('#terrainBrushRotationValue').addEventListener('input', (event) => setTerrainBrushRotation(event.target.value));
 $('#clearTerrainBrush').onclick = () => { state.terrainBrushImage = null; state.terrainBrushMode = 'hard'; $('#terrainBrushName').textContent = ''; $('#clearTerrainBrush').hidden = true; document.querySelector('[data-terrain-brush="hard"]').classList.add('active'); };
 document.querySelectorAll('[data-terrain-brush]').forEach((button) => {
-  button.onclick = () => {
-    state.terrainBrushMode = button.dataset.terrainBrush; state.terrainBrushImage = null;
+  button.onclick = async () => {
+    state.terrainBrushMode = button.dataset.terrainBrush;
+    state.terrainBrushImage = button.dataset.brushSrc ? await imageFromSource(new URL(button.dataset.brushSrc, document.baseURI).href) : null;
     document.querySelectorAll('[data-terrain-brush]').forEach((item) => item.classList.toggle('active', item === button));
-    $('#clearTerrainBrush').hidden = true;
+    $('#terrainBrushName').textContent = button.dataset.brushSrc?.split('/').pop() || '';
+    $('#clearTerrainBrush').hidden = !state.terrainBrushImage;
   };
 });
 
@@ -1748,18 +1853,23 @@ function paintTerrainHeight(layer, x, y, brushSize, renderPreview = true) {
 
 $('#createMaskBtn').onclick = () => {
   const layer = selectedLayer();
+  if (state.maskEditing === layer.id) { closeMaskEditor(); return; }
   $('#brushOpacity').max = '1'; $('#brushOpacity').step = '0.01'; $('#brushOpacity').value = '1'; $('#brushOpacityValue').value = '100';
   maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
-  maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
+  maskEditContext.fillStyle = '#fff'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height);
   if (layer.mask) maskEditContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
   state.maskEditing = layer.id;
   maskHistory = [];
   state.drag = false;
   viewport.classList.remove('dragging');
-  maskEditCanvas.style.display = 'block';
+  maskEditCanvas.style.display = 'block'; maskEditCanvas.style.opacity = layer.type === 'terrain' ? '0.35' : '1';
   redraw();
   $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
-  $('#saveState').textContent = 'Editando máscara';
+  const supportsTerrainBrushes = layer.type === 'terrain';
+  $('#terrainBrushPresets').hidden = !supportsTerrainBrushes; $('#terrainBrushUpload').hidden = !supportsTerrainBrushes;
+  $('#terrainBrushRotationLabel').hidden = !supportsTerrainBrushes; $('#terrainBrushRotation').hidden = !supportsTerrainBrushes; $('#terrainBrushRotationValue').hidden = !supportsTerrainBrushes;
+  $('#createMaskBtn').textContent = 'Fechar editor';
+  $('#saveState').textContent = 'Editando máscara • alterações automáticas';
 };
 document.querySelectorAll('[data-mask-tool]').forEach((button) => {
   button.onclick = () => {
@@ -1801,6 +1911,50 @@ $('#brushOpacityValue').addEventListener('change', (event) => {
   if (heightMode && maskTool !== 'eraser') showTerrainHeightLevel(value);
 });
 bindNumberInput('brushSizeValue', 'brushSize', () => {});
+function paintDistributionStamp(x, y, brushSize) {
+  const opacity = Number($('#brushOpacity').value);
+  if (!state.terrainBrushImage) {
+    maskEditContext.globalCompositeOperation = 'source-over'; maskEditContext.globalAlpha = opacity;
+    maskEditContext.fillStyle = maskTool === 'eraser' ? '#fff' : '#000';
+    maskEditContext.beginPath(); maskEditContext.arc(x, y, brushSize / 2, 0, Math.PI * 2); maskEditContext.fill();
+    maskEditContext.globalAlpha = 1; return;
+  }
+  const stamp = document.createElement('canvas'); stamp.width = stamp.height = Math.max(1, Math.ceil(brushSize));
+  const stampContext = stamp.getContext('2d');
+  stampContext.drawImage(state.terrainBrushImage, 0, 0, stamp.width, stamp.height);
+  stampContext.globalCompositeOperation = 'source-in'; stampContext.fillStyle = maskTool === 'eraser' ? '#fff' : '#000'; stampContext.fillRect(0, 0, stamp.width, stamp.height);
+  const rotation = (Math.random() * 2 - 1) * state.terrainBrushRotation * Math.PI / 180;
+  maskEditContext.save(); maskEditContext.globalAlpha = opacity; maskEditContext.translate(x, y); maskEditContext.rotate(rotation);
+  maskEditContext.drawImage(stamp, -brushSize / 2, -brushSize / 2, brushSize, brushSize); maskEditContext.restore();
+}
+
+let maskCommitTimer = 0;
+let maskCommitRevision = 0;
+function scheduleMaskCommit() {
+  clearTimeout(maskCommitTimer);
+  maskCommitTimer = setTimeout(() => commitMaskEdits(), 180);
+}
+
+async function commitMaskEdits() {
+  clearTimeout(maskCommitTimer); maskCommitTimer = 0;
+  const layer = state.layers.find((item) => item.id === state.maskEditing);
+  if (!layer) return;
+  const revision = ++maskCommitRevision;
+  const source = maskEditCanvas.toDataURL('image/png');
+  const image = await imageFromSource(source);
+  if (revision !== maskCommitRevision) return;
+  if (state.terrainHeightEditing) {
+    layer.heightMap = image; renderTerrainHeight(layer, maskEditCanvas);
+    $('#saveState').textContent = 'Terreno atualizado automaticamente'; return;
+  }
+  layer.mask = image; layer.maskName = 'Máscara criada no editor';
+  layer.maskPixels = null; layer.maskPath = null; layer.clip = null; layer.bounds = null;
+  $('#maskName').textContent = layer.maskName; renderMaskPreview(layer); updateReadyState();
+  if (layer.type === 'region') await applyRegionPriority(layer);
+  if (layer.type === 'terrain' && layer.assets.length) await generate(layer);
+  else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
+}
+
 function paintMask(event) {
   if (!maskDrawing || maskPaintPointerId !== event.pointerId || !(event.buttons & 1)) return;
   const heightLayer = state.terrainHeightEditing ? state.layers.find((layer) => layer.id === state.terrainHeightEditing) : null;
@@ -1811,14 +1965,12 @@ function paintMask(event) {
       for (let index = 0; index < data.data.length; index += 4) {
         data.data[index] = data.data[index + 1] = data.data[index + 2] = level; data.data[index + 3] = 255;
       }
-      maskEditContext.putImageData(data, 0, 0); renderTerrainHeight(heightLayer, maskEditCanvas); maskDrawing = false; return;
+      maskEditContext.putImageData(data, 0, 0); renderTerrainHeight(heightLayer, maskEditCanvas); maskDrawing = false; scheduleMaskCommit(); return;
     }
     maskEditContext.globalCompositeOperation = 'source-over';
-    maskEditContext.globalAlpha = heightLayer ? 1 : Number($('#brushOpacity').value);
-    const level = Math.round(Number($('#brushOpacity').value) * 255);
-    maskEditContext.fillStyle = heightLayer ? `rgb(${level},${level},${level})` : '#000'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); maskEditContext.globalAlpha = 1;
-    if (heightLayer) renderTerrainHeight(heightLayer, maskEditCanvas);
-    maskDrawing = false;
+    maskEditContext.globalAlpha = Number($('#brushOpacity').value);
+    maskEditContext.fillStyle = maskTool === 'eraser' ? '#fff' : '#000'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); maskEditContext.globalAlpha = 1;
+    maskDrawing = false; scheduleMaskCommit();
     return;
   }
   const rectangle = maskEditCanvas.getBoundingClientRect();
@@ -1833,22 +1985,14 @@ function paintMask(event) {
       const radius = brushSize / 2, left = Math.min(lastTerrainPaintPoint.x, x) - radius, top = Math.min(lastTerrainPaintPoint.y, y) - radius;
       renderTerrainHeight(heightLayer, maskEditCanvas, { x: left, y: top, width: Math.abs(x - lastTerrainPaintPoint.x) + brushSize, height: Math.abs(y - lastTerrainPaintPoint.y) + brushSize });
     } else paintTerrainHeight(heightLayer, x, y, brushSize);
-    lastTerrainPaintPoint = { x, y }; return;
+    lastTerrainPaintPoint = { x, y }; scheduleMaskCommit(); return;
   }
   else {
-    maskEditContext.globalCompositeOperation = heightLayer ? 'source-over' : maskTool === 'eraser' ? 'destination-out' : 'source-over';
-    maskEditContext.globalAlpha = heightLayer ? 1 : Number($('#brushOpacity').value);
-    const level = Math.round(Number($('#brushOpacity').value) * 255);
-    maskEditContext.fillStyle = heightLayer ? `rgb(${level},${level},${level})` : '#000';
     const start = lastTerrainPaintPoint || { x, y };
     const distance = Math.hypot(x - start.x, y - start.y);
     const steps = Math.max(1, Math.ceil(distance / brushStampSpacing(brushSize)));
-    for (let step = 1; step <= steps; step++) {
-      const stampX = start.x + (x - start.x) * step / steps, stampY = start.y + (y - start.y) * step / steps;
-      maskEditContext.beginPath(); maskEditContext.arc(stampX, stampY, radius, 0, Math.PI * 2); maskEditContext.fill();
-    }
-    maskEditContext.globalAlpha = 1;
-    lastTerrainPaintPoint = { x, y };
+    for (let step = 1; step <= steps; step++) paintDistributionStamp(start.x + (x - start.x) * step / steps, start.y + (y - start.y) * step / steps, brushSize);
+    lastTerrainPaintPoint = { x, y }; scheduleMaskCommit();
   }
 }
 function stopBrushRepetition() {
@@ -1917,37 +2061,28 @@ maskEditCanvas.onpointerleave = () => { if (!maskDrawing) brushCursor.style.disp
 maskEditCanvas.onpointerenter = (event) => { if (!maskPanning && maskTool !== 'fill') maskEditCanvas.onpointermove(event); };
 function stopMaskPointer(event) {
   event?.stopPropagation();
+  const painted = maskDrawing;
   maskDrawing = false; maskPanning = false; maskPaintPointerId = null;
   lastTerrainPaintPoint = null;
   stopBrushRepetition();
+  if (painted && state.maskEditing) commitMaskEdits();
 }
 maskEditCanvas.onpointerup = stopMaskPointer;
 maskEditCanvas.onpointercancel = stopMaskPointer;
 maskEditCanvas.onlostpointercapture = stopMaskPointer;
-async function closeMaskEditor(save) {
-  const layer = state.layers.find((item) => item.id === state.maskEditing);
-  if (state.terrainHeightEditing && layer) {
-    if (save) {
-      layer.heightMap = await imageFromSource(maskEditCanvas.toDataURL('image/png'));
-      renderTerrainHeight(layer, maskEditCanvas);
-    } else if (layer.heightMap) renderTerrainHeight(layer);
-    else { layer.heightOutput.width = 0; redraw(); }
-  } else if (save && layer) {
-    layer.mask = await imageFromSource(maskEditCanvas.toDataURL('image/png'));
-    layer.maskName = 'Máscara criada no editor'; layer.maskPixels = null; layer.maskPath = null; layer.clip = null; layer.bounds = null; layer.output.width = 0; layer.placements = [];
-    if (layer.type === 'region') await applyRegionPriority(layer);
-    $('#maskName').textContent = layer.maskName; $('#createMaskBtn').textContent = t('editMask'); renderMaskPreview(layer); updateReadyState(); redraw();
-  }
+async function closeMaskEditor() {
+  const editingId = state.maskEditing;
+  const layer = state.layers.find((item) => item.id === editingId);
+  await commitMaskEdits();
+  if (state.maskEditing !== editingId) return;
   state.maskEditing = null; state.terrainHeightEditing = null; maskEditCanvas.style.display = 'none'; maskEditCanvas.style.opacity = '1'; $('#maskTools').hidden = true; $('#brushSizeControl').hidden = true;
   $('#brushSizeControl span').textContent = 'Opacidade'; $('#brushOpacity').max = '1';
   $('#terrainBrushPresets').hidden = true; $('#terrainBrushUpload').hidden = true; $('#clearTerrainBrush').hidden = true;
   $('#terrainBrushRotationLabel').hidden = true; $('#terrainBrushRotation').hidden = true; $('#terrainBrushRotationValue').hidden = true;
   brushCursor.style.display = 'none'; maskHistory = [];
-  redraw();
-  $('#saveState').textContent = save ? 'Máscara atualizada' : 'Edição cancelada';
+  if (layer?.id === state.selectedId) $('#createMaskBtn').textContent = layer.mask ? t('editMask') : t('createMask');
+  redraw(); $('#saveState').textContent = 'Edição finalizada';
 }
-$('#finishMask').onclick = () => closeMaskEditor(true);
-$('#cancelMask').onclick = () => closeMaskEditor(false);
 document.addEventListener('keydown', async (event) => {
   if (!state.maskEditing || !(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return;
   event.preventDefault();
@@ -1958,13 +2093,13 @@ document.addEventListener('keydown', async (event) => {
   maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
   maskEditContext.drawImage(image, 0, 0);
   if (state.terrainHeightEditing) renderTerrainHeight(state.layers.find((layer) => layer.id === state.terrainHeightEditing), maskEditCanvas);
-  $('#saveState').textContent = `Desfazer • ${maskHistory.length} restante(s)`;
+  scheduleMaskCommit(); $('#saveState').textContent = `Desfazer • ${maskHistory.length} restante(s)`;
 });
 $('#randomSeed').onclick = () => {
   selectedLayer().settings.seed = Math.random().toString(36).slice(2, 10);
   $('#seed').value = selectedLayer().settings.seed;
 };
-$('#generateBtn').onclick = generate;
+$('#generateBtn').onclick = () => { const layer = selectedLayer(); layer.settings.seed = Math.random().toString(36).slice(2, 10); $('#seed').value = layer.settings.seed; generate(layer); };
 
 document.addEventListener('click', (event) => {
   if (!event.target.closest('#layerContextMenu')) $('#layerContextMenu').hidden = true;
@@ -2304,7 +2439,7 @@ setBrushRepetition(state.terrainBrushRepetition);
 selectLayer(firstLayer.id);
 applyLanguage(state.language);
 updateTransform();
-fetch('data/poi-types.json')
+fetch('../data/poi-types.json')
   .then((response) => response.ok ? response.json() : Promise.reject(new Error('Tipos indisponíveis')))
   .then((types) => { state.poiTypes = types; populateObjectOptions(); redraw(); })
   .catch(() => { /* The embedded defaults keep local file usage functional. */ });

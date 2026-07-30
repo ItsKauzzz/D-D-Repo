@@ -1,5 +1,9 @@
 # D&D Repo
 
+## Map editor (Admin tools)
+
+O **Atlasmith**, editor administrativo de mapas, fica isolado em `Map Editor/`. Abra `Map Editor/admin-tools.html` para acessar as ferramentas. O editor inclui conjuntos predefinidos, agrupados pela nomenclatura dos arquivos de `Map Editor/Assets/Icons`, e brushes de terreno fornecidos em `Map Editor/Assets/Brushes`. Pelo menu **Manage**, conjuntos podem ser importados ou exportados em pacotes portáteis `.atlasmith-sets`. A pintura de máscaras é salva imediatamente: branco representa ausência de objetos, preto usa a intensidade máxima configurada e os tons de cinza reduzem proporcionalmente a chance de distribuição.
+
 ## Compatibilidade futura com Electron
 
 O Admin Tools e o editor de mapas serão posteriormente convertidos em um aplicativo desktop com Electron. Novas funcionalidades devem evitar dependências exclusivas de servidor, preservar compatibilidade com APIs de navegador/Electron e manter os projetos portáveis no formato exportável.
