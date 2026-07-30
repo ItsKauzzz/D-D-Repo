@@ -558,6 +558,7 @@ $('#terrainAnchorPreview').addEventListener('click', (event) => {
 });
 
 function selectLayer(id) {
+  if (state.maskEditing && state.maskEditing !== id) closeMaskEditor();
   state.selectedId = id;
   const layer = selectedLayer();
   $('#layerName').value = layer.name;
@@ -585,7 +586,7 @@ function selectLayer(id) {
   });
   const upload = document.querySelector('.upload');
   upload.querySelector('b').textContent = layer.type === 'image' ? t('uploadImage') : t('uploadMask');
-  upload.querySelector('small').textContent = layer.type === 'image' ? 'Background ou elemento visual' : 'PNG preto com transparência recomendado';
+  upload.querySelector('small').textContent = layer.type === 'image' ? 'Background ou elemento visual' : 'PNG em tons de cinza • branco vazio, preto com intensidade máxima';
   $('#generateBtn').hidden = layer.type !== 'terrain';
   $('#footerHint').textContent = layer.type === 'terrain' ? 'A seed mantém o resultado reproduzível.' : 'Arraste a camada para definir sua prioridade.';
   if (layer.type === 'object') fillObjectInspector(layer.object);
@@ -1025,7 +1026,7 @@ function prepareMask(layer) {
     for (let x = 0; x < canvas.width; x++) {
       const index = (y * canvas.width + x) * 4;
       const darkness = 1 - (pixels[index] + pixels[index + 1] + pixels[index + 2]) / 765;
-      if (pixels[index + 3] > 16 && darkness > 0.2) {
+      if (pixels[index + 3] > 0 && darkness > 0) {
         clipData.data[index] = 255;
         clipData.data[index + 1] = 255;
         clipData.data[index + 2] = 255;
@@ -1055,8 +1056,7 @@ function prepareMask(layer) {
   layer.bounds = minX <= maxX ? { minX, minY, maxX, maxY } : null;
 }
 
-async function generate() {
-  const layer = selectedLayer();
+async function generate(layer = selectedLayer()) {
   if (!layer.mask || !layer.assets.length) return;
   if (!layer.maskPixels) prepareMask(layer);
   if (!layer.bounds) {
@@ -1117,7 +1117,7 @@ async function generate() {
         const alpha = layer.maskPixels[pixel + 3] / 255;
         const darkness = 1 - (layer.maskPixels[pixel] + layer.maskPixels[pixel + 1] + layer.maskPixels[pixel + 2]) / 765;
         const coverage = alpha * darkness;
-        if (coverage < 0.2 || random() > coverage) continue;
+        if (coverage <= 0 || random() > coverage) continue;
         const assetIndex = Math.floor(random() * layer.assets.length);
         placements.push({
           x, y,
@@ -1342,7 +1342,8 @@ function renderImageSets() {
   for (const set of state.imageSets) {
     const item = document.createElement('div');
     item.className = 'image-set';
-    item.innerHTML = '<div><b></b><small></small></div><button class="edit-set" title="Editar">✎</button><button class="use-set">Usar</button>';
+    item.innerHTML = '<img class="set-thumbnail" alt=""><div><b></b><small></small></div><button class="edit-set" title="Editar">✎</button><button class="use-set">Usar</button>';
+    const thumbnail = item.querySelector('.set-thumbnail'); thumbnail.src = set.assets[0]?.image.src || ''; thumbnail.alt = set.name;
     item.querySelector('b').textContent = set.name;
     item.querySelector('small').textContent = `${set.assets.length} imagem(ns)`;
     item.querySelector('.edit-set').onclick = () => {
@@ -1753,7 +1754,7 @@ function openTerrainHeightEditor(layer) {
   renderTerrainHeight(layer, maskEditCanvas); $('#saveState').textContent = 'Editando altura do terreno';
 }
 
-$('#editGroundHeight').onclick = () => openTerrainHeightEditor(selectedLayer());
+$('#editGroundHeight').onclick = () => state.maskEditing === selectedLayer()?.id ? closeMaskEditor() : openTerrainHeightEditor(selectedLayer());
 $('#groundMaskInput').addEventListener('change', async (event) => {
   const file = event.target.files[0];
   const layer = selectedLayer();
@@ -1794,7 +1795,7 @@ $('#clearTerrainBrush').onclick = () => { state.terrainBrushImage = null; state.
 document.querySelectorAll('[data-terrain-brush]').forEach((button) => {
   button.onclick = async () => {
     state.terrainBrushMode = button.dataset.terrainBrush;
-    state.terrainBrushImage = button.dataset.brushSrc ? await imageFromSource(button.dataset.brushSrc) : null;
+    state.terrainBrushImage = button.dataset.brushSrc ? await imageFromSource(new URL(button.dataset.brushSrc, document.baseURI).href) : null;
     document.querySelectorAll('[data-terrain-brush]').forEach((item) => item.classList.toggle('active', item === button));
     $('#terrainBrushName').textContent = button.dataset.brushSrc?.split('/').pop() || '';
     $('#clearTerrainBrush').hidden = !state.terrainBrushImage;
@@ -1852,18 +1853,23 @@ function paintTerrainHeight(layer, x, y, brushSize, renderPreview = true) {
 
 $('#createMaskBtn').onclick = () => {
   const layer = selectedLayer();
+  if (state.maskEditing === layer.id) { closeMaskEditor(); return; }
   $('#brushOpacity').max = '1'; $('#brushOpacity').step = '0.01'; $('#brushOpacity').value = '1'; $('#brushOpacityValue').value = '100';
   maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
-  maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
+  maskEditContext.fillStyle = '#fff'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height);
   if (layer.mask) maskEditContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
   state.maskEditing = layer.id;
   maskHistory = [];
   state.drag = false;
   viewport.classList.remove('dragging');
-  maskEditCanvas.style.display = 'block';
+  maskEditCanvas.style.display = 'block'; maskEditCanvas.style.opacity = layer.type === 'terrain' ? '0.35' : '1';
   redraw();
   $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
-  $('#saveState').textContent = 'Editando máscara';
+  const supportsTerrainBrushes = layer.type === 'terrain';
+  $('#terrainBrushPresets').hidden = !supportsTerrainBrushes; $('#terrainBrushUpload').hidden = !supportsTerrainBrushes;
+  $('#terrainBrushRotationLabel').hidden = !supportsTerrainBrushes; $('#terrainBrushRotation').hidden = !supportsTerrainBrushes; $('#terrainBrushRotationValue').hidden = !supportsTerrainBrushes;
+  $('#createMaskBtn').textContent = 'Fechar editor';
+  $('#saveState').textContent = 'Editando máscara • alterações automáticas';
 };
 document.querySelectorAll('[data-mask-tool]').forEach((button) => {
   button.onclick = () => {
@@ -1905,6 +1911,50 @@ $('#brushOpacityValue').addEventListener('change', (event) => {
   if (heightMode && maskTool !== 'eraser') showTerrainHeightLevel(value);
 });
 bindNumberInput('brushSizeValue', 'brushSize', () => {});
+function paintDistributionStamp(x, y, brushSize) {
+  const opacity = Number($('#brushOpacity').value);
+  if (!state.terrainBrushImage) {
+    maskEditContext.globalCompositeOperation = 'source-over'; maskEditContext.globalAlpha = opacity;
+    maskEditContext.fillStyle = maskTool === 'eraser' ? '#fff' : '#000';
+    maskEditContext.beginPath(); maskEditContext.arc(x, y, brushSize / 2, 0, Math.PI * 2); maskEditContext.fill();
+    maskEditContext.globalAlpha = 1; return;
+  }
+  const stamp = document.createElement('canvas'); stamp.width = stamp.height = Math.max(1, Math.ceil(brushSize));
+  const stampContext = stamp.getContext('2d');
+  stampContext.drawImage(state.terrainBrushImage, 0, 0, stamp.width, stamp.height);
+  stampContext.globalCompositeOperation = 'source-in'; stampContext.fillStyle = maskTool === 'eraser' ? '#fff' : '#000'; stampContext.fillRect(0, 0, stamp.width, stamp.height);
+  const rotation = (Math.random() * 2 - 1) * state.terrainBrushRotation * Math.PI / 180;
+  maskEditContext.save(); maskEditContext.globalAlpha = opacity; maskEditContext.translate(x, y); maskEditContext.rotate(rotation);
+  maskEditContext.drawImage(stamp, -brushSize / 2, -brushSize / 2, brushSize, brushSize); maskEditContext.restore();
+}
+
+let maskCommitTimer = 0;
+let maskCommitRevision = 0;
+function scheduleMaskCommit() {
+  clearTimeout(maskCommitTimer);
+  maskCommitTimer = setTimeout(() => commitMaskEdits(), 180);
+}
+
+async function commitMaskEdits() {
+  clearTimeout(maskCommitTimer); maskCommitTimer = 0;
+  const layer = state.layers.find((item) => item.id === state.maskEditing);
+  if (!layer) return;
+  const revision = ++maskCommitRevision;
+  const source = maskEditCanvas.toDataURL('image/png');
+  const image = await imageFromSource(source);
+  if (revision !== maskCommitRevision) return;
+  if (state.terrainHeightEditing) {
+    layer.heightMap = image; renderTerrainHeight(layer, maskEditCanvas);
+    $('#saveState').textContent = 'Terreno atualizado automaticamente'; return;
+  }
+  layer.mask = image; layer.maskName = 'Máscara criada no editor';
+  layer.maskPixels = null; layer.maskPath = null; layer.clip = null; layer.bounds = null;
+  $('#maskName').textContent = layer.maskName; renderMaskPreview(layer); updateReadyState();
+  if (layer.type === 'region') await applyRegionPriority(layer);
+  if (layer.type === 'terrain' && layer.assets.length) await generate(layer);
+  else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
+}
+
 function paintMask(event) {
   if (!maskDrawing || maskPaintPointerId !== event.pointerId || !(event.buttons & 1)) return;
   const heightLayer = state.terrainHeightEditing ? state.layers.find((layer) => layer.id === state.terrainHeightEditing) : null;
@@ -1915,14 +1965,12 @@ function paintMask(event) {
       for (let index = 0; index < data.data.length; index += 4) {
         data.data[index] = data.data[index + 1] = data.data[index + 2] = level; data.data[index + 3] = 255;
       }
-      maskEditContext.putImageData(data, 0, 0); renderTerrainHeight(heightLayer, maskEditCanvas); maskDrawing = false; return;
+      maskEditContext.putImageData(data, 0, 0); renderTerrainHeight(heightLayer, maskEditCanvas); maskDrawing = false; scheduleMaskCommit(); return;
     }
     maskEditContext.globalCompositeOperation = 'source-over';
-    maskEditContext.globalAlpha = heightLayer ? 1 : Number($('#brushOpacity').value);
-    const level = Math.round(Number($('#brushOpacity').value) * 255);
-    maskEditContext.fillStyle = heightLayer ? `rgb(${level},${level},${level})` : '#000'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); maskEditContext.globalAlpha = 1;
-    if (heightLayer) renderTerrainHeight(heightLayer, maskEditCanvas);
-    maskDrawing = false;
+    maskEditContext.globalAlpha = Number($('#brushOpacity').value);
+    maskEditContext.fillStyle = maskTool === 'eraser' ? '#fff' : '#000'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); maskEditContext.globalAlpha = 1;
+    maskDrawing = false; scheduleMaskCommit();
     return;
   }
   const rectangle = maskEditCanvas.getBoundingClientRect();
@@ -1937,22 +1985,14 @@ function paintMask(event) {
       const radius = brushSize / 2, left = Math.min(lastTerrainPaintPoint.x, x) - radius, top = Math.min(lastTerrainPaintPoint.y, y) - radius;
       renderTerrainHeight(heightLayer, maskEditCanvas, { x: left, y: top, width: Math.abs(x - lastTerrainPaintPoint.x) + brushSize, height: Math.abs(y - lastTerrainPaintPoint.y) + brushSize });
     } else paintTerrainHeight(heightLayer, x, y, brushSize);
-    lastTerrainPaintPoint = { x, y }; return;
+    lastTerrainPaintPoint = { x, y }; scheduleMaskCommit(); return;
   }
   else {
-    maskEditContext.globalCompositeOperation = heightLayer ? 'source-over' : maskTool === 'eraser' ? 'destination-out' : 'source-over';
-    maskEditContext.globalAlpha = heightLayer ? 1 : Number($('#brushOpacity').value);
-    const level = Math.round(Number($('#brushOpacity').value) * 255);
-    maskEditContext.fillStyle = heightLayer ? `rgb(${level},${level},${level})` : '#000';
     const start = lastTerrainPaintPoint || { x, y };
     const distance = Math.hypot(x - start.x, y - start.y);
     const steps = Math.max(1, Math.ceil(distance / brushStampSpacing(brushSize)));
-    for (let step = 1; step <= steps; step++) {
-      const stampX = start.x + (x - start.x) * step / steps, stampY = start.y + (y - start.y) * step / steps;
-      maskEditContext.beginPath(); maskEditContext.arc(stampX, stampY, radius, 0, Math.PI * 2); maskEditContext.fill();
-    }
-    maskEditContext.globalAlpha = 1;
-    lastTerrainPaintPoint = { x, y };
+    for (let step = 1; step <= steps; step++) paintDistributionStamp(start.x + (x - start.x) * step / steps, start.y + (y - start.y) * step / steps, brushSize);
+    lastTerrainPaintPoint = { x, y }; scheduleMaskCommit();
   }
 }
 function stopBrushRepetition() {
@@ -2021,37 +2061,28 @@ maskEditCanvas.onpointerleave = () => { if (!maskDrawing) brushCursor.style.disp
 maskEditCanvas.onpointerenter = (event) => { if (!maskPanning && maskTool !== 'fill') maskEditCanvas.onpointermove(event); };
 function stopMaskPointer(event) {
   event?.stopPropagation();
+  const painted = maskDrawing;
   maskDrawing = false; maskPanning = false; maskPaintPointerId = null;
   lastTerrainPaintPoint = null;
   stopBrushRepetition();
+  if (painted && state.maskEditing) commitMaskEdits();
 }
 maskEditCanvas.onpointerup = stopMaskPointer;
 maskEditCanvas.onpointercancel = stopMaskPointer;
 maskEditCanvas.onlostpointercapture = stopMaskPointer;
-async function closeMaskEditor(save) {
-  const layer = state.layers.find((item) => item.id === state.maskEditing);
-  if (state.terrainHeightEditing && layer) {
-    if (save) {
-      layer.heightMap = await imageFromSource(maskEditCanvas.toDataURL('image/png'));
-      renderTerrainHeight(layer, maskEditCanvas);
-    } else if (layer.heightMap) renderTerrainHeight(layer);
-    else { layer.heightOutput.width = 0; redraw(); }
-  } else if (save && layer) {
-    layer.mask = await imageFromSource(maskEditCanvas.toDataURL('image/png'));
-    layer.maskName = 'Máscara criada no editor'; layer.maskPixels = null; layer.maskPath = null; layer.clip = null; layer.bounds = null; layer.output.width = 0; layer.placements = [];
-    if (layer.type === 'region') await applyRegionPriority(layer);
-    $('#maskName').textContent = layer.maskName; $('#createMaskBtn').textContent = t('editMask'); renderMaskPreview(layer); updateReadyState(); redraw();
-  }
+async function closeMaskEditor() {
+  const editingId = state.maskEditing;
+  const layer = state.layers.find((item) => item.id === editingId);
+  await commitMaskEdits();
+  if (state.maskEditing !== editingId) return;
   state.maskEditing = null; state.terrainHeightEditing = null; maskEditCanvas.style.display = 'none'; maskEditCanvas.style.opacity = '1'; $('#maskTools').hidden = true; $('#brushSizeControl').hidden = true;
   $('#brushSizeControl span').textContent = 'Opacidade'; $('#brushOpacity').max = '1';
   $('#terrainBrushPresets').hidden = true; $('#terrainBrushUpload').hidden = true; $('#clearTerrainBrush').hidden = true;
   $('#terrainBrushRotationLabel').hidden = true; $('#terrainBrushRotation').hidden = true; $('#terrainBrushRotationValue').hidden = true;
   brushCursor.style.display = 'none'; maskHistory = [];
-  redraw();
-  $('#saveState').textContent = save ? 'Máscara atualizada' : 'Edição cancelada';
+  if (layer?.id === state.selectedId) $('#createMaskBtn').textContent = layer.mask ? t('editMask') : t('createMask');
+  redraw(); $('#saveState').textContent = 'Edição finalizada';
 }
-$('#finishMask').onclick = () => closeMaskEditor(true);
-$('#cancelMask').onclick = () => closeMaskEditor(false);
 document.addEventListener('keydown', async (event) => {
   if (!state.maskEditing || !(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return;
   event.preventDefault();
@@ -2062,13 +2093,13 @@ document.addEventListener('keydown', async (event) => {
   maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
   maskEditContext.drawImage(image, 0, 0);
   if (state.terrainHeightEditing) renderTerrainHeight(state.layers.find((layer) => layer.id === state.terrainHeightEditing), maskEditCanvas);
-  $('#saveState').textContent = `Desfazer • ${maskHistory.length} restante(s)`;
+  scheduleMaskCommit(); $('#saveState').textContent = `Desfazer • ${maskHistory.length} restante(s)`;
 });
 $('#randomSeed').onclick = () => {
   selectedLayer().settings.seed = Math.random().toString(36).slice(2, 10);
   $('#seed').value = selectedLayer().settings.seed;
 };
-$('#generateBtn').onclick = generate;
+$('#generateBtn').onclick = () => { const layer = selectedLayer(); layer.settings.seed = Math.random().toString(36).slice(2, 10); $('#seed').value = layer.settings.seed; generate(layer); };
 
 document.addEventListener('click', (event) => {
   if (!event.target.closest('#layerContextMenu')) $('#layerContextMenu').hidden = true;
