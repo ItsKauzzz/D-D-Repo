@@ -523,7 +523,10 @@ function selectLayer(id) {
   }
   if (layer.type === 'path') fillPathInspector(layer);
   if (layer.type === 'terrain' || layer.type === 'region') renderMaskPreview(layer);
-  if (layer.type === 'ground') $('#groundMaskName').textContent = layer.maskName || 'Nenhuma máscara de ground/base';
+  if (layer.type === 'ground') {
+    $('#groundMaskName').textContent = layer.maskName || 'Nenhuma máscara de ground/base';
+    renderGroundMaskPreview(layer);
+  }
   updateOutputs();
   renderLayers();
   renderAssets();
@@ -546,6 +549,16 @@ function renderMaskPreview(layer) {
     $('#maskName').textContent = 'Nenhuma máscara selecionada'; $('#createMaskBtn').textContent = t('createMask'); renderMaskPreview(layer); updateReadyState(); redraw();
   };
   card.append(image, name, remove); preview.append(card);
+}
+
+function renderGroundMaskPreview(layer) {
+  const preview = $('#groundMaskPreview');
+  preview.replaceChildren();
+  if (!layer?.heightMap) return;
+  const card = document.createElement('div'); card.className = 'mask-card';
+  const image = new Image(); image.src = layer.heightMap.src; image.alt = `Máscara original de ${layer.name}`;
+  const label = document.createElement('small'); label.textContent = 'Máscara original • preto e branco';
+  card.append(image, label); preview.append(card);
 }
 
 async function applyRegionPriority(activeLayer) {
@@ -1430,7 +1443,7 @@ $('#rotation').addEventListener('change', (event) => { selectedLayer().settings.
 $('#mirror').addEventListener('change', (event) => { selectedLayer().settings.mirror = event.target.checked; });
 $('#slice').addEventListener('change', (event) => { selectedLayer().settings.slice = event.target.checked; });
 const maskEditCanvas = $('#maskEditCanvas');
-const maskEditContext = maskEditCanvas.getContext('2d');
+const maskEditContext = maskEditCanvas.getContext('2d', { willReadFrequently: true });
 let maskTool = 'brush';
 let maskDrawing = false;
 let maskPanning = false;
@@ -1478,48 +1491,56 @@ function mixTerrainColor(base, overlay, amount) {
 function renderTerrainHeight(layer, sourceCanvas = null, dirty = null) {
   let source = sourceCanvas;
   if (!source && layer.heightMap) {
-    source = document.createElement('canvas'); source.width = canvas.width; source.height = canvas.height; source.getContext('2d').drawImage(layer.heightMap, 0, 0, canvas.width, canvas.height);
+    source = document.createElement('canvas'); source.width = canvas.width; source.height = canvas.height;
+    source.getContext('2d', { willReadFrequently: true }).drawImage(layer.heightMap, 0, 0, canvas.width, canvas.height);
   }
-  if (!source.width || !source.height) return;
+  if (!source?.width || !source.height) return;
   const sourceContext = source.getContext('2d', { willReadFrequently: true });
   const coastBlur = 3;
-  // Always resolve the coast against the complete black-and-white canvas.
-  // Partial regions made their own rectangle look like an artificial coast,
-  // which caused straight seams around brush strokes and imported masks.
-  const region = { x: 0, y: 0, width: source.width, height: source.height };
-  const heightData = sourceContext.getImageData(region.x, region.y, region.width, region.height);
+  const maxThickness = Math.ceil(Math.max(state.terrainColors.coastLandThickness, state.terrainColors.coastWaveThickness) * (1 + state.terrainColors.coastNoiseMultiplier)) + coastBlur + 2;
+  const expand = (rectangle, padding) => {
+    const x = Math.max(0, Math.floor(rectangle.x - padding)), y = Math.max(0, Math.floor(rectangle.y - padding));
+    return { x, y, width: Math.min(source.width, Math.ceil(rectangle.x + rectangle.width + padding)) - x, height: Math.min(source.height, Math.ceil(rectangle.y + rectangle.height + padding)) - y };
+  };
+  // Repaint only the changed area plus its coast, but sample an additional
+  // margin. The second margin prevents the readback rectangle from becoming a
+  // fake coastline—the source of the former square seams around brush strokes.
+  const paintRegion = dirty ? expand(dirty, maxThickness) : { x: 0, y: 0, width: source.width, height: source.height };
+  const sampleRegion = dirty ? expand(paintRegion, maxThickness) : paintRegion;
+  const heightData = sourceContext.getImageData(sampleRegion.x, sampleRegion.y, sampleRegion.width, sampleRegion.height);
   const output = layer.heightOutput;
   if (output.width !== source.width || output.height !== source.height) { output.width = source.width; output.height = source.height; }
-  const outputContext = output.getContext('2d'); const colored = outputContext.createImageData(region.width, region.height);
+  const outputContext = output.getContext('2d');
+  const colored = outputContext.createImageData(paintRegion.width, paintRegion.height);
   const colors = [state.terrainColors.deep, state.terrainColors.medium, state.terrainColors.shallow, state.terrainColors.land].map((color) => [parseInt(color.slice(1, 3), 16), parseInt(color.slice(3, 5), 16), parseInt(color.slice(5, 7), 16)]);
   const coastColors = [state.terrainColors.coastLand, state.terrainColors.coastWave].map((color) => [parseInt(color.slice(1, 3), 16), parseInt(color.slice(3, 5), 16), parseInt(color.slice(5, 7), 16)]);
-  for (let index = 0; index < heightData.data.length; index += 4) {
-    // The editable heightmap is intentionally intuitive for mask painting:
-    // white is height 0 (deep water) and black is height 100 (land).
-    const height = 1 - heightData.data[index] / 255;
-    const localPixel = index / 4, localX = localPixel % region.width, localY = Math.floor(localPixel / region.width), land = height >= 0.9;
-    const noise = state.terrainColors.coastVariation ? 1 + (perlinCoastNoise(region.x + localX, region.y + localY) - 0.5) * 2 * state.terrainColors.coastNoiseMultiplier : 1;
+  const offsetX = paintRegion.x - sampleRegion.x, offsetY = paintRegion.y - sampleRegion.y;
+  for (let py = 0; py < paintRegion.height; py++) for (let px = 0; px < paintRegion.width; px++) {
+    const sx = px + offsetX, sy = py + offsetY;
+    const sourceIndex = (sy * sampleRegion.width + sx) * 4, outputIndex = (py * paintRegion.width + px) * 4;
+    const height = 1 - heightData.data[sourceIndex] / 255;
+    const land = height >= 0.9;
+    const worldX = paintRegion.x + px, worldY = paintRegion.y + py;
+    const noise = state.terrainColors.coastVariation ? 1 + (perlinCoastNoise(worldX, worldY) - 0.5) * 2 * state.terrainColors.coastNoiseMultiplier : 1;
     const thickness = Math.max(0, (land ? state.terrainColors.coastLandThickness : state.terrainColors.coastWaveThickness) * noise);
     const searchRadius = Math.ceil(thickness + coastBlur);
     let coastDistance = Infinity;
     for (let distance = 1; distance <= searchRadius && !Number.isFinite(coastDistance); distance++) for (const [dx, dy] of [[-distance, 0], [distance, 0], [0, -distance], [0, distance], [-distance, -distance], [distance, -distance], [-distance, distance], [distance, distance]]) {
-      const nx = localX + dx, ny = localY + dy;
-      if (nx >= 0 && ny >= 0 && nx < region.width && ny < region.height) {
-        const neighborHeight = 1 - heightData.data[(ny * region.width + nx) * 4] / 255;
-        const neighborLand = neighborHeight >= 0.9;
-        if (neighborLand !== land) { coastDistance = Math.hypot(dx, dy); break; }
+      const nx = sx + dx, ny = sy + dy;
+      if (nx >= 0 && ny >= 0 && nx < sampleRegion.width && ny < sampleRegion.height) {
+        const neighborHeight = 1 - heightData.data[(ny * sampleRegion.width + nx) * 4] / 255;
+        if ((neighborHeight >= 0.9) !== land) { coastDistance = Math.hypot(dx, dy); break; }
       }
     }
     const baseColor = height < 0.3 ? colors[0] : height < 0.6 ? colors[1] : height < 0.9 ? colors[2] : colors[3];
     const coastRange = thickness + coastBlur;
-    const coastAmount = Number.isFinite(coastDistance) && coastRange > 0
-      ? Math.max(0, Math.min(1, (coastRange - coastDistance + 1) / Math.max(1, coastBlur + 1)))
-      : 0;
+    const coastAmount = Number.isFinite(coastDistance) && coastRange > 0 ? Math.max(0, Math.min(1, (coastRange - coastDistance + 1) / Math.max(1, coastBlur + 1))) : 0;
     const smoothCoastAmount = coastAmount * coastAmount * (3 - 2 * coastAmount);
     const color = mixTerrainColor(baseColor, coastColors[land ? 0 : 1], smoothCoastAmount * 0.9);
-    colored.data[index] = color[0]; colored.data[index + 1] = color[1]; colored.data[index + 2] = color[2]; colored.data[index + 3] = 255;
+    colored.data[outputIndex] = color[0]; colored.data[outputIndex + 1] = color[1]; colored.data[outputIndex + 2] = color[2]; colored.data[outputIndex + 3] = 255;
   }
-  outputContext.putImageData(colored, region.x, region.y); redraw();
+  outputContext.putImageData(colored, paintRegion.x, paintRegion.y);
+  redraw();
 }
 
 function openTerrainHeightEditor(layer) {
@@ -1559,7 +1580,10 @@ $('#groundMaskInput').addEventListener('change', async (event) => {
   layer.heightMap = await imageFromSource(normalized.toDataURL('image/png'));
   layer.maskName = file.name;
   $('#groundMaskName').textContent = file.name;
-  renderTerrainHeight(layer, normalized);
+  renderGroundMaskPreview(layer);
+  stage.style.display = 'block'; $('#emptyState').style.display = 'none';
+  renderTerrainHeight(layer);
+  redraw();
   $('#saveState').textContent = 'Máscara de ground/base aplicada';
   event.target.value = '';
 });
