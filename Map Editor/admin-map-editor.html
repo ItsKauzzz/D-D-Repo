@@ -119,6 +119,11 @@
       <label><input id="mirror" type="checkbox" checked> Mirror aleatório</label>
       <label><input id="slice" type="checkbox"> Slice na máscara</label>
     </section>
+    <section class="terrain-control terrain-region-link">
+      <label class="check-row"><input id="terrainCreateRegion" type="checkbox"> Criar uma região com esta máscara</label>
+      <label id="terrainRegionLinkField">Região vinculada<select id="terrainRegionLink"><option value="">Selecione uma região criada</option></select></label>
+      <small>A região vinculada usará a máscara deste terreno no mapa exportado.</small>
+    </section>
     <section class="object-control" hidden>
       <div class="object-form">
         <div class="object-anchor-field">
@@ -214,7 +219,7 @@
       <fieldset class="speed-settings map-general-settings"><legend>Mapa</legend>
         <label>Largura <span><input id="mapWidthSetting" type="number" min="1" value="1600"> px</span></label>
         <label>Altura <span><input id="mapHeightSetting" type="number" min="1" value="1000"> px</span></label>
-        <label>Filtro de imagens <select id="mapFilterSetting"><option value="linear">Linear</option><option value="nearest">Mais próximo (pixel)</option></select></label>
+        <label>Filtro de imagens <select id="mapFilterSetting"><option value="linear">Linear</option><option value="balanced">Intermediário</option><option value="nearest">Mais próximo (pixel)</option></select></label>
         <button id="applyMapSettings" type="button" class="position-object">Aplicar tamanho</button>
       </fieldset>
       <label class="project-scale-setting">Escala do mapa <span><b>100px</b> equivalem a <input id="distanceScaleKm" type="number" min="0.01" step="1" value="100"> km</span></label>

@@ -124,6 +124,8 @@ Object.assign(phraseTranslations.en, {
   'Ground / base': 'Ground / base', 'Terrain sprites': 'Terrain sprites', 'Enviar máscara de ground/base': 'Upload ground/base mask', 'Imagem em preto e branco • branco = água, preto = terra': 'Black and white image • white = water, black = land',
   'Nenhuma máscara de ground/base': 'No ground/base mask', '▦ Editar ground/base': '▦ Edit ground/base', 'Distribuição padronizada': 'Standardized distribution', 'Pesquisar conjuntos...': 'Search sets...',
   'Nenhum conjunto encontrado.': 'No sets found.', 'Nenhum conjunto criado ainda.': 'No sets created yet.', 'Usar': 'Use', 'Editar': 'Edit', 'Novo conjunto': 'New set',
+  'Criar uma região com esta máscara': 'Create a region from this mask', 'Região vinculada': 'Linked region', 'Selecione uma região criada': 'Select an existing region', 'Crie uma layer de região primeiro': 'Create a region layer first',
+  'A região vinculada usará a máscara deste terreno no mapa exportado.': 'The linked region will use this terrain mask in the exported map.', 'Intermediário': 'Balanced',
 });
 Object.assign(phraseTranslations.ja, {
   File: 'ファイル', Manage: '管理', Abrir: '開く', Salvar: '保存', 'Salvar como': '名前を付けて保存', 'Exportar como PNG': 'PNGとして書き出す', 'Exportar projeto completo': '完全なプロジェクトを書き出す', 'Exportar mapa': 'マップを書き出す',
@@ -132,6 +134,8 @@ Object.assign(phraseTranslations.ja, {
   'Ground / base': 'グラウンド / ベース', 'Terrain sprites': '地形スプライト', 'Enviar máscara de ground/base': 'グラウンド / ベースマスクをアップロード', 'Imagem em preto e branco • branco = água, preto = terra': '白黒画像 • 白 = 水、黒 = 陸地',
   'Nenhuma máscara de ground/base': 'グラウンド / ベースマスクなし', '▦ Editar ground/base': '▦ グラウンド / ベースを編集', 'Distribuição padronizada': '均等配置', 'Pesquisar conjuntos...': 'セットを検索...',
   'Nenhum conjunto encontrado.': 'セットが見つかりません。', 'Nenhum conjunto criado ainda.': 'セットはまだありません。', 'Usar': '使用', 'Editar': '編集', 'Novo conjunto': '新規セット',
+  'Criar uma região com esta máscara': 'このマスクから地域を作成', 'Região vinculada': 'リンクする地域', 'Selecione uma região criada': '既存の地域を選択', 'Crie uma layer de região primeiro': '先に地域レイヤーを作成してください',
+  'A região vinculada usará a máscara deste terreno no mapa exportado.': 'リンクした地域は、書き出したマップでこの地形マスクを使用します。', 'Intermediário': '中間',
 });
 function translateDocument(root = document.body) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -249,7 +253,7 @@ function createLayer(type = 'terrain') {
     heightMap: null,
     heightOutput: document.createElement('canvas'),
     placements: [],
-    settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, standardizedDistribution: false, rotation: true, mirror: true, slice: false, imageOffsetX: 0, imageOffsetY: 0, imageOpacity: 1 },
+    settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, standardizedDistribution: false, rotation: true, mirror: true, slice: false, createRegion: false, regionLayerId: '', imageOffsetX: 0, imageOffsetY: 0, imageOpacity: 1 },
   };
 }
 
@@ -313,6 +317,7 @@ function fit() {
 
 function redraw(includeObjects = true, showSelection = true, includePaths = true) {
   ctx.imageSmoothingEnabled = state.mapFilter !== 'nearest';
+  ctx.imageSmoothingQuality = state.mapFilter === 'linear' ? 'high' : 'low';
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   // Background images retain their explicit layer priority.
   for (const layer of [...state.layers].reverse()) {
@@ -588,6 +593,16 @@ $('#terrainAnchorPreview').addEventListener('click', (event) => {
   else redraw();
 });
 
+function populateTerrainRegionLink(layer) {
+  const select = $('#terrainRegionLink');
+  const regions = state.layers.filter((item) => item.type === 'region');
+  select.replaceChildren(new Option(regions.length ? 'Selecione uma região criada' : 'Crie uma layer de região primeiro', ''), ...regions.map((region) => new Option(region.region.name || region.name, region.id)));
+  select.value = regions.some((region) => region.id === layer.settings.regionLayerId) ? layer.settings.regionLayerId : '';
+  if (layer.settings.regionLayerId && !select.value) layer.settings.regionLayerId = '';
+  $('#terrainCreateRegion').checked = Boolean(layer.settings.createRegion);
+  $('#terrainRegionLinkField').hidden = !layer.settings.createRegion;
+}
+
 function selectLayer(id) {
   if (state.maskEditing && state.maskEditing !== id) closeMaskEditor();
   state.selectedId = id;
@@ -605,6 +620,7 @@ function selectLayer(id) {
   $('#rotation').checked = layer.settings.rotation;
   $('#mirror').checked = layer.settings.mirror;
   $('#slice').checked = layer.settings.slice;
+  if (layer.type === 'terrain') populateTerrainRegionLink(layer);
   $('#imageOffsetX').value = layer.settings.imageOffsetX;
   $('#imageOffsetY').value = layer.settings.imageOffsetY;
   $('#imageOpacity').value = layer.settings.imageOpacity;
@@ -1104,6 +1120,7 @@ async function generate(layer = selectedLayer()) {
   layer.placements = [];
   const outputContext = layer.output.getContext('2d');
   outputContext.imageSmoothingEnabled = state.mapFilter !== 'nearest';
+  outputContext.imageSmoothingQuality = state.mapFilter === 'linear' ? 'high' : 'low';
   const random = randomFactory(hashSeed(layer.settings.seed));
   const { minX, minY, maxX, maxY } = layer.bounds;
   const width = maxX - minX + 1;
@@ -1304,11 +1321,13 @@ $('#projectSettingsBtn').onclick = () => {
   $('#projectSettingsModal').hidden = false;
 };
 function applyMapFilter() {
-  state.mapFilter = $('#mapFilterSetting').value === 'nearest' ? 'nearest' : 'linear';
+  const selectedFilter = $('#mapFilterSetting').value;
+  state.mapFilter = ['linear', 'balanced', 'nearest'].includes(selectedFilter) ? selectedFilter : 'linear';
   const pixelated = state.mapFilter === 'nearest';
   canvas.style.imageRendering = pixelated ? 'pixelated' : 'auto';
   maskEditCanvas.style.imageRendering = pixelated ? 'pixelated' : 'auto';
   ctx.imageSmoothingEnabled = !pixelated;
+  ctx.imageSmoothingQuality = state.mapFilter === 'linear' ? 'high' : 'low';
 }
 $('#applyMapSettings').onclick = () => {
   const width = Math.max(1, Math.round(Number($('#mapWidthSetting').value) || canvas.width));
@@ -1692,6 +1711,14 @@ $('#standardizedDistribution').addEventListener('change', (event) => { selectedL
 $('#rotation').addEventListener('change', (event) => { selectedLayer().settings.rotation = event.target.checked; scheduleTerrainAutoGenerate(); });
 $('#mirror').addEventListener('change', (event) => { selectedLayer().settings.mirror = event.target.checked; scheduleTerrainAutoGenerate(); });
 $('#slice').addEventListener('change', (event) => { selectedLayer().settings.slice = event.target.checked; scheduleTerrainAutoGenerate(); });
+$('#terrainCreateRegion').addEventListener('change', (event) => {
+  const layer = selectedLayer(); if (layer?.type !== 'terrain') return;
+  layer.settings.createRegion = event.target.checked;
+  $('#terrainRegionLinkField').hidden = !event.target.checked;
+});
+$('#terrainRegionLink').addEventListener('change', (event) => {
+  const layer = selectedLayer(); if (layer?.type === 'terrain') layer.settings.regionLayerId = event.target.value;
+});
 const maskEditCanvas = $('#maskEditCanvas');
 const maskEditContext = maskEditCanvas.getContext('2d', { willReadFrequently: true });
 let maskTool = 'brush';
@@ -2398,7 +2425,7 @@ $('#projectInput').addEventListener('change', async (event) => {
     state.terrainColors = { ...state.terrainColors, ...project.terrainColors };
     setTerrainBrushRotation(project.terrainBrushRotation || 0);
     setBrushRepetition(project.terrainBrushRepetition ?? 100);
-    state.mapFilter = project.mapFilter === 'nearest' ? 'nearest' : 'linear';
+    state.mapFilter = ['linear', 'balanced', 'nearest'].includes(project.mapFilter) ? project.mapFilter : 'linear';
     $('#mapFilterSetting').value = state.mapFilter; applyMapFilter();
     state.imageSets = await Promise.all(project.imageSets.map(async (set) => ({
       ...set, assets: await Promise.all(set.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source), anchorX: asset.anchorX, anchorY: asset.anchorY }))),
@@ -2585,16 +2612,33 @@ function exportablePois() {
 }
 
 function exportableRegions() {
-  return state.layers.filter((layer) => layer.visible && layer.type === 'region' && layer.mask).map((layer) => {
+  const candidates = state.layers.flatMap((layer) => {
+    if (!layer.visible || !layer.mask) return [];
+    if (layer.type === 'region') return [{ sourceLayer: layer, regionLayer: layer, terrainMask: false }];
+    if (layer.type !== 'terrain' || !layer.settings.createRegion || !layer.settings.regionLayerId) return [];
+    const regionLayer = state.layers.find((item) => item.type === 'region' && item.id === layer.settings.regionLayerId);
+    return regionLayer ? [{ sourceLayer: layer, regionLayer, terrainMask: true }] : [];
+  });
+  return candidates.map(({ sourceLayer, regionLayer, terrainMask }) => {
     const scratch = document.createElement('canvas'); scratch.width = canvas.width; scratch.height = canvas.height;
     const regionContext = scratch.getContext('2d', { willReadFrequently: true });
-    regionContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
-    const pixels = regionContext.getImageData(0, 0, canvas.width, canvas.height).data;
+    regionContext.drawImage(sourceLayer.mask, 0, 0, canvas.width, canvas.height);
+    const imageData = regionContext.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    if (terrainMask) {
+      for (let index = 0; index < pixels.length; index += 4) {
+        const darkness = 1 - (pixels[index] + pixels[index + 1] + pixels[index + 2]) / 765;
+        pixels[index] = pixels[index + 1] = pixels[index + 2] = 255;
+        pixels[index + 3] = Math.round(pixels[index + 3] * Math.max(0, darkness));
+      }
+      regionContext.putImageData(imageData, 0, 0);
+    }
     let totalX = 0, totalY = 0, count = 0;
     for (let y = 0; y < canvas.height; y += 4) for (let x = 0; x < canvas.width; x += 4) {
       if (pixels[(y * canvas.width + x) * 4 + 3] > 32) { totalX += x; totalY += y; count++; }
     }
-    return { id: layer.id, group: layer.region.group || 'Regiões', name: layer.region.name, color: layer.region.color, fillMode: layer.region.fillMode || 'fill', outlineThickness: layer.region.outlineThickness ?? 3, outlineDashed: Boolean(layer.region.outlineDashed), outlineGap: layer.region.outlineGap ?? 12, defaultOverview: Boolean(layer.region.defaultOverview), mask: layer.maskExportSource || layer.mask.src, centerX: count ? totalX / count : canvas.width / 2, centerY: count ? totalY / count : canvas.height / 2 };
+    const region = regionLayer.region;
+    return { id: terrainMask ? `${sourceLayer.id}:region` : regionLayer.id, group: region.group || 'Regiões', name: region.name, color: region.color, fillMode: region.fillMode || 'fill', outlineThickness: region.outlineThickness ?? 3, outlineDashed: Boolean(region.outlineDashed), outlineGap: region.outlineGap ?? 12, defaultOverview: Boolean(region.defaultOverview), mask: terrainMask ? scratch.toDataURL('image/png') : regionLayer.maskExportSource || regionLayer.mask.src, centerX: count ? totalX / count : canvas.width / 2, centerY: count ? totalY / count : canvas.height / 2 };
   });
 }
 
