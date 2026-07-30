@@ -80,7 +80,11 @@
     <section class="terrain-control">
       <div class="object-anchor-field">
         <span>Preview e ponto âncora do terreno</span>
-        <button id="terrainAnchorPreview" type="button" aria-label="Definir ponto âncora do terreno"><img alt="Preview do terreno"><i></i><small>Selecione uma imagem do mestre</small></button>
+        <div class="sprite-preview-navigation">
+          <button id="previousTerrainSprite" class="sprite-preview-nav" type="button" aria-label="Sprite anterior">‹</button>
+          <button id="terrainAnchorPreview" type="button" aria-label="Definir ponto âncora do terreno"><img alt="Preview do terreno"><i></i><small>Selecione uma imagem do mestre</small></button>
+          <button id="nextTerrainSprite" class="sprite-preview-nav" type="button" aria-label="Próximo sprite">›</button>
+        </div>
         <output id="terrainAnchorCoordinates">Âncora: —</output>
       </div>
     </section>
@@ -216,15 +220,21 @@
   <div id="layerContextMenu" class="context-menu" hidden>
     <button data-action="rename">Renomear</button>
     <button data-action="toggle">Ocultar</button>
+    <button data-action="duplicate">Duplicar camada</button>
     <button data-action="delete" class="danger">Excluir camada</button>
   </div>
-  <div id="projectSettingsModal" class="modal-backdrop" hidden>
-    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="projectSettingsTitle">
-      <div class="modal-head"><div><p class="panel-label">PROJETO</p><h2 id="projectSettingsTitle">Configurações</h2></div><button id="closeProjectSettings" aria-label="Fechar">×</button></div>
+  <div id="interfaceSettingsModal" class="modal-backdrop" hidden>
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="interfaceSettingsTitle">
+      <div class="modal-head"><div><p class="panel-label">INTERFACE</p><h2 id="interfaceSettingsTitle">Configurações</h2></div><button id="closeInterfaceSettings" aria-label="Fechar">×</button></div>
       <fieldset class="speed-settings appearance-settings"><legend>Aparência</legend>
         <label>Idioma <select id="languageSelect"><option value="pt-BR">Português</option><option value="en">English</option><option value="ja">日本語</option></select></label>
         <label>Tema <select id="themeSetting"><option value="atlasmith">Atlasmith</option><option value="light">Claro</option><option value="wine">Vinho e dourado</option><option value="earth">Marrom e verde</option></select></label>
       </fieldset>
+    </div>
+  </div>
+  <div id="projectSettingsModal" class="modal-backdrop" hidden>
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="projectSettingsTitle">
+      <div class="modal-head"><div><p class="panel-label">PROJETO</p><h2 id="projectSettingsTitle">Configurações</h2></div><button id="closeProjectSettings" aria-label="Fechar">×</button></div>
       <fieldset class="speed-settings map-general-settings"><legend>Mapa</legend>
         <label>Largura <span><input id="mapWidthSetting" type="number" min="1" value="1600"> px</span></label>
         <label>Altura <span><input id="mapHeightSetting" type="number" min="1" value="1000"> px</span></label>
