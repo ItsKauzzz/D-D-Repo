@@ -11,11 +11,18 @@
     <a href="admin-tools.html" aria-label="Voltar">←</a>
     <strong>Map editor</strong>
     <span id="saveState">Pronto</span>
-    <button id="openProjectBtn" class="secondary-action">Abrir projeto</button>
+    <div class="app-menu"><button type="button" class="app-menu-trigger">File</button><div class="app-menu-dropdown" hidden>
+      <button id="menuOpenProject" type="button">Abrir</button><button id="menuSaveProject" type="button">Salvar</button><button id="menuSaveAsProject" type="button">Salvar como</button>
+      <hr><button id="menuExportPng" type="button">Exportar como PNG</button><button id="menuExportProject" type="button">Exportar projeto completo</button><button id="menuExportMap" type="button">Exportar mapa</button>
+    </div></div>
+    <div class="app-menu"><button type="button" class="app-menu-trigger">Manage</button><div class="app-menu-dropdown" hidden>
+      <button id="menuManagePoiTypes" type="button">Tipos de objeto</button><button id="menuManageSets" type="button">Conjuntos de imagens</button>
+    </div></div>
+    <button id="openProjectBtn" class="secondary-action legacy-top-action" hidden>Abrir projeto</button>
     <input id="projectInput" type="file" accept=".json,.teralium,.zip" hidden>
-    <button id="saveProjectBtn" class="secondary-action">Salvar projeto</button>
-    <button id="exportBtn">Exportar projeto</button>
-    <button id="exportMapBtn">Exportar mapa</button>
+    <button id="saveProjectBtn" class="secondary-action legacy-top-action" hidden>Salvar projeto</button>
+    <button id="exportBtn" class="legacy-top-action" hidden>Exportar projeto</button>
+    <button id="exportMapBtn" class="legacy-top-action" hidden>Exportar mapa</button>
     <button id="previewMapBtn" class="icon-action" title="Pré-visualizar mapa" aria-label="Pré-visualizar mapa">👁</button>
     <button id="projectSettingsBtn" class="icon-action" title="Configurações do projeto" aria-label="Configurações do projeto">⚙</button>
   </header>
@@ -27,6 +34,7 @@
     </div>
     <div id="addLayerMenu" class="add-layer-menu" hidden>
       <button data-layer-type="terrain"><span>⌁</span><b>Terreno</b></button>
+      <button data-layer-type="ground"><span>▰</span><b>Ground / base</b></button>
       <button data-layer-type="image"><span>▧</span><b>Imagem</b></button>
       <button data-layer-type="object"><span>⌖</span><b>Objeto</b></button>
       <button data-layer-type="region"><span>◒</span><b>Região</b></button>
@@ -69,8 +77,14 @@
       <input id="maskInput" type="file" accept="image/*" hidden>
       <p class="filename" id="maskName">Nenhuma máscara selecionada</p>
       <button id="createMaskBtn" class="asset-upload terrain-control region-control">✦ Criar máscara</button>
-      <button id="editTerrainHeight" class="asset-upload terrain-control">▦ Editor de terreno</button>
       <div id="maskPreview" class="mask-preview terrain-control region-control"></div>
+    </section>
+    <section class="ground-control image-control" hidden>
+      <label class="upload" for="groundMaskInput"><span>＋</span><b>Enviar máscara de ground/base</b><small>Imagem em preto e branco • branco = água, preto = terra</small></label>
+      <input id="groundMaskInput" type="file" accept="image/*" hidden>
+      <p class="filename" id="groundMaskName">Nenhuma máscara de ground/base</p>
+      <div id="groundMaskPreview" class="mask-preview"></div>
+      <button id="editGroundHeight" class="asset-upload">▦ Editar ground/base</button>
     </section>
     <section class="image-control fields" hidden>
       <label>Offset X <input id="imageOffsetXValue" class="value-input" type="number" min="-2000" max="2000" value="0"><input id="imageOffsetX" type="range" min="-2000" max="2000" value="0"></label>
@@ -78,7 +92,7 @@
       <label>Opacidade <input id="imageOpacityValue" class="value-input" type="number" min="0" max="100" value="100"><input id="imageOpacity" type="range" min="0" max="1" step="0.01" value="1"></label>
     </section>
     <section class="terrain-control">
-      <div class="section-title"><b>Imagens do mestre</b><span id="assetCount">0</span></div>
+      <div class="section-title"><b>Terrain sprites</b><span id="assetCount">0</span></div>
       <button id="openAssetModal" class="asset-upload">＋ Adicionar imagens</button>
       <div id="assetGrid" class="asset-grid"><p>Adicione árvores, pedras ou qualquer elemento que queira distribuir.</p></div>
     </section>
@@ -92,6 +106,7 @@
         <label><small>Máx.</small><input id="sizeMax" type="range" min="0" max="2" step="0.05" value="1.3"></label>
       </div>
       <label>Seed <div class="seed-row"><input id="seed" value="Teralium-01"><button id="randomSeed" title="Gerar seed">↻</button></div></label>
+      <label class="check-row"><input id="standardizedDistribution" type="checkbox"> Distribuição padronizada</label>
     </section>
     <section class="options terrain-control">
       <label><input id="rotation" type="checkbox" checked> Rotação aleatória</label>
@@ -107,11 +122,12 @@
         </div>
         <label>Nome<input id="objectName" placeholder="Nome do local"></label>
         <label>Tipo<select id="objectType"></select></label>
+        <button id="managePoiTypes" type="button" class="position-object" hidden>＋ Gerenciar tipos de objeto</button>
         <label>Ícone<select id="objectIconSet" hidden><option value="">Selecione um conjunto</option></select><button id="openObjectIconPicker" type="button" class="icon-picker-trigger"><img alt=""><span>Selecionar conjunto de ícones</span></button></label>
         <div id="objectIconPreview" class="object-thumbnails"></div>
         <label>Galeria<select id="objectGallerySet"><option value="">Sem galeria</option></select></label>
         <div id="objectGalleryPreview" class="object-thumbnails"></div>
-        <button id="manageObjectSets" class="position-object">＋ Gerenciar conjuntos</button>
+        <button id="manageObjectSets" class="position-object" hidden>＋ Gerenciar conjuntos</button>
         <label>Descrição<textarea id="objectDescription" rows="6" placeholder="História, detalhes e informações do local..."></textarea></label>
         <button id="openDetailedDescription" type="button" class="position-object">Adicionar descrição detalhada</button>
         <button id="removeDetailedDescription" type="button" class="remove-detailed-description" hidden>Remover descrição detalhada</button>
@@ -176,8 +192,10 @@
     <button id="cancelMask" title="Cancelar">×</button>
   </div>
   <div id="brushSizeControl" class="brush-size-control" hidden>
+    <output id="heightLevelPopup" class="height-level-popup" hidden></output>
     <span>Opacidade</span><input id="brushOpacity" type="range" min="0" max="1" step="0.01" value="1"><input id="brushOpacityValue" class="value-input" type="number" min="0" max="100" value="100">
     <span>Brush</span><input id="brushSize" type="range" min="2" max="300" value="60"><input id="brushSizeValue" class="value-input" type="number" min="2" max="300" value="60">
+    <span title="0%: um stamp por largura do brush • 100%: um stamp por pixel">Brush repetition</span><input id="brushRepetition" type="range" min="0" max="100" step="1" value="100" title="Controla frequência e espaçamento dos stamps"><input id="brushRepetitionValue" class="value-input" type="number" min="0" max="100" value="100">
     <span id="terrainBrushRotationLabel" hidden>Random rotation</span><input id="terrainBrushRotation" type="range" min="0" max="180" step="1" value="0" hidden><input id="terrainBrushRotationValue" class="value-input" type="number" min="0" max="180" step="1" value="0" hidden>
     <div id="terrainBrushPresets" class="terrain-brush-presets" hidden><button type="button" data-terrain-brush="hard" class="active" title="Brush circular normal">1</button><button type="button" data-terrain-brush="soft" title="Brush circular suave">2</button></div><label id="terrainBrushUpload" class="terrain-brush-upload" hidden>Imagem do brush<input id="terrainBrushInput" type="file" accept="image/*" hidden></label><span id="terrainBrushName"></span><button id="clearTerrainBrush" type="button" hidden>×</button>
   </div>
@@ -193,6 +211,7 @@
       <fieldset class="speed-settings map-general-settings"><legend>Mapa</legend>
         <label>Largura <span><input id="mapWidthSetting" type="number" min="1" value="1600"> px</span></label>
         <label>Altura <span><input id="mapHeightSetting" type="number" min="1" value="1000"> px</span></label>
+        <label>Filtro de imagens <select id="mapFilterSetting"><option value="linear">Linear</option><option value="nearest">Mais próximo (pixel)</option></select></label>
         <button id="applyMapSettings" type="button" class="position-object">Aplicar tamanho</button>
       </fieldset>
       <label class="project-scale-setting">Escala do mapa <span><b>100px</b> equivalem a <input id="distanceScaleKm" type="number" min="0.01" step="1" value="100"> km</span></label>
@@ -228,6 +247,13 @@
       <div class="modal-head"><div><p class="panel-label">DESCRIÇÃO</p><h2 id="descriptionTemplateTitle">Templates de descrição</h2></div><button id="closeDescriptionTemplates" aria-label="Fechar">×</button></div>
       <div id="descriptionTemplateList" class="description-template-list"></div>
       <div class="description-template-create"><input id="newDescriptionTemplateName" placeholder="Nome do novo template"><button id="createDescriptionTemplate" class="position-object">＋ Criar novo</button></div>
+    </div>
+  </div>
+  <div id="poiTypeModal" class="modal-backdrop" hidden>
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="poiTypeTitle">
+      <div class="modal-head"><div><p class="panel-label">OBJETOS</p><h2 id="poiTypeTitle">Tipos de objeto</h2></div><button id="closePoiTypes" aria-label="Fechar">×</button></div>
+      <div id="poiTypeList" class="description-template-list"></div>
+      <div class="description-template-create"><input id="newPoiTypeName" placeholder="Nome do novo tipo"><input id="newPoiTypeColor" type="color" value="#f0c674"><button id="createPoiType" class="position-object">＋ Criar tipo</button></div>
     </div>
   </div>
   <div id="descriptionEditorModal" class="modal-backdrop" hidden>
