@@ -121,11 +121,17 @@ Object.assign(phraseTranslations.en, {
   File: 'File', Manage: 'Manage', Abrir: 'Open', Salvar: 'Save', 'Salvar como': 'Save as', 'Exportar como PNG': 'Export as PNG', 'Exportar projeto completo': 'Export full project', 'Exportar mapa': 'Export map',
   'Tipos de objeto': 'Object types', 'Conjuntos de imagens': 'Image sets', Mapa: 'Map', Largura: 'Width', Altura: 'Height', 'Filtro de imagens': 'Image filter', Linear: 'Linear', 'Mais próximo (pixel)': 'Nearest (pixel)', 'Aplicar tamanho': 'Apply size',
   'Configurações de terreno': 'Terrain settings', 'Cores de altura do terreno': 'Terrain height colors', 'Água rasa': 'Shallow water', 'Água média': 'Medium water', 'Água profunda': 'Deep water', 'Nível da terra': 'Land level', 'Ondas costeiras': 'Coastal waves',
+  'Ground / base': 'Ground / base', 'Terrain sprites': 'Terrain sprites', 'Enviar máscara de ground/base': 'Upload ground/base mask', 'Imagem em preto e branco • branco = água, preto = terra': 'Black and white image • white = water, black = land',
+  'Nenhuma máscara de ground/base': 'No ground/base mask', '▦ Editar ground/base': '▦ Edit ground/base', 'Distribuição padronizada': 'Standardized distribution', 'Pesquisar conjuntos...': 'Search sets...',
+  'Nenhum conjunto encontrado.': 'No sets found.', 'Nenhum conjunto criado ainda.': 'No sets created yet.', 'Usar': 'Use', 'Editar': 'Edit', 'Novo conjunto': 'New set',
 });
 Object.assign(phraseTranslations.ja, {
   File: 'ファイル', Manage: '管理', Abrir: '開く', Salvar: '保存', 'Salvar como': '名前を付けて保存', 'Exportar como PNG': 'PNGとして書き出す', 'Exportar projeto completo': '完全なプロジェクトを書き出す', 'Exportar mapa': 'マップを書き出す',
   'Tipos de objeto': 'オブジェクトタイプ', 'Conjuntos de imagens': '画像セット', Mapa: 'マップ', Largura: '幅', Altura: '高さ', 'Filtro de imagens': '画像フィルター', Linear: 'リニア', 'Mais próximo (pixel)': '最近傍（ピクセル）', 'Aplicar tamanho': 'サイズを適用',
   'Configurações de terreno': '地形設定', 'Cores de altura do terreno': '地形高さの色', 'Água rasa': '浅瀬', 'Água média': '中層水', 'Água profunda': '深海', 'Nível da terra': '陸地レベル', 'Ondas costeiras': '沿岸の波',
+  'Ground / base': 'グラウンド / ベース', 'Terrain sprites': '地形スプライト', 'Enviar máscara de ground/base': 'グラウンド / ベースマスクをアップロード', 'Imagem em preto e branco • branco = água, preto = terra': '白黒画像 • 白 = 水、黒 = 陸地',
+  'Nenhuma máscara de ground/base': 'グラウンド / ベースマスクなし', '▦ Editar ground/base': '▦ グラウンド / ベースを編集', 'Distribuição padronizada': '均等配置', 'Pesquisar conjuntos...': 'セットを検索...',
+  'Nenhum conjunto encontrado.': 'セットが見つかりません。', 'Nenhum conjunto criado ainda.': 'セットはまだありません。', 'Usar': '使用', 'Editar': '編集', 'Novo conjunto': '新規セット',
 });
 function translateDocument(root = document.body) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -1275,6 +1281,7 @@ let pendingSetAssets = [];
 let editingSetId = null;
 function openAssetLibrary() {
   editingSetId = null; pendingSetAssets = [];
+  $('#assetSetSearch').value = '';
   $('#setName').value = ''; $('#newSetFiles').textContent = 'Nenhuma imagem selecionada';
   $('#createSetBtn').textContent = 'Criar conjunto'; $('#createSetBtn').disabled = true;
   renderEditingSetAssets(); renderImageSets(); $('#assetModal').hidden = false;
@@ -1368,7 +1375,9 @@ $('#createSetBtn').onclick = () => {
 function renderImageSets() {
   const list = $('#setList');
   list.replaceChildren();
-  for (const set of state.imageSets) {
+  const term = $('#assetSetSearch').value.trim().toLocaleLowerCase();
+  const visibleSets = state.imageSets.filter((set) => set.name.toLocaleLowerCase().includes(term));
+  for (const set of visibleSets) {
     const item = document.createElement('div');
     item.className = 'image-set';
     item.innerHTML = '<img class="set-thumbnail" alt=""><div><b></b><small></small></div><button class="edit-set" title="Editar">✎</button><button class="use-set">Usar</button>';
@@ -1404,9 +1413,10 @@ function renderImageSets() {
     };
     list.append(item);
   }
-  if (!state.imageSets.length) list.innerHTML = '<div class="set-empty">Nenhum conjunto criado ainda.</div>';
+  if (!visibleSets.length) list.innerHTML = `<div class="set-empty">${state.imageSets.length ? 'Nenhum conjunto encontrado.' : 'Nenhum conjunto criado ainda.'}</div>`;
   translateDocument(list);
 }
+$('#assetSetSearch').addEventListener('input', renderImageSets);
 
 function renderEditingSetAssets() {
   const list = $('#editingSetAssets');
@@ -1430,9 +1440,7 @@ function updateExportSetsButton() {
 
 function renderExportSetList() {
   const list = $('#exportSetList');
-  const term = $('#exportSetSearch').value.trim().toLocaleLowerCase();
-  const visibleSets = state.imageSets.filter((set) => set.name.toLocaleLowerCase().includes(term));
-  list.replaceChildren(...visibleSets.map((set) => {
+  list.replaceChildren(...state.imageSets.map((set) => {
     const label = document.createElement('label'); label.className = 'export-set-option';
     const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = set.id;
     checkbox.checked = exportSetSelection.has(set.id);
@@ -1441,13 +1449,12 @@ function renderExportSetList() {
     checkbox.onchange = () => { if (checkbox.checked) exportSetSelection.add(set.id); else exportSetSelection.delete(set.id); updateExportSetsButton(); };
     label.append(checkbox, name, count); return label;
   }));
-  if (!visibleSets.length) list.innerHTML = `<div class="set-empty">${state.imageSets.length ? 'Nenhum conjunto encontrado.' : 'Nenhum conjunto disponível para exportar.'}</div>`;
+  if (!state.imageSets.length) list.innerHTML = '<div class="set-empty">Nenhum conjunto disponível para exportar.</div>';
   updateExportSetsButton();
 }
 
 function openExportSetsModal() {
   exportSetSelection.clear();
-  $('#exportSetSearch').value = '';
   renderExportSetList();
   $('#exportSetsModal').hidden = false;
 }
@@ -1483,7 +1490,6 @@ async function exportImageSets(setIds) {
 
 $('#selectAllExportSets').onclick = () => { document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = true; exportSetSelection.add(input.value); }); updateExportSetsButton(); };
 $('#clearExportSets').onclick = () => { exportSetSelection.clear(); document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = false; }); updateExportSetsButton(); };
-$('#exportSetSearch').addEventListener('input', renderExportSetList);
 $('#closeExportSets').onclick = () => { $('#exportSetsModal').hidden = true; };
 $('#exportSetsModal').addEventListener('click', (event) => { if (event.target === $('#exportSetsModal')) $('#exportSetsModal').hidden = true; });
 $('#confirmExportSets').onclick = async () => {
@@ -1620,6 +1626,16 @@ $('#drawPath').onclick = () => {
   });
 });
 
+let terrainAutoGenerateTimer = 0;
+function scheduleTerrainAutoGenerate() {
+  clearTimeout(terrainAutoGenerateTimer);
+  const layerId = selectedLayer()?.id;
+  terrainAutoGenerateTimer = setTimeout(() => {
+    const layer = state.layers.find((item) => item.id === layerId);
+    if (layer?.type === 'terrain' && layer.mask && layer.assets.length) generate(layer);
+  }, 280);
+}
+
 ['density', 'scale', 'sizeMin', 'sizeMax'].forEach((id) => {
   $(`#${id}`).addEventListener('input', (event) => {
     const layer = selectedLayer();
@@ -1629,6 +1645,7 @@ $('#drawPath').onclick = () => {
     $('#sizeMin').value = layer.settings.sizeMin;
     $('#sizeMax').value = layer.settings.sizeMax;
     updateOutputs();
+    scheduleTerrainAutoGenerate();
   });
 });
 ['imageOffsetX', 'imageOffsetY', 'imageOpacity'].forEach((id) => {
@@ -1657,8 +1674,8 @@ function bindNumberInput(valueId, rangeId, applyValue, factor = 1) {
     applyValue(value);
   });
 }
-bindNumberInput('densityValue', 'density', (value) => { selectedLayer().settings.density = value; });
-bindNumberInput('scaleValue', 'scale', (value) => { selectedLayer().settings.scale = value; });
+bindNumberInput('densityValue', 'density', (value) => { selectedLayer().settings.density = value; scheduleTerrainAutoGenerate(); });
+bindNumberInput('scaleValue', 'scale', (value) => { selectedLayer().settings.scale = value; scheduleTerrainAutoGenerate(); });
 bindNumberInput('imageOffsetXValue', 'imageOffsetX', (value) => { selectedLayer().settings.imageOffsetX = value; redraw(); });
 bindNumberInput('imageOffsetYValue', 'imageOffsetY', (value) => { selectedLayer().settings.imageOffsetY = value; redraw(); });
 bindNumberInput('imageOpacityValue', 'imageOpacity', (value) => { selectedLayer().settings.imageOpacity = value; redraw(); }, 100);
@@ -1668,13 +1685,13 @@ bindNumberInput('objectOffsetXValue', 'objectOffsetX', (value) => { selectedLaye
 bindNumberInput('objectOffsetYValue', 'objectOffsetY', (value) => { selectedLayer().object.offsetY = value; redraw(); });
 $('#sizeVariation').addEventListener('change', (event) => {
   selectedLayer().settings.sizeVariation = event.target.checked;
-  updateOutputs();
+  updateOutputs(); scheduleTerrainAutoGenerate();
 });
-$('#seed').addEventListener('input', (event) => { selectedLayer().settings.seed = event.target.value; });
-$('#standardizedDistribution').addEventListener('change', (event) => { selectedLayer().settings.standardizedDistribution = event.target.checked; });
-$('#rotation').addEventListener('change', (event) => { selectedLayer().settings.rotation = event.target.checked; });
-$('#mirror').addEventListener('change', (event) => { selectedLayer().settings.mirror = event.target.checked; });
-$('#slice').addEventListener('change', (event) => { selectedLayer().settings.slice = event.target.checked; });
+$('#seed').addEventListener('input', (event) => { selectedLayer().settings.seed = event.target.value; scheduleTerrainAutoGenerate(); });
+$('#standardizedDistribution').addEventListener('change', (event) => { selectedLayer().settings.standardizedDistribution = event.target.checked; scheduleTerrainAutoGenerate(); });
+$('#rotation').addEventListener('change', (event) => { selectedLayer().settings.rotation = event.target.checked; scheduleTerrainAutoGenerate(); });
+$('#mirror').addEventListener('change', (event) => { selectedLayer().settings.mirror = event.target.checked; scheduleTerrainAutoGenerate(); });
+$('#slice').addEventListener('change', (event) => { selectedLayer().settings.slice = event.target.checked; scheduleTerrainAutoGenerate(); });
 const maskEditCanvas = $('#maskEditCanvas');
 const maskEditContext = maskEditCanvas.getContext('2d', { willReadFrequently: true });
 let maskTool = 'brush';
@@ -1837,25 +1854,31 @@ function renderTerrainHeight(layer, sourceCanvas = null, dirty = null) {
   redraw();
 }
 
-function openTerrainHeightEditor(layer) {
+async function openTerrainHeightEditor(layer) {
   if (!layer || !['ground', 'terrain'].includes(layer.type)) return;
-  stage.style.display = 'block'; $('#emptyState').style.display = 'none';
-  maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
-  maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
-  if (layer.heightMap) maskEditContext.drawImage(layer.heightMap, 0, 0, canvas.width, canvas.height);
-  else { maskEditContext.fillStyle = '#fff'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); }
-  state.terrainHeightEditing = layer.id; state.maskEditing = layer.id; maskHistory = [];
-  maskEditCanvas.style.display = 'block'; maskEditCanvas.style.opacity = '0';
-  $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
-  lastTerrainHeightLevel = '';
-  $('#brushSizeControl span').textContent = 'Height'; $('#brushOpacity').max = '100'; $('#brushOpacity').step = '1'; $('#brushOpacity').value = '100'; $('#brushOpacity').dispatchEvent(new Event('input'));
-  showTerrainHeightLevel(100, true);
-  $('#terrainBrushPresets').hidden = false; $('#terrainBrushUpload').hidden = false; $('#clearTerrainBrush').hidden = !state.terrainBrushImage;
-  $('#terrainBrushRotationLabel').hidden = false; $('#terrainBrushRotation').hidden = false; $('#terrainBrushRotationValue').hidden = false;
-  renderTerrainHeight(layer, maskEditCanvas); $('#saveState').textContent = 'Editando altura do terreno';
+  showTaskProgress('Preparando editor de ground/base', 5);
+  try {
+    await nextFrame();
+    stage.style.display = 'block'; $('#emptyState').style.display = 'none';
+    maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
+    maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
+    if (layer.heightMap) maskEditContext.drawImage(layer.heightMap, 0, 0, canvas.width, canvas.height);
+    else { maskEditContext.fillStyle = '#fff'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); }
+    updateTaskProgress('Carregando mapa de altura', 45); await nextFrame();
+    state.terrainHeightEditing = layer.id; state.maskEditing = layer.id; maskHistory = [];
+    maskEditCanvas.style.display = 'block'; maskEditCanvas.style.opacity = '0';
+    $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
+    lastTerrainHeightLevel = '';
+    $('#brushSizeControl span').textContent = 'Height'; $('#brushOpacity').max = '100'; $('#brushOpacity').step = '1'; $('#brushOpacity').value = '100'; $('#brushOpacity').dispatchEvent(new Event('input'));
+    showTerrainHeightLevel(100, true);
+    $('#terrainBrushPresets').hidden = false; $('#terrainBrushUpload').hidden = false; $('#clearTerrainBrush').hidden = !state.terrainBrushImage;
+    $('#terrainBrushRotationLabel').hidden = false; $('#terrainBrushRotation').hidden = false; $('#terrainBrushRotationValue').hidden = false;
+    updateTaskProgress('Renderizando ground/base', 65); await nextFrame();
+    renderTerrainHeight(layer, maskEditCanvas); updateTaskProgress('Editor pronto', 100); $('#saveState').textContent = 'Editando altura do terreno';
+  } finally { hideTaskProgress(); }
 }
 
-$('#editGroundHeight').onclick = () => state.maskEditing === selectedLayer()?.id ? closeMaskEditor() : openTerrainHeightEditor(selectedLayer());
+$('#editGroundHeight').onclick = async () => state.maskEditing === selectedLayer()?.id ? closeMaskEditor() : openTerrainHeightEditor(selectedLayer());
 $('#groundMaskInput').addEventListener('change', async (event) => {
   const file = event.target.files[0];
   const layer = selectedLayer();

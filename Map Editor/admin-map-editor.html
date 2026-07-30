@@ -78,6 +78,11 @@
         <output id="terrainAnchorCoordinates">Âncora: —</output>
       </div>
     </section>
+    <section class="terrain-control">
+      <div class="section-title"><b>Terrain sprites</b><span id="assetCount">0</span></div>
+      <button id="openAssetModal" class="asset-upload">＋ Adicionar imagens</button>
+      <div id="assetGrid" class="asset-grid"><p>Adicione árvores, pedras ou qualquer elemento que queira distribuir.</p></div>
+    </section>
     <section class="terrain-control image-control region-control">
       <label class="upload" for="maskInput"><span>＋</span><b>Enviar máscara</b><small>PNG com transparência recomendado</small></label>
       <input id="maskInput" type="file" accept="image/*" hidden>
@@ -96,11 +101,6 @@
       <label>Offset X <input id="imageOffsetXValue" class="value-input" type="number" min="-2000" max="2000" value="0"><input id="imageOffsetX" type="range" min="-2000" max="2000" value="0"></label>
       <label>Offset Y <input id="imageOffsetYValue" class="value-input" type="number" min="-2000" max="2000" value="0"><input id="imageOffsetY" type="range" min="-2000" max="2000" value="0"></label>
       <label>Opacidade <input id="imageOpacityValue" class="value-input" type="number" min="0" max="100" value="100"><input id="imageOpacity" type="range" min="0" max="1" step="0.01" value="1"></label>
-    </section>
-    <section class="terrain-control">
-      <div class="section-title"><b>Terrain sprites</b><span id="assetCount">0</span></div>
-      <button id="openAssetModal" class="asset-upload">＋ Adicionar imagens</button>
-      <div id="assetGrid" class="asset-grid"><p>Adicione árvores, pedras ou qualquer elemento que queira distribuir.</p></div>
     </section>
     <section class="fields terrain-control">
       <label>Intensidade <input id="densityValue" class="value-input" type="number" min="0" max="1000" value="45"><input id="density" type="range" min="0" max="1000" value="45"></label>
@@ -270,7 +270,6 @@
     <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="exportSetsTitle">
       <div class="modal-head"><div><p class="panel-label">BIBLIOTECA</p><h2 id="exportSetsTitle">Exportar conjuntos</h2></div><button id="closeExportSets" aria-label="Fechar">×</button></div>
       <p class="modal-copy">Selecione os conjuntos que deseja compartilhar em um pacote portátil.</p>
-      <input id="exportSetSearch" class="icon-picker-search export-set-search" type="search" placeholder="Pesquisar conjuntos..." aria-label="Pesquisar conjuntos para exportar">
       <div class="export-set-actions"><button id="selectAllExportSets" type="button">Selecionar todos</button><button id="clearExportSets" type="button">Limpar</button></div>
       <div id="exportSetList" class="export-set-list"></div>
       <button id="confirmExportSets" type="button" class="position-object" disabled>Exportar selecionados</button>
@@ -280,6 +279,7 @@
     <div class="asset-modal" role="dialog" aria-modal="true" aria-labelledby="assetModalTitle">
       <div class="modal-head"><div><p class="panel-label">BIBLIOTECA</p><h2 id="assetModalTitle">Conjuntos de imagens</h2></div><button id="closeAssetModal" aria-label="Fechar">×</button></div>
       <p class="modal-copy">Reutilize o mesmo conjunto de imagens em diferentes camadas.</p>
+      <input id="assetSetSearch" class="icon-picker-search" type="search" placeholder="Pesquisar conjuntos..." aria-label="Pesquisar conjuntos de terreno">
       <div id="setList" class="set-list"></div>
       <div class="new-set">
         <h3>Novo conjunto</h3>

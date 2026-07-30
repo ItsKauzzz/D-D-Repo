@@ -260,7 +260,6 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .topbar .app-name { margin-left: 8px; margin-right: auto; color: var(--accent); font: 700 15px 'Manrope'; }
 .app-menu-dropdown { right: auto; left: 0; }
 .export-set-actions { display: flex; gap: 8px; margin: 18px 0 10px; }
-.export-set-search { margin-bottom: 0; }
 .export-set-actions button { padding: 6px 9px; border: 1px solid #3b443c; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
 .export-set-list { display: grid; gap: 7px; max-height: 420px; margin-bottom: 18px; overflow-y: auto; }
 .export-set-option { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid #323933; border-radius: 8px; background: #202521; cursor: pointer; }
