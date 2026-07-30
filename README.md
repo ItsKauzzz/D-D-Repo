@@ -1,5 +1,9 @@
 # D&D Repo
 
+## Compatibilidade futura com Electron
+
+O Admin Tools e o editor de mapas serão posteriormente convertidos em um aplicativo desktop com Electron. Novas funcionalidades devem evitar dependências exclusivas de servidor, preservar compatibilidade com APIs de navegador/Electron e manter os projetos portáveis no formato exportável.
+
 ## Pontos de interesse do mapa
 
 Os pontos de interesse são carregados da pasta `data/locations`.

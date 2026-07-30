@@ -12,11 +12,12 @@
     <strong>Map editor</strong>
     <span id="saveState">Pronto</span>
     <button id="openProjectBtn" class="secondary-action">Abrir projeto</button>
-    <input id="projectInput" type="file" accept=".json,.teralium" hidden>
+    <input id="projectInput" type="file" accept=".json,.teralium,.zip" hidden>
     <button id="saveProjectBtn" class="secondary-action">Salvar projeto</button>
-    <button id="exportBtn">Exportar PNG</button>
+    <button id="exportBtn">Exportar projeto</button>
     <button id="exportMapBtn">Exportar mapa</button>
     <button id="previewMapBtn" class="icon-action" title="Pré-visualizar mapa" aria-label="Pré-visualizar mapa">👁</button>
+    <button id="projectSettingsBtn" class="icon-action" title="Configurações do projeto" aria-label="Configurações do projeto">⚙</button>
   </header>
 
   <aside class="sidebar left-panel">
@@ -29,13 +30,14 @@
       <button data-layer-type="image"><span>▧</span><b>Imagem</b></button>
       <button data-layer-type="object"><span>⌖</span><b>Objeto</b></button>
       <button data-layer-type="region"><span>◒</span><b>Região</b></button>
+      <button data-layer-type="path"><span>〰</span><b>Caminhos</b></button>
+      <button data-layer-type="folder"><span>▰</span><b>Folder</b></button>
     </div>
     <div id="layerList" class="layer-list"></div>
     <div class="coming-types">
       <p>PRÓXIMOS TIPOS</p>
       <span>Pontos de interesse</span><span>Estradas</span>
     </div>
-    <div class="help"><b>Navegação</b><p>Arraste o mapa para mover. Use a roda do mouse para aplicar zoom.</p></div>
   </aside>
 
   <main id="viewport">
@@ -55,11 +57,19 @@
       <div><p class="panel-label">INSPECTOR</p><input id="layerName" aria-label="Nome da camada"></div>
       <span id="typeBadge" class="type-badge">Terreno</span>
     </div>
+    <section class="terrain-control">
+      <div class="object-anchor-field">
+        <span>Preview e ponto âncora do terreno</span>
+        <button id="terrainAnchorPreview" type="button" aria-label="Definir ponto âncora do terreno"><img alt="Preview do terreno"><i></i><small>Selecione uma imagem do mestre</small></button>
+        <output id="terrainAnchorCoordinates">Âncora: —</output>
+      </div>
+    </section>
     <section class="terrain-control image-control region-control">
       <label class="upload" for="maskInput"><span>＋</span><b>Enviar máscara</b><small>PNG com transparência recomendado</small></label>
       <input id="maskInput" type="file" accept="image/*" hidden>
       <p class="filename" id="maskName">Nenhuma máscara selecionada</p>
       <button id="createMaskBtn" class="asset-upload terrain-control region-control">✦ Criar máscara</button>
+      <button id="editTerrainHeight" class="asset-upload terrain-control">▦ Editor de terreno</button>
       <div id="maskPreview" class="mask-preview terrain-control region-control"></div>
     </section>
     <section class="image-control fields" hidden>
@@ -73,7 +83,7 @@
       <div id="assetGrid" class="asset-grid"><p>Adicione árvores, pedras ou qualquer elemento que queira distribuir.</p></div>
     </section>
     <section class="fields terrain-control">
-      <label>Intensidade <input id="densityValue" class="value-input" type="number" min="0" max="300" value="45"><input id="density" type="range" min="0" max="300" value="45"></label>
+      <label>Intensidade <input id="densityValue" class="value-input" type="number" min="0" max="1000" value="45"><input id="density" type="range" min="0" max="1000" value="45"></label>
       <label>Tamanho geral <input id="scaleValue" class="value-input" type="number" min="0" max="2" step="0.05" value="1"><input id="scale" type="range" min="0" max="2" step="0.05" value="1"></label>
       <label class="check-row"><input id="sizeVariation" type="checkbox" checked> Variação de tamanho</label>
       <div id="sizeVariationFields" class="range-field">
@@ -90,14 +100,21 @@
     </section>
     <section class="object-control" hidden>
       <div class="object-form">
+        <div class="object-anchor-field">
+          <span>Preview e ponto âncora</span>
+          <button id="objectAnchorPreview" type="button" aria-label="Definir ponto âncora"><img alt="Preview do objeto"><i></i><small>Selecione um ícone</small></button>
+          <output id="objectAnchorCoordinates">Âncora: —</output>
+        </div>
         <label>Nome<input id="objectName" placeholder="Nome do local"></label>
         <label>Tipo<select id="objectType"></select></label>
-        <label>Ícone<select id="objectIconSet"><option value="">Selecione um conjunto</option></select></label>
+        <label>Ícone<select id="objectIconSet" hidden><option value="">Selecione um conjunto</option></select><button id="openObjectIconPicker" type="button" class="icon-picker-trigger"><img alt=""><span>Selecionar conjunto de ícones</span></button></label>
         <div id="objectIconPreview" class="object-thumbnails"></div>
         <label>Galeria<select id="objectGallerySet"><option value="">Sem galeria</option></select></label>
         <div id="objectGalleryPreview" class="object-thumbnails"></div>
         <button id="manageObjectSets" class="position-object">＋ Gerenciar conjuntos</button>
         <label>Descrição<textarea id="objectDescription" rows="6" placeholder="História, detalhes e informações do local..."></textarea></label>
+        <button id="openDetailedDescription" type="button" class="position-object">Adicionar descrição detalhada</button>
+        <button id="removeDetailedDescription" type="button" class="remove-detailed-description" hidden>Remover descrição detalhada</button>
         <label class="check-row"><input id="objectPoi" type="checkbox" checked> Criar como ponto de interesse</label>
         <div class="fields object-visual-controls">
           <label>Tamanho geral <input id="objectScaleValue" class="value-input" type="number" min="0" max="4" step="0.05" value="1"><input id="objectScale" type="range" min="0" max="4" step="0.05" value="1"></label>
@@ -112,10 +129,40 @@
     </section>
     <section class="region-control" hidden>
       <div class="object-form">
-        <label>Layer / tipo de região<input id="regionGroup" placeholder="Ex.: Fronteiras políticas"></label>
         <label>Nome da região<input id="regionName" placeholder="Ex.: Reino do Norte"></label>
-        <label>Cor<input id="regionColor" type="color" value="#6fa86b"></label>
+        <label>Layer / tipo de região<select id="regionPreset"></select></label>
+        <div class="path-preset-editor">
+          <input id="regionPresetName" placeholder="Nome do tipo de região">
+          <label>Cor<input id="regionColor" type="color" value="#6fa86b"></label>
+          <label>Preenchimento<select id="regionFillMode"><option value="fill">Fill</option><option value="outline">Outline</option></select></label>
+          <label>Thickness do outline<input id="regionOutlineThickness" type="number" min="1" max="50" value="3"></label>
+          <label class="check-row"><input id="regionOutlineDashed" type="checkbox"> Outline tracejado</label>
+          <label>Espaço do tracejado<input id="regionOutlineGap" type="number" min="1" max="500" value="12"></label>
+          <label class="check-row"><input id="regionDefaultOverview" type="checkbox"> Mostrar por padrão no overview</label>
+          <button id="saveRegionPreset" type="button" class="position-object">Salvar preset de região</button>
+          <button id="deleteRegionPreset" type="button" class="position-object danger-button">Excluir preset</button>
+        </div>
         <p class="region-note">Regiões desenhadas por último removem automaticamente as intersecções das regiões anteriores.</p>
+      </div>
+    </section>
+    <section class="path-control" hidden>
+      <div class="object-form">
+        <label>Nome<input id="pathName" placeholder="Nome do caminho"></label>
+        <label>Descrição<textarea id="pathDescription" rows="5" placeholder="Descrição do caminho..."></textarea></label>
+        <label>Galeria<select id="pathGallerySet"><option value="">Sem galeria</option></select></label>
+        <label class="check-row"><input id="pathShowOnMap" type="checkbox" checked> Mostrar no mapa</label>
+        <label>Preset visual<select id="pathPreset"></select></label>
+        <div class="path-preset-editor">
+          <input id="pathPresetName" placeholder="Nome do preset">
+          <label>Stroke<input id="pathStroke" type="number" min="1" max="100" value="8"></label>
+          <label>Cor<input id="pathColor" type="color" value="#c99b57"></label>
+          <label class="check-row"><input id="pathDashed" type="checkbox"> Tracejado / pontilhado</label>
+          <label>Espaço do tracejado<input id="pathDashGap" type="number" min="1" max="500" value="12"></label>
+          <button id="savePathPreset" type="button" class="position-object">Salvar como preset</button>
+          <button id="deletePathPreset" type="button" class="position-object danger-button">Excluir preset</button>
+        </div>
+        <button id="drawPath" class="position-object">〰 Desenhar caminho</button>
+        <small id="pathDistance">Distância: 0 km</small>
       </div>
     </section>
     <div class="inspector-footer"><button id="generateBtn" disabled>Gerar preenchimento</button><small id="footerHint">A seed mantém o resultado reproduzível.</small></div>
@@ -128,10 +175,67 @@
     <button id="finishMask" title="Concluir">✓</button>
     <button id="cancelMask" title="Cancelar">×</button>
   </div>
-  <div id="brushSizeControl" class="brush-size-control" hidden><span>Brush</span><input id="brushSize" type="range" min="2" max="300" value="60"><input id="brushSizeValue" class="value-input" type="number" min="2" max="300" value="60"></div>
+  <div id="brushSizeControl" class="brush-size-control" hidden>
+    <span>Opacidade</span><input id="brushOpacity" type="range" min="0" max="1" step="0.01" value="1"><input id="brushOpacityValue" class="value-input" type="number" min="0" max="100" value="100">
+    <span>Brush</span><input id="brushSize" type="range" min="2" max="300" value="60"><input id="brushSizeValue" class="value-input" type="number" min="2" max="300" value="60">
+    <span id="terrainBrushRotationLabel" hidden>Random rotation</span><input id="terrainBrushRotation" type="range" min="0" max="180" step="1" value="0" hidden><input id="terrainBrushRotationValue" class="value-input" type="number" min="0" max="180" step="1" value="0" hidden>
+    <div id="terrainBrushPresets" class="terrain-brush-presets" hidden><button type="button" data-terrain-brush="hard" class="active" title="Brush circular normal">1</button><button type="button" data-terrain-brush="soft" title="Brush circular suave">2</button></div><label id="terrainBrushUpload" class="terrain-brush-upload" hidden>Imagem do brush<input id="terrainBrushInput" type="file" accept="image/*" hidden></label><span id="terrainBrushName"></span><button id="clearTerrainBrush" type="button" hidden>×</button>
+  </div>
   <div id="layerContextMenu" class="context-menu" hidden>
     <button data-action="rename">Renomear</button>
     <button data-action="toggle">Ocultar</button>
+    <button data-action="delete" class="danger">Excluir camada</button>
+  </div>
+  <label class="language-picker">Language: <select id="languageSelect"><option value="pt-BR">Português</option><option value="en">English</option><option value="ja">日本語</option></select></label>
+  <div id="projectSettingsModal" class="modal-backdrop" hidden>
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="projectSettingsTitle">
+      <div class="modal-head"><div><p class="panel-label">PROJETO</p><h2 id="projectSettingsTitle">Configurações</h2></div><button id="closeProjectSettings" aria-label="Fechar">×</button></div>
+      <fieldset class="speed-settings map-general-settings"><legend>Mapa</legend>
+        <label>Largura <span><input id="mapWidthSetting" type="number" min="1" value="1600"> px</span></label>
+        <label>Altura <span><input id="mapHeightSetting" type="number" min="1" value="1000"> px</span></label>
+        <button id="applyMapSettings" type="button" class="position-object">Aplicar tamanho</button>
+      </fieldset>
+      <label class="project-scale-setting">Escala do mapa <span><b>100px</b> equivalem a <input id="distanceScaleKm" type="number" min="0.01" step="1" value="100"> km</span></label>
+      <fieldset class="speed-settings"><legend>Velocidades médias</legend>
+        <label>A pé <span><input id="speedWalking" type="number" min="0.01" value="5"> km/h</span></label>
+        <label>A cavalo <span><input id="speedHorse" type="number" min="0.01" value="15"> km/h</span></label>
+        <label>De navio <span><input id="speedShip" type="number" min="0.01" value="30"> km/h</span></label>
+        <label>De aeroplano / balão <span><input id="speedAir" type="number" min="0.01" value="80"> km/h</span></label>
+      </fieldset>
+      <details class="terrain-settings"><summary>Configurações de terreno</summary><fieldset class="speed-settings"><legend>Cores de altura do terreno</legend>
+        <label>Água rasa <input id="terrainWaterShallow" type="color" value="#51746f"></label>
+        <label>Água média <input id="terrainWaterMedium" type="color" value="#4b6c6a"></label>
+        <label>Água profunda <input id="terrainWaterDeep" type="color" value="#405a5b"></label>
+        <label>Nível da terra <input id="terrainLandColor" type="color" value="#d7c89d"></label>
+        <label>Fim da terra <input id="terrainCoastLandColor" type="color" value="#65483b"></label>
+        <label>Ondas costeiras <input id="terrainCoastWaveColor" type="color" value="#91c9cf"></label>
+        <label>Thickness terra <input id="terrainCoastLandThickness" type="number" min="0" max="30" value="3"></label>
+        <label>Thickness ondas <input id="terrainCoastWaveThickness" type="number" min="0" max="30" value="2"></label>
+        <label class="check-row"><input id="terrainCoastVariation" type="checkbox" checked> Variação Perlin nos contornos</label>
+        <label>Multiplicador da variação <input id="terrainCoastNoiseMultiplier" type="number" min="0" max="3" step="0.1" value="0.6"></label>
+      </fieldset></details>
+    </div>
+  </div>
+  <div id="objectIconPickerModal" class="modal-backdrop" hidden>
+    <div class="settings-modal icon-picker-modal" role="dialog" aria-modal="true" aria-labelledby="objectIconPickerTitle">
+      <div class="modal-head"><div><p class="panel-label">ÍCONES</p><h2 id="objectIconPickerTitle">Selecionar conjunto</h2></div><button id="closeObjectIconPicker" aria-label="Fechar">×</button></div>
+      <input id="objectIconSearch" class="icon-picker-search" placeholder="Pesquisar conjuntos...">
+      <div id="objectIconPickerList" class="icon-picker-list"></div>
+    </div>
+  </div>
+  <div id="descriptionTemplateModal" class="modal-backdrop" hidden>
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="descriptionTemplateTitle">
+      <div class="modal-head"><div><p class="panel-label">DESCRIÇÃO</p><h2 id="descriptionTemplateTitle">Templates de descrição</h2></div><button id="closeDescriptionTemplates" aria-label="Fechar">×</button></div>
+      <div id="descriptionTemplateList" class="description-template-list"></div>
+      <div class="description-template-create"><input id="newDescriptionTemplateName" placeholder="Nome do novo template"><button id="createDescriptionTemplate" class="position-object">＋ Criar novo</button></div>
+    </div>
+  </div>
+  <div id="descriptionEditorModal" class="modal-backdrop" hidden>
+    <div class="description-editor-modal" role="dialog" aria-modal="true" aria-labelledby="descriptionEditorTitle">
+      <div class="modal-head"><div><p class="panel-label">EDITOR</p><h2 id="descriptionEditorTitle">Descrição detalhada</h2></div><button id="closeDescriptionEditor" aria-label="Fechar">×</button></div>
+      <div class="description-editor-layout"><nav id="descriptionEditorPages" class="description-editor-pages"></nav><div id="descriptionPageEditor" class="description-page-editor"></div></div>
+      <div class="description-editor-actions"><button id="addDescriptionPage" class="position-object">＋ Adicionar página</button><button id="saveDetailedDescription" class="position-object">Salvar descrição</button></div>
+    </div>
   </div>
   <div id="assetModal" class="modal-backdrop" hidden>
     <div class="asset-modal" role="dialog" aria-modal="true" aria-labelledby="assetModalTitle">
