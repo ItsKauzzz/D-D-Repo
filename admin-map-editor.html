@@ -115,6 +115,7 @@
         </div>
         <label>Nome<input id="objectName" placeholder="Nome do local"></label>
         <label>Tipo<select id="objectType"></select></label>
+        <button id="managePoiTypes" type="button" class="position-object">＋ Gerenciar tipos de objeto</button>
         <label>Ícone<select id="objectIconSet" hidden><option value="">Selecione um conjunto</option></select><button id="openObjectIconPicker" type="button" class="icon-picker-trigger"><img alt=""><span>Selecionar conjunto de ícones</span></button></label>
         <div id="objectIconPreview" class="object-thumbnails"></div>
         <label>Galeria<select id="objectGallerySet"><option value="">Sem galeria</option></select></label>
@@ -239,6 +240,13 @@
       <div class="modal-head"><div><p class="panel-label">DESCRIÇÃO</p><h2 id="descriptionTemplateTitle">Templates de descrição</h2></div><button id="closeDescriptionTemplates" aria-label="Fechar">×</button></div>
       <div id="descriptionTemplateList" class="description-template-list"></div>
       <div class="description-template-create"><input id="newDescriptionTemplateName" placeholder="Nome do novo template"><button id="createDescriptionTemplate" class="position-object">＋ Criar novo</button></div>
+    </div>
+  </div>
+  <div id="poiTypeModal" class="modal-backdrop" hidden>
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="poiTypeTitle">
+      <div class="modal-head"><div><p class="panel-label">OBJETOS</p><h2 id="poiTypeTitle">Tipos de objeto</h2></div><button id="closePoiTypes" aria-label="Fechar">×</button></div>
+      <div id="poiTypeList" class="description-template-list"></div>
+      <div class="description-template-create"><input id="newPoiTypeName" placeholder="Nome do novo tipo"><input id="newPoiTypeColor" type="color" value="#f0c674"><button id="createPoiType" class="position-object">＋ Criar tipo</button></div>
     </div>
   </div>
   <div id="descriptionEditorModal" class="modal-backdrop" hidden>
