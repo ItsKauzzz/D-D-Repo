@@ -5,6 +5,24 @@ const stage = document.querySelector('#stage');
 const $ = (selector) => document.querySelector(selector);
 document.addEventListener('contextmenu', (event) => event.preventDefault());
 
+let progressDepth = 0;
+function showTaskProgress(label, percent = 0) {
+  progressDepth++;
+  updateTaskProgress(label, percent);
+  $('#taskProgress').hidden = false;
+}
+function updateTaskProgress(label, percent) {
+  const value = Math.max(0, Math.min(100, Math.round(percent)));
+  $('#taskProgressLabel').textContent = label;
+  $('#taskProgressPercent').textContent = `${value}%`;
+  $('#taskProgressBar').value = value;
+}
+function hideTaskProgress() {
+  progressDepth = Math.max(0, progressDepth - 1);
+  if (!progressDepth) $('#taskProgress').hidden = true;
+}
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+
 const bundledIconFiles = ["anchor_1.png", "anchor_2.png", "architecture_1.png", "beacon_1.png", "book_1.png", "bridge_1.png", "bridge_2.png", "bush_1.png", "bush_2.png", "cactus_1.png", "cactus_2.png", "camp_1.png", "camp_2.png", "camp_3.png", "camp_4.png", "castle.png", "castle_2.png", "castle_3.png", "castle_4.png", "castle_8.png", "cave_1.png", "cave_2.png", "cave_3.png", "chest.png", "chest_1.png", "church_1.png", "church_2.png", "coins_1.png", "crystal_1.png", "farm_1.png", "farm_2.png", "farm_3.png", "farm_4.png", "farms_1.png", "flag_1.png", "fortress_1.png", "fountain_1.png", "gate_1.png", "graveyard_1.png", "hot_springs_1.png", "house_1.png", "house_2.png", "house_3.png", "house_4.png", "house_5.png", "house_6.png", "house_7.png", "house_8.png", "island_1.png", "kraken_1.png", "log_1.png", "mannor_1.png", "map_1.png", "market_1.png", "mill_1.png", "mine_1.png", "mine_2.png", "mine_3.png", "monastery_1.png", "monastery_2.png", "monolith_1.png", "monolith_2.png", "mountain_2.png", "mountain_3.png", "mountain_4.png", "mountain_5.png", "mountain_8.png", "mountain_9.png", "port_1.png", "portal_1.png", "portal_2.png", "pound_1.png", "pound_2.png", "rocks_1.png", "rocks_2.png", "rocks_3.png", "rocks_4.png", "rocks_5.png", "rocks_6.png", "rocks_7.png", "rocks_8.png", "rocks_9.png", "rune_1.png", "rune_2.png", "ship_1.png", "shipwreck_1.png", "shop_1.png", "shop_2.png", "sign_1.png", "skulls_1.png", "small_castle_1.png", "stadium_1.png", "statue_1.png", "swamp.png", "tower_1.png", "tower_2.png", "tower_3.png", "tower_4.png", "tower_5.png", "tower_6.png", "tree_1.png", "tree_10.png", "tree_2.png", "tree_3.png", "tree_4.png", "tree_5.png", "tree_6.png", "tree_7.png", "tree_8.png", "tree_9.png", "village_1.png", "village_2.png", "vulcano_1.png", "waterfall_1.png", "well_1.png", "windmill_1.png", "windmill_2.png", "windmill_3.png", "windmill_4.png"];
 
 const state = {
@@ -28,7 +46,7 @@ const state = {
       bundled: true,
       assets: fileNames.map((fileName) => {
         const image = new Image();
-        image.src = `Assets/Icons/${fileName}`;
+        image.src = window.BUNDLED_ICON_DATA?.[fileName] || `Assets/Icons/${fileName}`;
         return { file: { name: fileName }, image, anchorX: 0.5, anchorY: 0.5 };
       }),
     })),
@@ -56,6 +74,9 @@ const state = {
   terrainBrushRepetition: 100,
   mapFilter: 'linear',
   projectFileHandle: null,
+  theme: localStorage.getItem('atlasmith-theme') || 'atlasmith',
+  activeMapTool: 'select',
+  movingLayer: false,
 };
 
 const translations = {
@@ -103,11 +124,23 @@ Object.assign(phraseTranslations.en, {
   File: 'File', Manage: 'Manage', Abrir: 'Open', Salvar: 'Save', 'Salvar como': 'Save as', 'Exportar como PNG': 'Export as PNG', 'Exportar projeto completo': 'Export full project', 'Exportar mapa': 'Export map',
   'Tipos de objeto': 'Object types', 'Conjuntos de imagens': 'Image sets', Mapa: 'Map', Largura: 'Width', Altura: 'Height', 'Filtro de imagens': 'Image filter', Linear: 'Linear', 'Mais próximo (pixel)': 'Nearest (pixel)', 'Aplicar tamanho': 'Apply size',
   'Configurações de terreno': 'Terrain settings', 'Cores de altura do terreno': 'Terrain height colors', 'Água rasa': 'Shallow water', 'Água média': 'Medium water', 'Água profunda': 'Deep water', 'Nível da terra': 'Land level', 'Ondas costeiras': 'Coastal waves',
+  'Ground / base': 'Ground / base', 'Terrain sprites': 'Terrain sprites', 'Enviar máscara de ground/base': 'Upload ground/base mask', 'Imagem em preto e branco • branco = água, preto = terra': 'Black and white image • white = water, black = land',
+  'Nenhuma máscara de ground/base': 'No ground/base mask', '▦ Editar ground/base': '▦ Edit ground/base', 'Distribuição padronizada': 'Standardized distribution', 'Pesquisar conjuntos...': 'Search sets...',
+  'Nenhum conjunto encontrado.': 'No sets found.', 'Nenhum conjunto criado ainda.': 'No sets created yet.', 'Usar': 'Use', 'Editar': 'Edit', 'Novo conjunto': 'New set',
+  'Criar uma região com esta máscara': 'Create a region from this mask', 'Região vinculada': 'Linked region', 'Selecione uma região criada': 'Select an existing region', 'Crie uma layer de região primeiro': 'Create a region layer first',
+  'A região vinculada usará a máscara deste terreno no mapa exportado.': 'The linked region will use this terrain mask in the exported map.', 'Intermediário': 'Balanced',
+  Aparência: 'Appearance', Idioma: 'Language', Tema: 'Theme', Claro: 'Light', 'Vinho e dourado': 'Wine and gold', 'Marrom e verde': 'Brown and green',
 });
 Object.assign(phraseTranslations.ja, {
   File: 'ファイル', Manage: '管理', Abrir: '開く', Salvar: '保存', 'Salvar como': '名前を付けて保存', 'Exportar como PNG': 'PNGとして書き出す', 'Exportar projeto completo': '完全なプロジェクトを書き出す', 'Exportar mapa': 'マップを書き出す',
   'Tipos de objeto': 'オブジェクトタイプ', 'Conjuntos de imagens': '画像セット', Mapa: 'マップ', Largura: '幅', Altura: '高さ', 'Filtro de imagens': '画像フィルター', Linear: 'リニア', 'Mais próximo (pixel)': '最近傍（ピクセル）', 'Aplicar tamanho': 'サイズを適用',
   'Configurações de terreno': '地形設定', 'Cores de altura do terreno': '地形高さの色', 'Água rasa': '浅瀬', 'Água média': '中層水', 'Água profunda': '深海', 'Nível da terra': '陸地レベル', 'Ondas costeiras': '沿岸の波',
+  'Ground / base': 'グラウンド / ベース', 'Terrain sprites': '地形スプライト', 'Enviar máscara de ground/base': 'グラウンド / ベースマスクをアップロード', 'Imagem em preto e branco • branco = água, preto = terra': '白黒画像 • 白 = 水、黒 = 陸地',
+  'Nenhuma máscara de ground/base': 'グラウンド / ベースマスクなし', '▦ Editar ground/base': '▦ グラウンド / ベースを編集', 'Distribuição padronizada': '均等配置', 'Pesquisar conjuntos...': 'セットを検索...',
+  'Nenhum conjunto encontrado.': 'セットが見つかりません。', 'Nenhum conjunto criado ainda.': 'セットはまだありません。', 'Usar': '使用', 'Editar': '編集', 'Novo conjunto': '新規セット',
+  'Criar uma região com esta máscara': 'このマスクから地域を作成', 'Região vinculada': 'リンクする地域', 'Selecione uma região criada': '既存の地域を選択', 'Crie uma layer de região primeiro': '先に地域レイヤーを作成してください',
+  'A região vinculada usará a máscara deste terreno no mapa exportado.': 'リンクした地域は、書き出したマップでこの地形マスクを使用します。', 'Intermediário': '中間',
+  Aparência: '外観', Idioma: '言語', Tema: 'テーマ', Claro: 'ライト', 'Vinho e dourado': 'ワインとゴールド', 'Marrom e verde': 'ブラウンとグリーン',
 });
 function translateDocument(root = document.body) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -144,11 +177,16 @@ document.addEventListener('click', (event) => {
 const closeAppMenus = () => document.querySelectorAll('.app-menu-dropdown').forEach((menu) => { menu.hidden = true; menu.previousElementSibling.classList.remove('active'); });
 $('#menuManagePoiTypes').onclick = () => { closeAppMenus(); $('#managePoiTypes').click(); };
 $('#menuManageSets').onclick = () => { closeAppMenus(); $('#manageObjectSets').click(); };
+$('#menuManageMap').onclick = () => { closeAppMenus(); $('#projectSettingsBtn').click(); };
 $('#menuImportSets').onclick = () => { closeAppMenus(); $('#setPackageInput').click(); };
 $('#menuExportSets').onclick = () => { closeAppMenus(); openExportSetsModal(); };
 $('#menuExportProject').onclick = () => { closeAppMenus(); $('#exportBtn').click(); };
 $('#menuExportMap').onclick = () => { closeAppMenus(); $('#exportMapBtn').click(); };
-$('#menuExportPng').onclick = () => { closeAppMenus(); redraw(true, false); downloadFile('mapa-render-final.png', dataUrlBytes(canvas.toDataURL('image/png')), 'image/png'); redraw(); };
+$('#menuExportPng').onclick = async () => {
+  closeAppMenus(); showTaskProgress('Mesclando chunks e exportando PNG', 0);
+  try { redraw(true, false); await nextFrame(); updateTaskProgress('Codificando PNG final', 55); downloadFile('mapa-render-final.png', await canvasChunkBlob(canvas), 'image/png'); updateTaskProgress('PNG exportado', 100); }
+  finally { redraw(); hideTaskProgress(); }
+};
 $('#menuOpenProject').onclick = async () => {
   closeAppMenus();
   if (!window.showOpenFilePicker) { $('#openProjectBtn').click(); return; }
@@ -160,13 +198,16 @@ $('#menuOpenProject').onclick = async () => {
   } catch (error) { if (error.name !== 'AbortError') window.alert(`Não foi possível abrir: ${error.message}`); }
 };
 async function saveProjectToHandle(saveAs = false) {
+  showTaskProgress('Salvando projeto', 0);
   try {
     let handle = saveAs ? null : state.projectFileHandle;
     if (!handle && window.showSaveFilePicker) handle = await window.showSaveFilePicker({ suggestedName: 'projeto-teralium.json', types: [{ description: 'Projeto Teralium', accept: { 'application/json': ['.json', '.teralium'] } }] });
     if (!handle) { $('#saveProjectBtn').click(); return; }
-    const writable = await handle.createWritable(); await writable.write(JSON.stringify(createProjectData())); await writable.close();
+    await flushPendingMaskChunks('Codificando chunks do projeto'); updateTaskProgress('Serializando projeto', 35); await nextFrame();
+    const writable = await handle.createWritable(); await writable.write(JSON.stringify(createProjectData())); updateTaskProgress('Gravando projeto', 80); await writable.close();
     state.projectFileHandle = handle; $('#saveState').textContent = 'Projeto salvo';
   } catch (error) { if (error.name !== 'AbortError') window.alert(`Não foi possível salvar: ${error.message}`); }
+  finally { hideTaskProgress(); }
 }
 $('#menuSaveProject').onclick = () => { closeAppMenus(); saveProjectToHandle(false); };
 $('#menuSaveAsProject').onclick = () => { closeAppMenus(); saveProjectToHandle(true); };
@@ -182,7 +223,6 @@ function applyLanguage(language) {
   $('#generateBtn').textContent = t('generate');
   $('#layerContextMenu [data-action="rename"]').textContent = t('rename');
   $('#layerContextMenu [data-action="delete"]').textContent = t('delete');
-  $('.language-picker').firstChild.textContent = `${t('language')} `;
   const layer = selectedLayer();
   if (layer) {
     $('#createMaskBtn').textContent = layer.mask ? t('editMask') : t('createMask');
@@ -191,6 +231,13 @@ function applyLanguage(language) {
     if (layer.type === 'object') renderObjectAnchorPreview(layer.object);
   }
   translateDocument();
+}
+
+function applyTheme(theme) {
+  state.theme = ['atlasmith', 'light', 'wine', 'earth'].includes(theme) ? theme : 'atlasmith';
+  document.documentElement.dataset.theme = state.theme;
+  localStorage.setItem('atlasmith-theme', state.theme);
+  $('#themeSetting').value = state.theme;
 }
 
 function createLayer(type = 'terrain') {
@@ -218,7 +265,7 @@ function createLayer(type = 'terrain') {
     heightMap: null,
     heightOutput: document.createElement('canvas'),
     placements: [],
-    settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, standardizedDistribution: false, rotation: true, mirror: true, slice: false, imageOffsetX: 0, imageOffsetY: 0, imageOpacity: 1 },
+    settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, standardizedDistribution: false, rotation: true, mirror: true, slice: false, createRegion: false, regionLayerId: '', layerOffsetX: 0, layerOffsetY: 0, imageOffsetX: 0, imageOffsetY: 0, imageOpacity: 1 },
   };
 }
 
@@ -282,6 +329,7 @@ function fit() {
 
 function redraw(includeObjects = true, showSelection = true, includePaths = true) {
   ctx.imageSmoothingEnabled = state.mapFilter !== 'nearest';
+  ctx.imageSmoothingQuality = state.mapFilter === 'linear' ? 'high' : 'low';
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   // Background images retain their explicit layer priority.
   for (const layer of [...state.layers].reverse()) {
@@ -289,11 +337,11 @@ function redraw(includeObjects = true, showSelection = true, includePaths = true
     if (layer.type === 'image' && layer.image) {
       ctx.save();
       ctx.globalAlpha = layer.settings.imageOpacity;
-      ctx.drawImage(layer.image, layer.settings.imageOffsetX, layer.settings.imageOffsetY, canvas.width, canvas.height);
+      ctx.drawImage(layer.image, layer.settings.imageOffsetX + (layer.settings.layerOffsetX || 0), layer.settings.imageOffsetY + (layer.settings.layerOffsetY || 0), canvas.width, canvas.height);
       ctx.restore();
     }
   }
-  for (const layer of [...state.layers].reverse()) if (layer.visible && ['ground', 'terrain'].includes(layer.type) && layer.heightOutput.width) ctx.drawImage(layer.heightOutput, 0, 0);
+  for (const layer of [...state.layers].reverse()) if (layer.visible && ['ground', 'terrain'].includes(layer.type) && layer.heightOutput.width) ctx.drawImage(layer.heightOutput, layer.settings.layerOffsetX || 0, layer.settings.layerOffsetY || 0);
 
   // Every generated asset and placed object shares one Y-sorted scene, even
   // when the entries came from different layers.
@@ -304,19 +352,19 @@ function redraw(includeObjects = true, showSelection = true, includePaths = true
     if (layer.type === 'terrain') {
       if (layer.placements?.length) {
         if (layer.settings.slice && layer.mask && !layer.maskPath) prepareMask(layer);
-        layer.placements.forEach((placement) => depthEntries.push({ y: placement.y, layerIndex, layer, placement }));
+        layer.placements.forEach((placement) => depthEntries.push({ y: placement.y + (layer.settings.layerOffsetY || 0), layerIndex, layer, placement }));
       }
       else if (layer.output.width) depthEntries.push({ y: -Infinity, layerIndex, layer });
     }
     if (layer.type === 'object' && layer.object?.x !== null && (includeObjects || !layer.object.poi)) {
-      depthEntries.push({ y: layer.object.y + (layer.object.offsetY ?? 0), layerIndex, object: layer.object });
+      depthEntries.push({ y: layer.object.y + (layer.object.offsetY ?? 0) + (layer.settings.layerOffsetY || 0), layerIndex, layer, object: layer.object });
     }
   });
   depthEntries.sort((first, second) => first.y - second.y || second.layerIndex - first.layerIndex);
   for (const entry of depthEntries) {
-    if (entry.object) drawMapObject(entry.object);
+    if (entry.object) drawMapObject(entry.object, entry.layer);
     else if (entry.placement) drawTerrainPlacement(entry.layer, entry.placement, ctx);
-    else ctx.drawImage(entry.layer.output, 0, 0);
+    else ctx.drawImage(entry.layer.output, entry.layer.settings.layerOffsetX || 0, entry.layer.settings.layerOffsetY || 0);
   }
   if (includePaths) for (const layer of [...state.layers].reverse()) if (layer.visible && layer.type === 'path') drawPathLayer(layer);
 
@@ -333,20 +381,21 @@ function drawSelectedLayerHighlight(layer) {
     for (const [x, y] of [[-3, 0], [3, 0], [0, -3], [0, 3], [-2, -2], [2, -2], [-2, 2], [2, 2]]) outlineContext.drawImage(layer.mask, x, y, canvas.width, canvas.height);
     outlineContext.globalCompositeOperation = 'source-in'; outlineContext.fillStyle = accent; outlineContext.fillRect(0, 0, canvas.width, canvas.height);
     outlineContext.globalCompositeOperation = 'destination-out'; outlineContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
-    ctx.drawImage(outline, 0, 0);
-    ctx.save(); ctx.globalAlpha = 0.12; ctx.drawImage(layer.mask, 0, 0, canvas.width, canvas.height); ctx.restore();
+    const offsetX = layer.settings.layerOffsetX || 0, offsetY = layer.settings.layerOffsetY || 0;
+    ctx.drawImage(outline, offsetX, offsetY);
+    ctx.save(); ctx.globalAlpha = 0.12; ctx.drawImage(layer.mask, offsetX, offsetY, canvas.width, canvas.height); ctx.restore();
   }
   if (layer.type === 'path' && layer.path.points.length) {
-    const preset = pathPreset(layer); ctx.save(); ctx.strokeStyle = accent; ctx.lineWidth = preset.stroke + 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
+    const preset = pathPreset(layer); ctx.save(); ctx.translate(layer.settings.layerOffsetX || 0, layer.settings.layerOffsetY || 0); ctx.strokeStyle = accent; ctx.lineWidth = preset.stroke + 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
     layer.path.points.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y)); ctx.stroke(); ctx.restore(); drawPathLayer(layer);
   }
-  if (layer.type === 'image' && layer.image) { ctx.save(); ctx.strokeStyle = accent; ctx.lineWidth = 4; ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4); ctx.restore(); }
+  if (layer.type === 'image' && layer.image) { ctx.save(); ctx.strokeStyle = accent; ctx.lineWidth = 4; ctx.strokeRect(2 + layer.settings.imageOffsetX + (layer.settings.layerOffsetX || 0), 2 + layer.settings.imageOffsetY + (layer.settings.layerOffsetY || 0), canvas.width - 4, canvas.height - 4); ctx.restore(); }
   if (layer.type === 'object' && layer.object?.x !== null) {
     const icon = state.imageSets.find((set) => set.id === layer.object.iconSetId)?.assets[0]?.image;
     if (icon) {
       const height = 48 * (layer.object.scale ?? 1), width = icon.naturalWidth / icon.naturalHeight * height;
-      const x = layer.object.x + (layer.object.offsetX ?? 0) - width * (layer.object.anchorX ?? 0.5);
-      const y = layer.object.y + (layer.object.offsetY ?? 0) - height * (layer.object.anchorY ?? 1);
+      const x = layer.object.x + (layer.object.offsetX ?? 0) + (layer.settings.layerOffsetX || 0) - width * (layer.object.anchorX ?? 0.5);
+      const y = layer.object.y + (layer.object.offsetY ?? 0) + (layer.settings.layerOffsetY || 0) - height * (layer.object.anchorY ?? 1);
       ctx.save(); ctx.strokeStyle = accent; ctx.lineWidth = 3; ctx.strokeRect(x - 4, y - 4, width + 8, height + 8); ctx.restore();
     }
   }
@@ -360,6 +409,7 @@ function drawPathLayer(layer) {
   if (!layer.path?.points.length) return;
   const preset = pathPreset(layer);
   ctx.save();
+  ctx.translate(layer.settings.layerOffsetX || 0, layer.settings.layerOffsetY || 0);
   ctx.strokeStyle = preset.color;
   ctx.lineWidth = preset.stroke;
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -392,6 +442,7 @@ function drawTerrainPlacement(layer, placement, context) {
   const width = asset.naturalWidth * layer.settings.scale * placement.variation;
   const height = asset.naturalHeight * layer.settings.scale * placement.variation;
   context.save();
+  context.translate(layer.settings.layerOffsetX || 0, layer.settings.layerOffsetY || 0);
   if (layer.settings.slice && layer.maskPath) context.clip(layer.maskPath);
   context.translate(placement.x, placement.y);
   context.rotate(placement.rotation);
@@ -400,14 +451,14 @@ function drawTerrainPlacement(layer, placement, context) {
   context.restore();
 }
 
-function drawMapObject(object) {
+function drawMapObject(object, layer = null) {
   const set = state.imageSets.find((item) => item.id === object.iconSetId);
   const icon = set?.assets[0]?.image;
   if (!icon) return;
   const size = 48 * (object.scale ?? 1);
   const width = icon.naturalWidth / icon.naturalHeight * size;
-  const x = object.x + (object.offsetX ?? 0);
-  const y = object.y + (object.offsetY ?? 0);
+  const x = object.x + (object.offsetX ?? 0) + (layer?.settings.layerOffsetX || 0);
+  const y = object.y + (object.offsetY ?? 0) + (layer?.settings.layerOffsetY || 0);
   ctx.save();
   ctx.globalAlpha = object.opacity ?? 1;
   ctx.drawImage(icon, x - width * (object.anchorX ?? 0.5), y - size * (object.anchorY ?? 1), width, size);
@@ -427,7 +478,6 @@ function drawMapObject(object) {
 function renderLayers() {
   const list = $('#layerList');
   list.replaceChildren();
-  const regionGroups = new Map();
   for (const layer of state.layers) {
     const button = document.createElement('button');
     button.className = `layer-card${layer.id === state.selectedId ? ' active' : ''}${layer.visible ? '' : ' is-hidden'}`;
@@ -473,16 +523,7 @@ function renderLayers() {
       renderLayers();
       redraw();
     });
-    if (layer.type === 'region') {
-      const groupName = layer.region.group || 'Regiões';
-      let group = regionGroups.get(groupName);
-      if (!group) {
-        group = document.createElement('section'); group.className = 'region-layer-group';
-        const title = document.createElement('p'); title.textContent = groupName;
-        group.append(title); regionGroups.set(groupName, group); list.append(group);
-      }
-      group.append(button);
-    } else list.append(button);
+    list.append(button);
   }
   for (const folder of state.layers.filter((layer) => layer.type === 'folder')) {
     const folderButton = list.querySelector(`[data-layer-id="${folder.id}"]`);
@@ -557,6 +598,16 @@ $('#terrainAnchorPreview').addEventListener('click', (event) => {
   else redraw();
 });
 
+function populateTerrainRegionLink(layer) {
+  const select = $('#terrainRegionLink');
+  const regions = state.layers.filter((item) => item.type === 'region');
+  select.replaceChildren(new Option(regions.length ? 'Selecione uma região criada' : 'Crie uma layer de região primeiro', ''), ...regions.map((region) => new Option(region.region.name || region.name, region.id)));
+  select.value = regions.some((region) => region.id === layer.settings.regionLayerId) ? layer.settings.regionLayerId : '';
+  if (layer.settings.regionLayerId && !select.value) layer.settings.regionLayerId = '';
+  $('#terrainCreateRegion').checked = Boolean(layer.settings.createRegion);
+  $('#terrainRegionLinkField').hidden = !layer.settings.createRegion;
+}
+
 function selectLayer(id) {
   if (state.maskEditing && state.maskEditing !== id) closeMaskEditor();
   state.selectedId = id;
@@ -574,6 +625,7 @@ function selectLayer(id) {
   $('#rotation').checked = layer.settings.rotation;
   $('#mirror').checked = layer.settings.mirror;
   $('#slice').checked = layer.settings.slice;
+  if (layer.type === 'terrain') populateTerrainRegionLink(layer);
   $('#imageOffsetX').value = layer.settings.imageOffsetX;
   $('#imageOffsetY').value = layer.settings.imageOffsetY;
   $('#imageOpacity').value = layer.settings.imageOpacity;
@@ -613,7 +665,7 @@ function renderMaskPreview(layer) {
   preview.replaceChildren();
   if (!layer.mask) return;
   const card = document.createElement('div'); card.className = 'mask-card';
-  const image = new Image(); image.src = layer.mask.src; image.alt = layer.maskName;
+  const image = new Image(); image.src = layer.maskExportSource || layer.mask.src || layer.maskBaseSource || layer.maskChunks?.values().next().value?.source || ''; image.alt = layer.maskName;
   const name = document.createElement('small'); name.textContent = layer.maskName;
   const remove = document.createElement('button'); remove.textContent = '×'; remove.title = 'Remover máscara';
   remove.onclick = () => {
@@ -629,7 +681,7 @@ function renderGroundMaskPreview(layer) {
   preview.replaceChildren();
   if (!layer?.heightMap) return;
   const card = document.createElement('div'); card.className = 'mask-card';
-  const image = new Image(); image.src = layer.heightMap.src; image.alt = `Máscara original de ${layer.name}`;
+  const image = new Image(); image.src = layer.heightMapExportSource || layer.heightMap.src || layer.heightMapBaseSource || layer.heightChunks?.values().next().value?.source || ''; image.alt = `Máscara original de ${layer.name}`;
   const label = document.createElement('small'); label.textContent = 'Máscara original • preto e branco';
   card.append(image, label); preview.append(card);
 }
@@ -1067,11 +1119,13 @@ async function generate(layer = selectedLayer()) {
   const token = ++state.generationToken;
   $('#saveState').textContent = 'Calculando…';
   $('#generateBtn').disabled = true;
+  showTaskProgress('Calculando distribuição do terreno', 0);
   layer.output.width = canvas.width;
   layer.output.height = canvas.height;
   layer.placements = [];
   const outputContext = layer.output.getContext('2d');
   outputContext.imageSmoothingEnabled = state.mapFilter !== 'nearest';
+  outputContext.imageSmoothingQuality = state.mapFilter === 'linear' ? 'high' : 'low';
   const random = randomFactory(hashSeed(layer.settings.seed));
   const { minX, minY, maxX, maxY } = layer.bounds;
   const width = maxX - minX + 1;
@@ -1083,10 +1137,10 @@ async function generate(layer = selectedLayer()) {
   // therefore creates proportionally more spawn points instead of leaving gaps.
   // Keep only a one-pixel floor to avoid division by zero at the slider limit.
   const footprint = Math.max(1, 48 * layer.settings.scale * averageVariation);
-  // Below the default scale, progressively apply an additional boost of up to
-  // 5x. This sits on top of the inverse-square footprint compensation above.
+  // Below the default scale, apply only a gentle boost of up to 2x. The former
+  // 5x multiplier made even intensity 1 overcrowded for very small sprites.
   const smallScaleBoost = layer.settings.scale < 1
-    ? 1 + (1 - layer.settings.scale) * 4
+    ? 1 + (1 - layer.settings.scale)
     : 1;
   // 100 is the base occupancy; 1000 layers roughly ten passes over the same
   // footprint and is intended to produce an almost completely filled mask.
@@ -1128,6 +1182,7 @@ async function generate(layer = selectedLayer()) {
           mirrored: layer.settings.mirror && random() > 0.5,
         });
       }
+      updateTaskProgress('Calculando distribuição do terreno', attempts ? iteration / attempts * 55 : 55);
       if (iteration < attempts) requestAnimationFrame(calculateBatch);
       else resolve();
     }
@@ -1155,6 +1210,7 @@ async function generate(layer = selectedLayer()) {
         outputContext.restore();
       }
       redraw();
+      updateTaskProgress('Renderizando terreno', placements.length ? 55 + drawn / placements.length * 45 : 100);
       if (drawn < placements.length) requestAnimationFrame(drawBatch);
       else resolve();
     }
@@ -1173,6 +1229,7 @@ async function generate(layer = selectedLayer()) {
     $('#saveState').textContent = 'Atualizado';
     updateReadyState();
   }
+  hideTaskProgress();
 }
 
 $('#addLayer').onclick = () => {
@@ -1246,6 +1303,7 @@ let pendingSetAssets = [];
 let editingSetId = null;
 function openAssetLibrary() {
   editingSetId = null; pendingSetAssets = [];
+  $('#assetSetSearch').value = '';
   $('#setName').value = ''; $('#newSetFiles').textContent = 'Nenhuma imagem selecionada';
   $('#createSetBtn').textContent = 'Criar conjunto'; $('#createSetBtn').disabled = true;
   renderEditingSetAssets(); renderImageSets(); $('#assetModal').hidden = false;
@@ -1257,6 +1315,7 @@ $('#assetModal').addEventListener('click', (event) => {
   if (event.target === $('#assetModal')) $('#assetModal').hidden = true;
 });
 $('#projectSettingsBtn').onclick = () => {
+  $('#languageSelect').value = state.language; $('#themeSetting').value = state.theme;
   $('#mapWidthSetting').value = canvas.width; $('#mapHeightSetting').value = canvas.height;
   $('#mapFilterSetting').value = state.mapFilter;
   $('#distanceScaleKm').value = state.distanceScaleKm;
@@ -1268,11 +1327,13 @@ $('#projectSettingsBtn').onclick = () => {
   $('#projectSettingsModal').hidden = false;
 };
 function applyMapFilter() {
-  state.mapFilter = $('#mapFilterSetting').value === 'nearest' ? 'nearest' : 'linear';
+  const selectedFilter = $('#mapFilterSetting').value;
+  state.mapFilter = ['linear', 'balanced', 'nearest'].includes(selectedFilter) ? selectedFilter : 'linear';
   const pixelated = state.mapFilter === 'nearest';
   canvas.style.imageRendering = pixelated ? 'pixelated' : 'auto';
   maskEditCanvas.style.imageRendering = pixelated ? 'pixelated' : 'auto';
   ctx.imageSmoothingEnabled = !pixelated;
+  ctx.imageSmoothingQuality = state.mapFilter === 'linear' ? 'high' : 'low';
 }
 $('#applyMapSettings').onclick = () => {
   const width = Math.max(1, Math.round(Number($('#mapWidthSetting').value) || canvas.width));
@@ -1339,7 +1400,9 @@ $('#createSetBtn').onclick = () => {
 function renderImageSets() {
   const list = $('#setList');
   list.replaceChildren();
-  for (const set of state.imageSets) {
+  const term = $('#assetSetSearch').value.trim().toLocaleLowerCase();
+  const visibleSets = state.imageSets.filter((set) => set.name.toLocaleLowerCase().includes(term));
+  for (const set of visibleSets) {
     const item = document.createElement('div');
     item.className = 'image-set';
     item.innerHTML = '<img class="set-thumbnail" alt=""><div><b></b><small></small></div><button class="edit-set" title="Editar">✎</button><button class="use-set">Usar</button>';
@@ -1375,9 +1438,10 @@ function renderImageSets() {
     };
     list.append(item);
   }
-  if (!state.imageSets.length) list.innerHTML = '<div class="set-empty">Nenhum conjunto criado ainda.</div>';
+  if (!visibleSets.length) list.innerHTML = `<div class="set-empty">${state.imageSets.length ? 'Nenhum conjunto encontrado.' : 'Nenhum conjunto criado ainda.'}</div>`;
   translateDocument(list);
 }
+$('#assetSetSearch').addEventListener('input', renderImageSets);
 
 function renderEditingSetAssets() {
   const list = $('#editingSetAssets');
@@ -1392,9 +1456,8 @@ function renderEditingSetAssets() {
 
 const SET_PACKAGE_FORMAT = 'atlasmith-image-sets';
 
-function selectedExportSetIds() {
-  return [...document.querySelectorAll('#exportSetList input:checked')].map((input) => input.value);
-}
+const exportSetSelection = new Set();
+function selectedExportSetIds() { return [...exportSetSelection]; }
 
 function updateExportSetsButton() {
   $('#confirmExportSets').disabled = !selectedExportSetIds().length;
@@ -1405,9 +1468,10 @@ function renderExportSetList() {
   list.replaceChildren(...state.imageSets.map((set) => {
     const label = document.createElement('label'); label.className = 'export-set-option';
     const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = set.id;
+    checkbox.checked = exportSetSelection.has(set.id);
     const name = document.createElement('b'); name.textContent = set.name;
     const count = document.createElement('small'); count.textContent = `${set.assets.length} imagem(ns)`;
-    checkbox.onchange = updateExportSetsButton;
+    checkbox.onchange = () => { if (checkbox.checked) exportSetSelection.add(set.id); else exportSetSelection.delete(set.id); updateExportSetsButton(); };
     label.append(checkbox, name, count); return label;
   }));
   if (!state.imageSets.length) list.innerHTML = '<div class="set-empty">Nenhum conjunto disponível para exportar.</div>';
@@ -1415,6 +1479,7 @@ function renderExportSetList() {
 }
 
 function openExportSetsModal() {
+  exportSetSelection.clear();
   renderExportSetList();
   $('#exportSetsModal').hidden = false;
 }
@@ -1424,9 +1489,17 @@ async function portableAssetSource(asset) {
   if (!asset.image.complete) await new Promise((resolve, reject) => { asset.image.addEventListener('load', resolve, { once: true }); asset.image.addEventListener('error', reject, { once: true }); });
   const width = asset.image.naturalWidth, height = asset.image.naturalHeight;
   if (!width || !height) throw new Error(`Não foi possível carregar ${asset.file.name}`);
-  const portableCanvas = document.createElement('canvas'); portableCanvas.width = width; portableCanvas.height = height;
-  portableCanvas.getContext('2d').drawImage(asset.image, 0, 0);
-  return portableCanvas.toDataURL('image/png');
+  // Read the original bytes instead of redrawing the image. Redrawing local or
+  // CDN assets can taint the temporary canvas and make toDataURL throw.
+  const response = await fetch(asset.image.currentSrc || asset.image.src);
+  if (!response.ok) throw new Error(`Não foi possível incluir ${asset.file.name} (${response.status})`);
+  const blob = await response.blob();
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error(`Não foi possível ler ${asset.file.name}`));
+    reader.readAsDataURL(blob);
+  });
 }
 
 async function exportImageSets(setIds) {
@@ -1440,8 +1513,8 @@ async function exportImageSets(setIds) {
   downloadFile('atlasmith-conjuntos.atlasmith-sets', JSON.stringify(packageData, null, 2), 'application/json');
 }
 
-$('#selectAllExportSets').onclick = () => { document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = true; }); updateExportSetsButton(); };
-$('#clearExportSets').onclick = () => { document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = false; }); updateExportSetsButton(); };
+$('#selectAllExportSets').onclick = () => { document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = true; exportSetSelection.add(input.value); }); updateExportSetsButton(); };
+$('#clearExportSets').onclick = () => { exportSetSelection.clear(); document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = false; }); updateExportSetsButton(); };
 $('#closeExportSets').onclick = () => { $('#exportSetsModal').hidden = true; };
 $('#exportSetsModal').addEventListener('click', (event) => { if (event.target === $('#exportSetsModal')) $('#exportSetsModal').hidden = true; });
 $('#confirmExportSets').onclick = async () => {
@@ -1578,6 +1651,16 @@ $('#drawPath').onclick = () => {
   });
 });
 
+let terrainAutoGenerateTimer = 0;
+function scheduleTerrainAutoGenerate() {
+  clearTimeout(terrainAutoGenerateTimer);
+  const layerId = selectedLayer()?.id;
+  terrainAutoGenerateTimer = setTimeout(() => {
+    const layer = state.layers.find((item) => item.id === layerId);
+    if (layer?.type === 'terrain' && layer.mask && layer.assets.length) generate(layer);
+  }, 280);
+}
+
 ['density', 'scale', 'sizeMin', 'sizeMax'].forEach((id) => {
   $(`#${id}`).addEventListener('input', (event) => {
     const layer = selectedLayer();
@@ -1587,6 +1670,7 @@ $('#drawPath').onclick = () => {
     $('#sizeMin').value = layer.settings.sizeMin;
     $('#sizeMax').value = layer.settings.sizeMax;
     updateOutputs();
+    scheduleTerrainAutoGenerate();
   });
 });
 ['imageOffsetX', 'imageOffsetY', 'imageOpacity'].forEach((id) => {
@@ -1615,8 +1699,8 @@ function bindNumberInput(valueId, rangeId, applyValue, factor = 1) {
     applyValue(value);
   });
 }
-bindNumberInput('densityValue', 'density', (value) => { selectedLayer().settings.density = value; });
-bindNumberInput('scaleValue', 'scale', (value) => { selectedLayer().settings.scale = value; });
+bindNumberInput('densityValue', 'density', (value) => { selectedLayer().settings.density = value; scheduleTerrainAutoGenerate(); });
+bindNumberInput('scaleValue', 'scale', (value) => { selectedLayer().settings.scale = value; scheduleTerrainAutoGenerate(); });
 bindNumberInput('imageOffsetXValue', 'imageOffsetX', (value) => { selectedLayer().settings.imageOffsetX = value; redraw(); });
 bindNumberInput('imageOffsetYValue', 'imageOffsetY', (value) => { selectedLayer().settings.imageOffsetY = value; redraw(); });
 bindNumberInput('imageOpacityValue', 'imageOpacity', (value) => { selectedLayer().settings.imageOpacity = value; redraw(); }, 100);
@@ -1626,13 +1710,21 @@ bindNumberInput('objectOffsetXValue', 'objectOffsetX', (value) => { selectedLaye
 bindNumberInput('objectOffsetYValue', 'objectOffsetY', (value) => { selectedLayer().object.offsetY = value; redraw(); });
 $('#sizeVariation').addEventListener('change', (event) => {
   selectedLayer().settings.sizeVariation = event.target.checked;
-  updateOutputs();
+  updateOutputs(); scheduleTerrainAutoGenerate();
 });
-$('#seed').addEventListener('input', (event) => { selectedLayer().settings.seed = event.target.value; });
-$('#standardizedDistribution').addEventListener('change', (event) => { selectedLayer().settings.standardizedDistribution = event.target.checked; });
-$('#rotation').addEventListener('change', (event) => { selectedLayer().settings.rotation = event.target.checked; });
-$('#mirror').addEventListener('change', (event) => { selectedLayer().settings.mirror = event.target.checked; });
-$('#slice').addEventListener('change', (event) => { selectedLayer().settings.slice = event.target.checked; });
+$('#seed').addEventListener('input', (event) => { selectedLayer().settings.seed = event.target.value; scheduleTerrainAutoGenerate(); });
+$('#standardizedDistribution').addEventListener('change', (event) => { selectedLayer().settings.standardizedDistribution = event.target.checked; scheduleTerrainAutoGenerate(); });
+$('#rotation').addEventListener('change', (event) => { selectedLayer().settings.rotation = event.target.checked; scheduleTerrainAutoGenerate(); });
+$('#mirror').addEventListener('change', (event) => { selectedLayer().settings.mirror = event.target.checked; scheduleTerrainAutoGenerate(); });
+$('#slice').addEventListener('change', (event) => { selectedLayer().settings.slice = event.target.checked; scheduleTerrainAutoGenerate(); });
+$('#terrainCreateRegion').addEventListener('change', (event) => {
+  const layer = selectedLayer(); if (layer?.type !== 'terrain') return;
+  layer.settings.createRegion = event.target.checked;
+  $('#terrainRegionLinkField').hidden = !event.target.checked;
+});
+$('#terrainRegionLink').addEventListener('change', (event) => {
+  const layer = selectedLayer(); if (layer?.type === 'terrain') layer.settings.regionLayerId = event.target.value;
+});
 const maskEditCanvas = $('#maskEditCanvas');
 const maskEditContext = maskEditCanvas.getContext('2d', { willReadFrequently: true });
 let maskTool = 'brush';
@@ -1642,12 +1734,71 @@ let maskPanX = 0;
 let maskPanY = 0;
 let maskPaintPointerId = null;
 let maskHistory = [];
+const MASK_CHUNK_SIZE = 512;
+let strokeDirtyChunks = new Set();
+let strokeChunkSnapshots = new Map();
+let maskChunkSaveChain = Promise.resolve();
 let lastTerrainPaintPoint = null;
 let lastTerrainHeightLevel = '';
 let heightLevelPopupTimer = 0;
 let brushRepetitionTimer = 0;
 let lastMaskPointerEvent = null;
 const brushCursor = $('#brushCursor');
+
+function maskChunkBounds(key) {
+  const [column, row] = key.split(':').map(Number);
+  const x = column * MASK_CHUNK_SIZE, y = row * MASK_CHUNK_SIZE;
+  return { key, x, y, width: Math.min(MASK_CHUNK_SIZE, canvas.width - x), height: Math.min(MASK_CHUNK_SIZE, canvas.height - y) };
+}
+
+function markMaskChunksDirty(x, y, width, height) {
+  const left = Math.max(0, Math.floor(x)), top = Math.max(0, Math.floor(y));
+  const right = Math.min(canvas.width - 1, Math.ceil(x + width) - 1), bottom = Math.min(canvas.height - 1, Math.ceil(y + height) - 1);
+  if (right < left || bottom < top) return;
+  for (let row = Math.floor(top / MASK_CHUNK_SIZE); row <= Math.floor(bottom / MASK_CHUNK_SIZE); row++) for (let column = Math.floor(left / MASK_CHUNK_SIZE); column <= Math.floor(right / MASK_CHUNK_SIZE); column++) {
+    const key = `${column}:${row}`;
+    if (!strokeChunkSnapshots.has(key)) {
+      const bounds = maskChunkBounds(key);
+      strokeChunkSnapshots.set(key, { ...bounds, pixels: maskEditContext.getImageData(bounds.x, bounds.y, bounds.width, bounds.height) });
+    }
+    strokeDirtyChunks.add(key);
+  }
+}
+
+function canvasChunkBlob(chunkCanvas) {
+  return new Promise((resolve, reject) => chunkCanvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Não foi possível salvar o chunk')), 'image/png'));
+}
+
+function blobDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob);
+  });
+}
+
+async function flushPendingMaskChunks(label = 'Salvando chunks da máscara') {
+  const pending = state.layers.flatMap((layer) => [
+    ...[...(layer.pendingMaskChunks || new Map())].map(([key, chunk]) => ({ layer, key, chunk, pendingProperty: 'pendingMaskChunks', chunksProperty: 'maskChunks' })),
+    ...[...(layer.pendingHeightChunks || new Map())].map(([key, chunk]) => ({ layer, key, chunk, pendingProperty: 'pendingHeightChunks', chunksProperty: 'heightChunks' })),
+  ]);
+  if (!pending.length) return maskChunkSaveChain;
+  maskChunkSaveChain = maskChunkSaveChain.then(async () => {
+    showTaskProgress(label, 0);
+    try {
+      for (let index = 0; index < pending.length; index++) {
+        const { layer, key, chunk, pendingProperty, chunksProperty } = pending[index];
+        const chunkCanvas = document.createElement('canvas'); chunkCanvas.width = chunk.width; chunkCanvas.height = chunk.height;
+        chunkCanvas.getContext('2d').putImageData(chunk.pixels, 0, 0);
+        const source = await blobDataUrl(await canvasChunkBlob(chunkCanvas));
+        layer[chunksProperty] ||= new Map();
+        layer[chunksProperty].set(key, { x: chunk.x, y: chunk.y, width: chunk.width, height: chunk.height, source });
+        if (layer[pendingProperty]?.get(key) === chunk) layer[pendingProperty].delete(key);
+        updateTaskProgress(label, (index + 1) / pending.length * 100);
+        await nextFrame();
+      }
+    } finally { hideTaskProgress(); }
+  });
+  return maskChunkSaveChain;
+}
 
 function showTerrainHeightLevel(value, force = false) {
   if (!state.terrainHeightEditing) return;
@@ -1736,25 +1887,31 @@ function renderTerrainHeight(layer, sourceCanvas = null, dirty = null) {
   redraw();
 }
 
-function openTerrainHeightEditor(layer) {
+async function openTerrainHeightEditor(layer) {
   if (!layer || !['ground', 'terrain'].includes(layer.type)) return;
-  stage.style.display = 'block'; $('#emptyState').style.display = 'none';
-  maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
-  maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
-  if (layer.heightMap) maskEditContext.drawImage(layer.heightMap, 0, 0, canvas.width, canvas.height);
-  else { maskEditContext.fillStyle = '#fff'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); }
-  state.terrainHeightEditing = layer.id; state.maskEditing = layer.id; maskHistory = [];
-  maskEditCanvas.style.display = 'block'; maskEditCanvas.style.opacity = '0';
-  $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
-  lastTerrainHeightLevel = '';
-  $('#brushSizeControl span').textContent = 'Height'; $('#brushOpacity').max = '100'; $('#brushOpacity').step = '1'; $('#brushOpacity').value = '100'; $('#brushOpacity').dispatchEvent(new Event('input'));
-  showTerrainHeightLevel(100, true);
-  $('#terrainBrushPresets').hidden = false; $('#terrainBrushUpload').hidden = false; $('#clearTerrainBrush').hidden = !state.terrainBrushImage;
-  $('#terrainBrushRotationLabel').hidden = false; $('#terrainBrushRotation').hidden = false; $('#terrainBrushRotationValue').hidden = false;
-  renderTerrainHeight(layer, maskEditCanvas); $('#saveState').textContent = 'Editando altura do terreno';
+  showTaskProgress('Preparando editor de ground/base', 5);
+  try {
+    await nextFrame();
+    stage.style.display = 'block'; $('#emptyState').style.display = 'none';
+    maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
+    maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
+    if (layer.heightMap) maskEditContext.drawImage(layer.heightMap, 0, 0, canvas.width, canvas.height);
+    else { maskEditContext.fillStyle = '#fff'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); }
+    updateTaskProgress('Carregando mapa de altura', 45); await nextFrame();
+    state.terrainHeightEditing = layer.id; state.maskEditing = layer.id; maskHistory = [];
+    maskEditCanvas.style.display = 'block'; maskEditCanvas.style.opacity = '0';
+    $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
+    lastTerrainHeightLevel = '';
+    $('#brushSizeControl span').textContent = 'Height'; $('#brushOpacity').max = '100'; $('#brushOpacity').step = '1'; $('#brushOpacity').value = '100'; $('#brushOpacity').dispatchEvent(new Event('input'));
+    showTerrainHeightLevel(100, true);
+    $('#terrainBrushPresets').hidden = false; $('#terrainBrushUpload').hidden = false; $('#clearTerrainBrush').hidden = !state.terrainBrushImage;
+    $('#terrainBrushRotationLabel').hidden = false; $('#terrainBrushRotation').hidden = false; $('#terrainBrushRotationValue').hidden = false;
+    updateTaskProgress('Renderizando ground/base', 65); await nextFrame();
+    renderTerrainHeight(layer, maskEditCanvas); updateTaskProgress('Editor pronto', 100); $('#saveState').textContent = 'Editando altura do terreno';
+  } finally { hideTaskProgress(); }
 }
 
-$('#editGroundHeight').onclick = () => state.maskEditing === selectedLayer()?.id ? closeMaskEditor() : openTerrainHeightEditor(selectedLayer());
+$('#editGroundHeight').onclick = async () => state.maskEditing === selectedLayer()?.id ? closeMaskEditor() : openTerrainHeightEditor(selectedLayer());
 $('#groundMaskInput').addEventListener('change', async (event) => {
   const file = event.target.files[0];
   const layer = selectedLayer();
@@ -1932,33 +2089,66 @@ let maskCommitTimer = 0;
 let maskCommitRevision = 0;
 function scheduleMaskCommit() {
   clearTimeout(maskCommitTimer);
-  maskCommitTimer = setTimeout(() => commitMaskEdits(), 180);
+  maskCommitTimer = setTimeout(() => maskDrawing ? scheduleMaskCommit() : commitMaskEdits(), 180);
 }
 
 async function commitMaskEdits() {
   clearTimeout(maskCommitTimer); maskCommitTimer = 0;
   const layer = state.layers.find((item) => item.id === state.maskEditing);
-  if (!layer) return;
+  if (!layer || !strokeDirtyChunks.size) return maskChunkSaveChain;
   const revision = ++maskCommitRevision;
-  const source = maskEditCanvas.toDataURL('image/png');
-  const image = await imageFromSource(source);
-  if (revision !== maskCommitRevision) return;
-  if (state.terrainHeightEditing) {
-    layer.heightMap = image; renderTerrainHeight(layer, maskEditCanvas);
-    $('#saveState').textContent = 'Terreno atualizado automaticamente'; return;
+  const heightMode = Boolean(state.terrainHeightEditing);
+  const keys = [...strokeDirtyChunks];
+  strokeDirtyChunks = new Set();
+  const captured = keys.map((key) => {
+    const bounds = maskChunkBounds(key);
+    return { ...bounds, pixels: maskEditContext.getImageData(bounds.x, bounds.y, bounds.width, bounds.height) };
+  });
+  const dirtyRectangle = captured.reduce((dirty, chunk) => {
+    if (!dirty) return { x: chunk.x, y: chunk.y, width: chunk.width, height: chunk.height };
+    const right = Math.max(dirty.x + dirty.width, chunk.x + chunk.width);
+    const bottom = Math.max(dirty.y + dirty.height, chunk.y + chunk.height);
+    const x = Math.min(dirty.x, chunk.x), y = Math.min(dirty.y, chunk.y);
+    return { x, y, width: right - x, height: bottom - y };
+  }, null);
+  const targetProperty = heightMode ? 'heightMap' : 'mask';
+  const chunksProperty = heightMode ? 'heightChunks' : 'maskChunks';
+  const pendingProperty = heightMode ? 'pendingHeightChunks' : 'pendingMaskChunks';
+  if (!(layer[targetProperty] instanceof HTMLCanvasElement)) {
+    const merged = document.createElement('canvas'); merged.width = canvas.width; merged.height = canvas.height;
+    const mergedContext = merged.getContext('2d');
+    if (layer[targetProperty]) {
+      layer[`${targetProperty}BaseSource`] = layer[targetProperty].src || null;
+      mergedContext.drawImage(layer[targetProperty], 0, 0, canvas.width, canvas.height);
+    } else { mergedContext.fillStyle = '#fff'; mergedContext.fillRect(0, 0, canvas.width, canvas.height); }
+    layer[targetProperty] = merged;
   }
-  layer.mask = image; layer.maskName = 'Máscara criada no editor';
+  const mergedContext = layer[targetProperty].getContext('2d');
+  captured.forEach((chunk) => mergedContext.putImageData(chunk.pixels, chunk.x, chunk.y));
+  layer[chunksProperty] ||= new Map();
+  layer[pendingProperty] ||= new Map();
+  captured.forEach((chunk) => layer[pendingProperty].set(chunk.key, chunk));
   layer.maskPixels = null; layer.maskPath = null; layer.clip = null; layer.bounds = null;
-  $('#maskName').textContent = layer.maskName; renderMaskPreview(layer); updateReadyState();
-  if (layer.type === 'region') await applyRegionPriority(layer);
-  if (layer.type === 'terrain' && layer.assets.length) await generate(layer);
-  else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
+  if (!heightMode) { layer.maskName = 'Máscara criada no editor'; $('#maskName').textContent = layer.maskName; updateReadyState(); }
+  if (revision === maskCommitRevision) {
+    if (heightMode) {
+      // paintTerrainHeight already refreshed this area while the stroke was in
+      // progress. Keep the union for callers that need an explicit partial
+      // refresh, without performing the former full-canvas render on release.
+      layer.heightDirtyRectangle = dirtyRectangle;
+      $('#saveState').textContent = `${captured.length} chunk(s) de altura pendente(s)`;
+    } else if (layer.type === 'region') await applyRegionPriority(layer);
+    else if (layer.type === 'terrain' && layer.assets.length) await generate(layer);
+    else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
+  }
+  return maskChunkSaveChain;
 }
 
 function paintMask(event) {
   if (!maskDrawing || maskPaintPointerId !== event.pointerId || !(event.buttons & 1)) return;
   const heightLayer = state.terrainHeightEditing ? state.layers.find((layer) => layer.id === state.terrainHeightEditing) : null;
   if (maskTool === 'fill') {
+    markMaskChunksDirty(0, 0, canvas.width, canvas.height);
     if (heightLayer) {
       const data = maskEditContext.getImageData(0, 0, canvas.width, canvas.height);
       const level = 255 - Math.round(Math.max(0, Math.min(100, Number($('#brushOpacity').value))) / 100 * 255);
@@ -1977,6 +2167,8 @@ function paintMask(event) {
   const x = (event.clientX - rectangle.left) * canvas.width / rectangle.width;
   const y = (event.clientY - rectangle.top) * canvas.height / rectangle.height;
   const brushSize = Number($('#brushSize').value), radius = brushSize / 2;
+  const dirtyRadius = state.terrainBrushImage ? brushSize * Math.SQRT2 / 2 : radius;
+  markMaskChunksDirty(x - dirtyRadius, y - dirtyRadius, dirtyRadius * 2, dirtyRadius * 2);
   if (heightLayer) {
     if (lastTerrainPaintPoint) {
       const distance = Math.hypot(x - lastTerrainPaintPoint.x, y - lastTerrainPaintPoint.y);
@@ -2032,8 +2224,7 @@ maskEditCanvas.onpointerdown = (event) => {
     brushCursor.style.display = 'none';
     maskPanning = true; maskPanX = event.clientX; maskPanY = event.clientY;
   } else if (event.button === 0) {
-    maskHistory.push(maskEditCanvas.toDataURL('image/png'));
-    if (maskHistory.length > 20) maskHistory.shift();
+    strokeDirtyChunks = new Set(); strokeChunkSnapshots = new Map();
     maskDrawing = true; maskPaintPointerId = event.pointerId; lastTerrainPaintPoint = null;
     lastMaskPointerEvent = { pointerId: event.pointerId, buttons: 1, clientX: event.clientX, clientY: event.clientY };
     paintMask(event); scheduleBrushRepetition();
@@ -2065,7 +2256,10 @@ function stopMaskPointer(event) {
   maskDrawing = false; maskPanning = false; maskPaintPointerId = null;
   lastTerrainPaintPoint = null;
   stopBrushRepetition();
-  if (painted && state.maskEditing) commitMaskEdits();
+  if (painted && state.maskEditing) {
+    if (strokeChunkSnapshots.size) { maskHistory.push([...strokeChunkSnapshots.values()]); if (maskHistory.length > 20) maskHistory.shift(); }
+    commitMaskEdits();
+  }
 }
 maskEditCanvas.onpointerup = stopMaskPointer;
 maskEditCanvas.onpointercancel = stopMaskPointer;
@@ -2088,10 +2282,9 @@ document.addEventListener('keydown', async (event) => {
   event.preventDefault();
   const snapshot = maskHistory.pop();
   if (!snapshot) return;
-  const image = await imageFromSource(snapshot);
   maskEditContext.globalCompositeOperation = 'source-over';
-  maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
-  maskEditContext.drawImage(image, 0, 0);
+  strokeDirtyChunks = new Set(); strokeChunkSnapshots = new Map();
+  snapshot.forEach((chunk) => { maskEditContext.putImageData(chunk.pixels, chunk.x, chunk.y); strokeDirtyChunks.add(chunk.key); });
   if (state.terrainHeightEditing) renderTerrainHeight(state.layers.find((layer) => layer.id === state.terrainHeightEditing), maskEditCanvas);
   scheduleMaskCommit(); $('#saveState').textContent = `Desfazer • ${maskHistory.length} restante(s)`;
 });
@@ -2138,10 +2331,32 @@ function serializeAsset(asset) {
   return { name: asset.file.name, source: asset.image.src, anchorX: asset.anchorX, anchorY: asset.anchorY };
 }
 
+function serializedChunks(chunks) { return chunks instanceof Map ? [...chunks.values()] : []; }
+
+async function drawableDataUrl(drawable) {
+  if (!drawable) return null;
+  if (drawable.src?.startsWith('data:')) return drawable.src;
+  if (drawable instanceof HTMLCanvasElement) return blobDataUrl(await canvasChunkBlob(drawable));
+  return portableAssetSource({ image: drawable, file: { name: 'imagem.png' } });
+}
+
+async function canvasFromChunks(chunks, fallbackSource = null) {
+  if (!chunks?.length) return fallbackSource ? imageFromSource(fallbackSource) : null;
+  const merged = document.createElement('canvas'); merged.width = canvas.width; merged.height = canvas.height;
+  const context = merged.getContext('2d');
+  if (fallbackSource) context.drawImage(await imageFromSource(fallbackSource), 0, 0, canvas.width, canvas.height);
+  else { context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height); }
+  for (let index = 0; index < chunks.length; index++) {
+    const chunk = chunks[index]; context.drawImage(await imageFromSource(chunk.source), chunk.x, chunk.y, chunk.width, chunk.height);
+    updateTaskProgress('Abrindo chunks do projeto', (index + 1) / chunks.length * 100); await nextFrame();
+  }
+  return merged;
+}
+
 function createProjectData() {
   const maskObjects = state.layers.flatMap((layer) => [
-    layer.mask ? { id: `${layer.id}:mask`, layerId: layer.id, kind: 'distribution', name: layer.maskName || `${layer.name} mask`, source: layer.mask.src } : null,
-    layer.heightMap ? { id: `${layer.id}:height`, layerId: layer.id, kind: layer.type === 'ground' ? 'ground-base' : 'heightmap', name: layer.maskName || `${layer.name} height`, source: layer.heightMap.src } : null,
+    layer.mask ? { id: `${layer.id}:mask`, layerId: layer.id, kind: 'distribution', name: layer.maskName || `${layer.name} mask`, source: layer.mask.src || layer.maskBaseSource || null, chunks: serializedChunks(layer.maskChunks) } : null,
+    layer.heightMap ? { id: `${layer.id}:height`, layerId: layer.id, kind: layer.type === 'ground' ? 'ground-base' : 'heightmap', name: layer.maskName || `${layer.name} height`, source: layer.heightMap.src || layer.heightMapBaseSource || null, chunks: serializedChunks(layer.heightChunks) } : null,
   ].filter(Boolean));
   return {
     format: 'teralium-map-project', version: 2,
@@ -2157,6 +2372,7 @@ function createProjectData() {
     terrainBrushRotation: state.terrainBrushRotation,
     terrainBrushRepetition: state.terrainBrushRepetition,
     mapFilter: state.mapFilter,
+    theme: state.theme,
     maskObjects,
     imageSets: state.imageSets.map((set) => ({ id: set.id, name: set.name, assets: set.assets.map(serializeAsset) })),
     layers: state.layers.map((layer) => ({
@@ -2170,10 +2386,13 @@ function createProjectData() {
   };
 }
 
-$('#saveProjectBtn').onclick = () => {
-  const project = createProjectData();
-  downloadFile('projeto-teralium.json', JSON.stringify(project), 'application/json');
-  $('#saveState').textContent = 'Projeto salvo';
+$('#saveProjectBtn').onclick = async () => {
+  showTaskProgress('Salvando projeto', 0);
+  try {
+    await flushPendingMaskChunks('Codificando chunks do projeto'); updateTaskProgress('Serializando projeto', 40); await nextFrame();
+    const project = createProjectData(); updateTaskProgress('Preparando download', 85);
+    downloadFile('projeto-teralium.json', JSON.stringify(project), 'application/json'); $('#saveState').textContent = 'Projeto salvo';
+  } finally { hideTaskProgress(); }
 };
 
 $('#openProjectBtn').onclick = () => { state.projectFileHandle = null; $('#projectInput').click(); };
@@ -2197,6 +2416,7 @@ function projectJsonFromZip(buffer) {
 $('#projectInput').addEventListener('change', async (event) => {
   const file = event.target.files[0];
   if (!file) return;
+  showTaskProgress('Abrindo projeto', 0);
   try {
     $('#saveState').textContent = 'Abrindo…';
     const projectText = file.name.toLowerCase().endsWith('.zip') ? projectJsonFromZip(await file.arrayBuffer()) : await file.text();
@@ -2210,9 +2430,10 @@ $('#projectInput').addEventListener('change', async (event) => {
     state.travelSpeeds = { ...state.travelSpeeds, ...project.travelSpeeds };
     state.descriptionTemplates = project.descriptionTemplates || [];
     state.terrainColors = { ...state.terrainColors, ...project.terrainColors };
+    applyTheme(project.theme || state.theme);
     setTerrainBrushRotation(project.terrainBrushRotation || 0);
     setBrushRepetition(project.terrainBrushRepetition ?? 100);
-    state.mapFilter = project.mapFilter === 'nearest' ? 'nearest' : 'linear';
+    state.mapFilter = ['linear', 'balanced', 'nearest'].includes(project.mapFilter) ? project.mapFilter : 'linear';
     $('#mapFilterSetting').value = state.mapFilter; applyMapFilter();
     state.imageSets = await Promise.all(project.imageSets.map(async (set) => ({
       ...set, assets: await Promise.all(set.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source), anchorX: asset.anchorX, anchorY: asset.anchorY }))),
@@ -2227,8 +2448,17 @@ $('#projectInput').addEventListener('change', async (event) => {
       const heightMapObject = project.maskObjects?.find((item) => item.id === saved.heightMapObjectId);
       const maskSource = maskObject?.source || saved.maskSource;
       const heightMapSource = heightMapObject?.source || saved.heightMapSource;
-      if (maskSource) layer.mask = await imageFromSource(maskSource);
-      if (heightMapSource) { layer.heightMap = await imageFromSource(heightMapSource); renderTerrainHeight(layer); }
+      if (maskSource || maskObject?.chunks?.length) {
+        layer.mask = await canvasFromChunks(maskObject?.chunks, maskSource);
+        layer.maskBaseSource = maskSource || null;
+        layer.maskChunks = new Map((maskObject?.chunks || []).map((chunk) => [`${Math.floor(chunk.x / MASK_CHUNK_SIZE)}:${Math.floor(chunk.y / MASK_CHUNK_SIZE)}`, chunk]));
+      }
+      if (heightMapSource || heightMapObject?.chunks?.length) {
+        layer.heightMap = await canvasFromChunks(heightMapObject?.chunks, heightMapSource);
+        layer.heightMapBaseSource = heightMapSource || null;
+        layer.heightChunks = new Map((heightMapObject?.chunks || []).map((chunk) => [`${Math.floor(chunk.x / MASK_CHUNK_SIZE)}:${Math.floor(chunk.y / MASK_CHUNK_SIZE)}`, chunk]));
+        renderTerrainHeight(layer);
+      }
       if (saved.imageSource) layer.image = await imageFromSource(saved.imageSource);
       layer.assets = await Promise.all(saved.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source), anchorX: asset.anchorX, anchorY: asset.anchorY })));
       layer.placements = saved.placements || [];
@@ -2247,8 +2477,72 @@ $('#projectInput').addEventListener('change', async (event) => {
     $('#saveState').textContent = 'Erro ao abrir';
     window.alert(`Não foi possível abrir o projeto: ${error.message}`);
   }
+  hideTaskProgress();
   event.target.value = '';
 });
+
+function editorWorldPoint(event) {
+  const rectangle = viewport.getBoundingClientRect();
+  return { x: (event.clientX - rectangle.left - state.x) / state.zoom, y: (event.clientY - rectangle.top - state.y) / state.zoom };
+}
+
+function maskCoverageAt(layer, x, y) {
+  const localX = Math.floor(x - (layer.settings.layerOffsetX || 0)), localY = Math.floor(y - (layer.settings.layerOffsetY || 0));
+  if (!layer.mask || localX < 0 || localY < 0 || localX >= canvas.width || localY >= canvas.height) return 0;
+  const sample = document.createElement('canvas'); sample.width = sample.height = 1;
+  const sampleContext = sample.getContext('2d', { willReadFrequently: true });
+  sampleContext.drawImage(layer.mask, localX, localY, 1, 1, 0, 0, 1, 1);
+  const pixel = sampleContext.getImageData(0, 0, 1, 1).data;
+  return pixel[3] / 255 * (1 - (pixel[0] + pixel[1] + pixel[2]) / 765);
+}
+
+function distanceToSegment(point, start, end) {
+  const dx = end.x - start.x, dy = end.y - start.y;
+  const lengthSquared = dx * dx + dy * dy;
+  const amount = lengthSquared ? Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared)) : 0;
+  return Math.hypot(point.x - (start.x + dx * amount), point.y - (start.y + dy * amount));
+}
+
+function layerAtPoint(point) {
+  for (const layer of state.layers) {
+    if (!layer.visible || layer.type === 'folder') continue;
+    const offsetX = layer.settings.layerOffsetX || 0, offsetY = layer.settings.layerOffsetY || 0;
+    if (layer.type === 'object' && layer.object?.x !== null) {
+      const icon = state.imageSets.find((set) => set.id === layer.object.iconSetId)?.assets[0]?.image;
+      if (icon) {
+        const height = 48 * (layer.object.scale ?? 1), width = icon.naturalWidth / icon.naturalHeight * height;
+        const left = layer.object.x + (layer.object.offsetX || 0) + offsetX - width * (layer.object.anchorX ?? 0.5);
+        const top = layer.object.y + (layer.object.offsetY || 0) + offsetY - height * (layer.object.anchorY ?? 1);
+        if (point.x >= left && point.x <= left + width && point.y >= top && point.y <= top + height) return layer;
+      }
+    }
+    if (layer.type === 'path' && layer.path?.points.length > 1) {
+      const local = { x: point.x - offsetX, y: point.y - offsetY };
+      if (layer.path.points.slice(1).some((end, index) => distanceToSegment(local, layer.path.points[index], end) <= Math.max(8, pathPreset(layer).stroke / 2 + 5))) return layer;
+    }
+    if (layer.type === 'terrain' && layer.placements?.some((placement) => {
+      const asset = layer.assets[placement.assetIndex]?.image || placement.asset;
+      const radius = Math.max(asset?.naturalWidth || 0, asset?.naturalHeight || 0) * layer.settings.scale * placement.variation / 2;
+      return Math.hypot(point.x - placement.x - offsetX, point.y - placement.y - offsetY) <= radius;
+    })) return layer;
+    if (['terrain', 'region'].includes(layer.type) && maskCoverageAt(layer, point.x, point.y) > 0.04) return layer;
+    if (layer.type === 'image' && layer.image) {
+      const imageX = offsetX + layer.settings.imageOffsetX, imageY = offsetY + layer.settings.imageOffsetY;
+      if (point.x >= imageX && point.y >= imageY && point.x <= imageX + canvas.width && point.y <= imageY + canvas.height) return layer;
+    }
+    if (layer.type === 'ground' && layer.heightOutput.width && point.x >= offsetX && point.y >= offsetY && point.x <= offsetX + canvas.width && point.y <= offsetY + canvas.height) return layer;
+  }
+  return null;
+}
+
+document.querySelectorAll('[data-map-tool]').forEach((button) => {
+  button.onclick = () => {
+    state.activeMapTool = button.dataset.mapTool;
+    document.querySelectorAll('[data-map-tool]').forEach((item) => item.classList.toggle('active', item === button));
+    viewport.dataset.mapTool = state.activeMapTool;
+  };
+});
+viewport.dataset.mapTool = state.activeMapTool;
 
 viewport.addEventListener('pointerdown', (event) => {
   if (state.drawingPath && selectedLayer()?.type === 'path' && event.button === 0) {
@@ -2269,17 +2563,35 @@ viewport.addEventListener('pointerdown', (event) => {
     redraw();
     return;
   }
+  if (event.button === 0 && state.activeMapTool === 'select') {
+    const layer = layerAtPoint(editorWorldPoint(event));
+    if (layer) selectLayer(layer.id);
+    return;
+  }
+  if (event.button === 0 && state.activeMapTool === 'move') {
+    if (!selectedLayer() || selectedLayer().type === 'folder') return;
+    state.movingLayer = true; state.lastX = event.clientX; state.lastY = event.clientY;
+    viewport.classList.add('moving-layer'); viewport.setPointerCapture(event.pointerId); return;
+  }
   state.drag = true; state.lastX = event.clientX; state.lastY = event.clientY;
   viewport.classList.add('dragging');
   viewport.setPointerCapture(event.pointerId);
 });
 viewport.addEventListener('pointermove', (event) => {
+  if (state.movingLayer) {
+    const layer = selectedLayer();
+    if (!layer) return;
+    layer.settings.layerOffsetX = (layer.settings.layerOffsetX || 0) + (event.clientX - state.lastX) / state.zoom;
+    layer.settings.layerOffsetY = (layer.settings.layerOffsetY || 0) + (event.clientY - state.lastY) / state.zoom;
+    state.lastX = event.clientX; state.lastY = event.clientY; redraw(); return;
+  }
   if (!state.drag) return;
   state.x += event.clientX - state.lastX; state.y += event.clientY - state.lastY;
   state.lastX = event.clientX; state.lastY = event.clientY;
   updateTransform();
 });
-viewport.addEventListener('pointerup', () => { state.drag = false; viewport.classList.remove('dragging'); });
+viewport.addEventListener('pointerup', () => { state.drag = false; state.movingLayer = false; viewport.classList.remove('dragging', 'moving-layer'); });
+viewport.addEventListener('pointercancel', () => { state.drag = false; state.movingLayer = false; viewport.classList.remove('dragging', 'moving-layer'); });
 viewport.addEventListener('wheel', (event) => {
   event.preventDefault();
   const rectangle = viewport.getBoundingClientRect();
@@ -2353,24 +2665,30 @@ function safeFileName(name, fallback) {
   return (name || fallback).replace(/[^a-z0-9._-]+/gi, '-');
 }
 
-$('#exportBtn').onclick = () => {
+$('#exportBtn').onclick = async () => {
   $('#saveState').textContent = 'Exportando projeto…';
-  redraw(true, false);
-  const project = createProjectData();
-  const files = [
-    { name: 'projeto-teralium.json', bytes: JSON.stringify(project, null, 2) },
-    { name: 'mapa-render-final.png', bytes: dataUrlBytes(canvas.toDataURL('image/png')) },
-  ];
-  state.layers.forEach((layer, index) => {
-    if (layer.mask) files.push({ name: `mascaras/${index + 1}-${safeFileName(layer.maskName, layer.name)}.png`, bytes: dataUrlBytes(layer.mask.src) });
-    if (layer.heightMap) files.push({ name: `${layer.type === 'ground' ? 'ground-base' : 'alturas'}/${index + 1}-${safeFileName(layer.name, 'terreno')}.png`, bytes: dataUrlBytes(layer.heightMap.src) });
-    if (layer.image) files.push({ name: `assets/camadas/${index + 1}-${safeFileName(layer.name, 'imagem')}.png`, bytes: dataUrlBytes(layer.image.src) });
-    layer.assets.forEach((asset, assetIndex) => files.push({ name: `assets/camadas/${index + 1}/${assetIndex + 1}-${safeFileName(asset.file.name, 'asset')}`, bytes: dataUrlBytes(asset.image.src) }));
-  });
-  state.imageSets.forEach((set, setIndex) => set.assets.forEach((asset, assetIndex) => files.push({ name: `assets/biblioteca/${setIndex + 1}-${safeFileName(set.name, 'conjunto')}/${assetIndex + 1}-${safeFileName(asset.file.name, 'asset')}`, bytes: dataUrlBytes(asset.image.src) })));
-  downloadFile('projeto-teralium.zip', zipProject(files), 'application/zip');
-  redraw();
-  $('#saveState').textContent = 'Projeto exportado';
+  showTaskProgress('Preparando exportação', 0);
+  try {
+    await flushPendingMaskChunks('Codificando chunks para exportação'); redraw(true, false); await nextFrame();
+    const project = createProjectData();
+    const files = [{ name: 'projeto-teralium.json', bytes: JSON.stringify(project, null, 2) }, { name: 'mapa-render-final.png', bytes: new Uint8Array(await (await canvasChunkBlob(canvas)).arrayBuffer()) }];
+    for (let index = 0; index < state.layers.length; index++) {
+      const layer = state.layers[index];
+      updateTaskProgress('Mesclando chunks das camadas', 10 + (index + 1) / Math.max(1, state.layers.length) * 65);
+      if (layer.mask) files.push({ name: `mascaras/${index + 1}-${safeFileName(layer.maskName, layer.name)}.png`, bytes: dataUrlBytes(await drawableDataUrl(layer.mask)) });
+      if (layer.heightMap) files.push({ name: `${layer.type === 'ground' ? 'ground-base' : 'alturas'}/${index + 1}-${safeFileName(layer.name, 'terreno')}.png`, bytes: dataUrlBytes(await drawableDataUrl(layer.heightMap)) });
+      if (layer.image) files.push({ name: `assets/camadas/${index + 1}-${safeFileName(layer.name, 'imagem')}.png`, bytes: dataUrlBytes(await drawableDataUrl(layer.image)) });
+      for (let assetIndex = 0; assetIndex < layer.assets.length; assetIndex++) files.push({ name: `assets/camadas/${index + 1}/${assetIndex + 1}-${safeFileName(layer.assets[assetIndex].file.name, 'asset')}`, bytes: dataUrlBytes(await portableAssetSource(layer.assets[assetIndex])) });
+      await nextFrame();
+    }
+    for (let setIndex = 0; setIndex < state.imageSets.length; setIndex++) for (let assetIndex = 0; assetIndex < state.imageSets[setIndex].assets.length; assetIndex++) {
+      const asset = state.imageSets[setIndex].assets[assetIndex];
+      files.push({ name: `assets/biblioteca/${setIndex + 1}-${safeFileName(state.imageSets[setIndex].name, 'conjunto')}/${assetIndex + 1}-${safeFileName(asset.file.name, 'asset')}`, bytes: dataUrlBytes(await portableAssetSource(asset)) });
+    }
+    updateTaskProgress('Compactando projeto', 85); await nextFrame();
+    downloadFile('projeto-teralium.zip', zipProject(files), 'application/zip'); updateTaskProgress('Projeto exportado', 100);
+    $('#saveState').textContent = 'Projeto exportado';
+  } finally { redraw(); hideTaskProgress(); }
 };
 function exportablePois() {
   return state.layers.filter((layer) => layer.visible && layer.type === 'object' && layer.object?.poi && layer.object.x !== null).map((layer) => {
@@ -2378,21 +2696,38 @@ function exportablePois() {
     const iconSet = state.imageSets.find((set) => set.id === object.iconSetId);
     const gallerySet = state.imageSets.find((set) => set.id === object.gallerySetId);
     const type = state.poiTypes.find((item) => item.id === object.type) || state.poiTypes.at(-1);
-    return { ...object, description: String(object.description ?? object.descricao ?? ''), simpleDescription: String(object.description ?? object.descricao ?? ''), x: object.x + (object.offsetX ?? 0), y: object.y + (object.offsetY ?? 0), id: layer.id, icon: iconSet?.assets[0]?.image.src || '', gallery: gallerySet?.assets.map((asset) => asset.image.src) || [], typeName: type?.name || object.type, color: type?.color || '#fff' };
+    return { ...object, description: String(object.description ?? object.descricao ?? ''), simpleDescription: String(object.description ?? object.descricao ?? ''), x: object.x + (object.offsetX ?? 0) + (layer.settings.layerOffsetX || 0), y: object.y + (object.offsetY ?? 0) + (layer.settings.layerOffsetY || 0), id: layer.id, icon: iconSet?.assets[0]?.image.src || '', gallery: gallerySet?.assets.map((asset) => asset.image.src) || [], typeName: type?.name || object.type, color: type?.color || '#fff' };
   }).filter((poi) => poi.icon);
 }
 
 function exportableRegions() {
-  return state.layers.filter((layer) => layer.visible && layer.type === 'region' && layer.mask).map((layer) => {
+  const candidates = state.layers.flatMap((layer) => {
+    if (!layer.visible || !layer.mask) return [];
+    if (layer.type === 'region') return [{ sourceLayer: layer, regionLayer: layer, terrainMask: false }];
+    if (layer.type !== 'terrain' || !layer.settings.createRegion || !layer.settings.regionLayerId) return [];
+    const regionLayer = state.layers.find((item) => item.type === 'region' && item.id === layer.settings.regionLayerId);
+    return regionLayer ? [{ sourceLayer: layer, regionLayer, terrainMask: true }] : [];
+  });
+  return candidates.map(({ sourceLayer, regionLayer, terrainMask }) => {
     const scratch = document.createElement('canvas'); scratch.width = canvas.width; scratch.height = canvas.height;
     const regionContext = scratch.getContext('2d', { willReadFrequently: true });
-    regionContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
-    const pixels = regionContext.getImageData(0, 0, canvas.width, canvas.height).data;
+    regionContext.drawImage(sourceLayer.mask, sourceLayer.settings.layerOffsetX || 0, sourceLayer.settings.layerOffsetY || 0, canvas.width, canvas.height);
+    const imageData = regionContext.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    if (terrainMask) {
+      for (let index = 0; index < pixels.length; index += 4) {
+        const darkness = 1 - (pixels[index] + pixels[index + 1] + pixels[index + 2]) / 765;
+        pixels[index] = pixels[index + 1] = pixels[index + 2] = 255;
+        pixels[index + 3] = Math.round(pixels[index + 3] * Math.max(0, darkness));
+      }
+      regionContext.putImageData(imageData, 0, 0);
+    }
     let totalX = 0, totalY = 0, count = 0;
     for (let y = 0; y < canvas.height; y += 4) for (let x = 0; x < canvas.width; x += 4) {
       if (pixels[(y * canvas.width + x) * 4 + 3] > 32) { totalX += x; totalY += y; count++; }
     }
-    return { id: layer.id, group: layer.region.group || 'Regiões', name: layer.region.name, color: layer.region.color, fillMode: layer.region.fillMode || 'fill', outlineThickness: layer.region.outlineThickness ?? 3, outlineDashed: Boolean(layer.region.outlineDashed), outlineGap: layer.region.outlineGap ?? 12, defaultOverview: Boolean(layer.region.defaultOverview), mask: layer.mask.src, centerX: count ? totalX / count : canvas.width / 2, centerY: count ? totalY / count : canvas.height / 2 };
+    const region = regionLayer.region;
+    return { id: terrainMask ? `${sourceLayer.id}:region` : regionLayer.id, group: region.group || 'Regiões', name: region.name, color: region.color, fillMode: region.fillMode || 'fill', outlineThickness: region.outlineThickness ?? 3, outlineDashed: Boolean(region.outlineDashed), outlineGap: region.outlineGap ?? 12, defaultOverview: Boolean(region.defaultOverview), mask: terrainMask ? scratch.toDataURL('image/png') : regionLayer.maskExportSource || regionLayer.mask.src, centerX: count ? totalX / count : canvas.width / 2, centerY: count ? totalY / count : canvas.height / 2 };
   });
 }
 
@@ -2400,7 +2735,7 @@ function exportablePaths() {
   return state.layers.filter((layer) => layer.visible && layer.type === 'path' && layer.path?.showOnMap && layer.path.points.length > 1).map((layer) => {
     const preset = pathPreset(layer);
     const gallery = state.imageSets.find((set) => set.id === layer.path.gallerySetId)?.assets.map((asset) => asset.image.src) || [];
-    return { id: layer.id, name: layer.path.name, description: layer.path.description, points: layer.path.points, distance: layer.path.distance || calculatePathDistance(layer.path.points), gallery, preset };
+    return { id: layer.id, name: layer.path.name, description: layer.path.description, points: layer.path.points.map((point) => ({ x: point.x + (layer.settings.layerOffsetX || 0), y: point.y + (layer.settings.layerOffsetY || 0) })), distance: layer.path.distance || calculatePathDistance(layer.path.points), gallery, preset };
   });
 }
 
@@ -2422,19 +2757,47 @@ const pois=${pois},regions=${regions},paths=${paths},types=${types},travelSpeeds
 <\/script></body></html>`;
 }
 
-$('#exportMapBtn').onclick = () => downloadFile('mapa-teralium.html', createMapHtml(), 'text/html');
-$('#previewMapBtn').onclick = () => {
-  const url = URL.createObjectURL(new Blob([createMapHtml()], { type: 'text/html' }));
-  window.open(url, '_blank');
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
+async function prepareMergedLayerSources(label) {
+  const layers = state.layers.filter((layer) => layer.mask instanceof HTMLCanvasElement);
+  showTaskProgress(label, 0);
+  try {
+    await flushPendingMaskChunks('Codificando chunks para exportação');
+    for (let index = 0; index < layers.length; index++) {
+      layers[index].maskExportSource = await drawableDataUrl(layers[index].mask);
+      updateTaskProgress(label, (index + 1) / Math.max(1, layers.length) * 100); await nextFrame();
+    }
+  } finally { hideTaskProgress(); }
+}
+
+$('#exportMapBtn').onclick = async () => { await prepareMergedLayerSources('Mesclando máscaras do mapa'); downloadFile('mapa-teralium.html', createMapHtml(), 'text/html'); };
+$('#previewMapBtn').onclick = async () => {
+  // Reserve the tab synchronously while this click still counts as a user
+  // gesture. Opening it after the awaited chunk merge is blocked as a popup by
+  // browsers, particularly when Atlasmith itself is running from file://.
+  const previewWindow = window.open('about:blank', '_blank');
+  if (!previewWindow) { window.alert('O navegador bloqueou a aba de pré-visualização. Permita pop-ups para o Atlasmith.'); return; }
+  previewWindow.document.title = 'Preparando pré-visualização…';
+  previewWindow.document.body.innerHTML = '<p style="background:#101311;color:#edf0ed;font:14px sans-serif;margin:0;padding:24px">Preparando pré-visualização…</p>';
+  try {
+    await prepareMergedLayerSources('Preparando pré-visualização');
+    const url = URL.createObjectURL(new Blob([createMapHtml()], { type: 'text/html' }));
+    previewWindow.location.replace(url);
+    previewWindow.opener = null;
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (error) {
+    previewWindow.close();
+    window.alert(`Não foi possível abrir a pré-visualização: ${error.message}`);
+  }
 };
 
 window.addEventListener('resize', () => { if (selectedLayer()?.mask) fit(); });
 
 $('#languageSelect').addEventListener('change', (event) => applyLanguage(event.target.value));
+$('#themeSetting').addEventListener('change', (event) => applyTheme(event.target.value));
 
 const firstLayer = createLayer();
 state.layers.push(firstLayer);
+applyTheme(state.theme);
 setBrushRepetition(state.terrainBrushRepetition);
 selectLayer(firstLayer.id);
 applyLanguage(state.language);

@@ -14,6 +14,7 @@
       <hr><button id="menuExportPng" type="button">Exportar como PNG</button><button id="menuExportProject" type="button">Exportar projeto completo</button><button id="menuExportMap" type="button">Exportar mapa</button>
     </div></div>
     <div class="app-menu"><button type="button" class="app-menu-trigger">Manage</button><div class="app-menu-dropdown" hidden>
+      <button id="menuManageMap" type="button">Mapa</button><hr>
       <button id="menuManagePoiTypes" type="button">Tipos de objeto</button><button id="menuManageSets" type="button">Conjuntos de imagens</button>
       <hr><button id="menuImportSets" type="button">Importar conjuntos</button><button id="menuExportSets" type="button">Exportar conjuntos</button>
     </div></div>
@@ -28,6 +29,10 @@
     <button id="previewMapBtn" class="icon-action" title="Pré-visualizar mapa" aria-label="Pré-visualizar mapa">👁</button>
     <button id="projectSettingsBtn" class="icon-action" title="Configurações do projeto" aria-label="Configurações do projeto">⚙</button>
   </header>
+  <div id="taskProgress" class="task-progress" hidden role="status" aria-live="polite">
+    <div><span id="taskProgressLabel">Processando…</span><strong id="taskProgressPercent">0%</strong></div>
+    <progress id="taskProgressBar" max="100" value="0"></progress>
+  </div>
 
   <aside class="sidebar left-panel">
     <div class="layers-heading">
@@ -49,6 +54,11 @@
       <span>Pontos de interesse</span><span>Estradas</span>
     </div>
   </aside>
+
+  <nav id="mapTools" class="map-tools" aria-label="Ferramentas do mapa">
+    <button type="button" data-map-tool="select" class="active" title="Selecionar camada" aria-label="Selecionar camada">⌖</button>
+    <button type="button" data-map-tool="move" title="Mover camada" aria-label="Mover camada">✥</button>
+  </nav>
 
   <main id="viewport">
     <div id="stage"><canvas id="mapCanvas" width="1600" height="1000"></canvas><canvas id="maskEditCanvas" width="1600" height="1000"></canvas><div id="brushCursor" class="brush-cursor"></div></div>
@@ -74,6 +84,11 @@
         <output id="terrainAnchorCoordinates">Âncora: —</output>
       </div>
     </section>
+    <section class="terrain-control">
+      <div class="section-title"><b>Terrain sprites</b><span id="assetCount">0</span></div>
+      <button id="openAssetModal" class="asset-upload">＋ Adicionar imagens</button>
+      <div id="assetGrid" class="asset-grid"><p>Adicione árvores, pedras ou qualquer elemento que queira distribuir.</p></div>
+    </section>
     <section class="terrain-control image-control region-control">
       <label class="upload" for="maskInput"><span>＋</span><b>Enviar máscara</b><small>PNG com transparência recomendado</small></label>
       <input id="maskInput" type="file" accept="image/*" hidden>
@@ -93,11 +108,6 @@
       <label>Offset Y <input id="imageOffsetYValue" class="value-input" type="number" min="-2000" max="2000" value="0"><input id="imageOffsetY" type="range" min="-2000" max="2000" value="0"></label>
       <label>Opacidade <input id="imageOpacityValue" class="value-input" type="number" min="0" max="100" value="100"><input id="imageOpacity" type="range" min="0" max="1" step="0.01" value="1"></label>
     </section>
-    <section class="terrain-control">
-      <div class="section-title"><b>Terrain sprites</b><span id="assetCount">0</span></div>
-      <button id="openAssetModal" class="asset-upload">＋ Adicionar imagens</button>
-      <div id="assetGrid" class="asset-grid"><p>Adicione árvores, pedras ou qualquer elemento que queira distribuir.</p></div>
-    </section>
     <section class="fields terrain-control">
       <label>Intensidade <input id="densityValue" class="value-input" type="number" min="0" max="1000" value="45"><input id="density" type="range" min="0" max="1000" value="45"></label>
       <label>Tamanho geral <input id="scaleValue" class="value-input" type="number" min="0" max="2" step="0.05" value="1"><input id="scale" type="range" min="0" max="2" step="0.05" value="1"></label>
@@ -114,6 +124,11 @@
       <label><input id="rotation" type="checkbox" checked> Rotação aleatória</label>
       <label><input id="mirror" type="checkbox" checked> Mirror aleatório</label>
       <label><input id="slice" type="checkbox"> Slice na máscara</label>
+    </section>
+    <section class="terrain-control terrain-region-link">
+      <label class="check-row"><input id="terrainCreateRegion" type="checkbox"> Criar uma região com esta máscara</label>
+      <label id="terrainRegionLinkField">Região vinculada<select id="terrainRegionLink"><option value="">Selecione uma região criada</option></select></label>
+      <small>A região vinculada usará a máscara deste terreno no mapa exportado.</small>
     </section>
     <section class="object-control" hidden>
       <div class="object-form">
@@ -203,14 +218,17 @@
     <button data-action="toggle">Ocultar</button>
     <button data-action="delete" class="danger">Excluir camada</button>
   </div>
-  <label class="language-picker">Language: <select id="languageSelect"><option value="pt-BR">Português</option><option value="en">English</option><option value="ja">日本語</option></select></label>
   <div id="projectSettingsModal" class="modal-backdrop" hidden>
     <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="projectSettingsTitle">
       <div class="modal-head"><div><p class="panel-label">PROJETO</p><h2 id="projectSettingsTitle">Configurações</h2></div><button id="closeProjectSettings" aria-label="Fechar">×</button></div>
+      <fieldset class="speed-settings appearance-settings"><legend>Aparência</legend>
+        <label>Idioma <select id="languageSelect"><option value="pt-BR">Português</option><option value="en">English</option><option value="ja">日本語</option></select></label>
+        <label>Tema <select id="themeSetting"><option value="atlasmith">Atlasmith</option><option value="light">Claro</option><option value="wine">Vinho e dourado</option><option value="earth">Marrom e verde</option></select></label>
+      </fieldset>
       <fieldset class="speed-settings map-general-settings"><legend>Mapa</legend>
         <label>Largura <span><input id="mapWidthSetting" type="number" min="1" value="1600"> px</span></label>
         <label>Altura <span><input id="mapHeightSetting" type="number" min="1" value="1000"> px</span></label>
-        <label>Filtro de imagens <select id="mapFilterSetting"><option value="linear">Linear</option><option value="nearest">Mais próximo (pixel)</option></select></label>
+        <label>Filtro de imagens <select id="mapFilterSetting"><option value="linear">Linear</option><option value="balanced">Intermediário</option><option value="nearest">Mais próximo (pixel)</option></select></label>
         <button id="applyMapSettings" type="button" class="position-object">Aplicar tamanho</button>
       </fieldset>
       <label class="project-scale-setting">Escala do mapa <span><b>100px</b> equivalem a <input id="distanceScaleKm" type="number" min="0.01" step="1" value="100"> km</span></label>
@@ -275,6 +293,7 @@
     <div class="asset-modal" role="dialog" aria-modal="true" aria-labelledby="assetModalTitle">
       <div class="modal-head"><div><p class="panel-label">BIBLIOTECA</p><h2 id="assetModalTitle">Conjuntos de imagens</h2></div><button id="closeAssetModal" aria-label="Fechar">×</button></div>
       <p class="modal-copy">Reutilize o mesmo conjunto de imagens em diferentes camadas.</p>
+      <input id="assetSetSearch" class="icon-picker-search" type="search" placeholder="Pesquisar conjuntos..." aria-label="Pesquisar conjuntos de terreno">
       <div id="setList" class="set-list"></div>
       <div class="new-set">
         <h3>Novo conjunto</h3>
@@ -287,6 +306,7 @@
       </div>
     </div>
   </div>
+  <script src="bundled-icon-data.js"></script>
   <script src="admin-map-editor.js"></script>
 </body>
 </html>
