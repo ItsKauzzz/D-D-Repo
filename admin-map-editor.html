@@ -11,11 +11,18 @@
     <a href="admin-tools.html" aria-label="Voltar">←</a>
     <strong>Map editor</strong>
     <span id="saveState">Pronto</span>
-    <button id="openProjectBtn" class="secondary-action">Abrir projeto</button>
+    <div class="app-menu"><button type="button" class="app-menu-trigger">File</button><div class="app-menu-dropdown" hidden>
+      <button id="menuOpenProject" type="button">Abrir</button><button id="menuSaveProject" type="button">Salvar</button><button id="menuSaveAsProject" type="button">Salvar como</button>
+      <hr><button id="menuExportPng" type="button">Exportar como PNG</button><button id="menuExportProject" type="button">Exportar projeto completo</button><button id="menuExportMap" type="button">Exportar mapa</button>
+    </div></div>
+    <div class="app-menu"><button type="button" class="app-menu-trigger">Manage</button><div class="app-menu-dropdown" hidden>
+      <button id="menuManagePoiTypes" type="button">Tipos de objeto</button><button id="menuManageSets" type="button">Conjuntos de imagens</button>
+    </div></div>
+    <button id="openProjectBtn" class="secondary-action legacy-top-action" hidden>Abrir projeto</button>
     <input id="projectInput" type="file" accept=".json,.teralium,.zip" hidden>
-    <button id="saveProjectBtn" class="secondary-action">Salvar projeto</button>
-    <button id="exportBtn">Exportar projeto</button>
-    <button id="exportMapBtn">Exportar mapa</button>
+    <button id="saveProjectBtn" class="secondary-action legacy-top-action" hidden>Salvar projeto</button>
+    <button id="exportBtn" class="legacy-top-action" hidden>Exportar projeto</button>
+    <button id="exportMapBtn" class="legacy-top-action" hidden>Exportar mapa</button>
     <button id="previewMapBtn" class="icon-action" title="Pré-visualizar mapa" aria-label="Pré-visualizar mapa">👁</button>
     <button id="projectSettingsBtn" class="icon-action" title="Configurações do projeto" aria-label="Configurações do projeto">⚙</button>
   </header>
@@ -115,12 +122,12 @@
         </div>
         <label>Nome<input id="objectName" placeholder="Nome do local"></label>
         <label>Tipo<select id="objectType"></select></label>
-        <button id="managePoiTypes" type="button" class="position-object">＋ Gerenciar tipos de objeto</button>
+        <button id="managePoiTypes" type="button" class="position-object" hidden>＋ Gerenciar tipos de objeto</button>
         <label>Ícone<select id="objectIconSet" hidden><option value="">Selecione um conjunto</option></select><button id="openObjectIconPicker" type="button" class="icon-picker-trigger"><img alt=""><span>Selecionar conjunto de ícones</span></button></label>
         <div id="objectIconPreview" class="object-thumbnails"></div>
         <label>Galeria<select id="objectGallerySet"><option value="">Sem galeria</option></select></label>
         <div id="objectGalleryPreview" class="object-thumbnails"></div>
-        <button id="manageObjectSets" class="position-object">＋ Gerenciar conjuntos</button>
+        <button id="manageObjectSets" class="position-object" hidden>＋ Gerenciar conjuntos</button>
         <label>Descrição<textarea id="objectDescription" rows="6" placeholder="História, detalhes e informações do local..."></textarea></label>
         <button id="openDetailedDescription" type="button" class="position-object">Adicionar descrição detalhada</button>
         <button id="removeDetailedDescription" type="button" class="remove-detailed-description" hidden>Remover descrição detalhada</button>
