@@ -37,6 +37,7 @@ const state = {
   terrainBrushImage: null,
   terrainBrushMode: 'hard',
   terrainBrushRotation: 0,
+  terrainBrushRepetition: 100,
   mapFilter: 'linear',
 };
 
@@ -1454,6 +1455,8 @@ let maskHistory = [];
 let lastTerrainPaintPoint = null;
 let lastTerrainHeightLevel = '';
 let heightLevelPopupTimer = 0;
+let brushRepetitionTimer = 0;
+let lastMaskPointerEvent = null;
 const brushCursor = $('#brushCursor');
 
 function showTerrainHeightLevel(value, force = false) {
@@ -1687,6 +1690,13 @@ $('#brushSize').oninput = (event) => {
   $('#brushSizeValue').value = event.target.value;
   brushCursor.style.width = `${event.target.value}px`; brushCursor.style.height = `${event.target.value}px`;
 };
+function setBrushRepetition(value) {
+  state.terrainBrushRepetition = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+  $('#brushRepetition').value = state.terrainBrushRepetition;
+  $('#brushRepetitionValue').value = state.terrainBrushRepetition;
+}
+$('#brushRepetition').addEventListener('input', (event) => setBrushRepetition(event.target.value));
+$('#brushRepetitionValue').addEventListener('change', (event) => setBrushRepetition(event.target.value));
 $('#brushOpacity').oninput = (event) => {
   $('#brushOpacityValue').value = state.terrainHeightEditing ? Math.round(event.target.value) : Math.round(event.target.value * 100);
   if (maskTool !== 'eraser') showTerrainHeightLevel(event.target.value);
@@ -1740,6 +1750,21 @@ function paintMask(event) {
     maskEditContext.beginPath(); maskEditContext.arc(x, y, radius, 0, Math.PI * 2); maskEditContext.fill(); maskEditContext.globalAlpha = 1;
   }
 }
+function stopBrushRepetition() {
+  clearTimeout(brushRepetitionTimer);
+  brushRepetitionTimer = 0;
+  lastMaskPointerEvent = null;
+}
+function scheduleBrushRepetition() {
+  clearTimeout(brushRepetitionTimer);
+  if (!maskDrawing || maskTool === 'fill' || !lastMaskPointerEvent) return;
+  const clicksPerSecond = 1 + state.terrainBrushRepetition / 100 * 59;
+  brushRepetitionTimer = setTimeout(() => {
+    if (!maskDrawing || !lastMaskPointerEvent) return;
+    paintMask(lastMaskPointerEvent);
+    scheduleBrushRepetition();
+  }, 1000 / clicksPerSecond);
+}
 maskEditCanvas.oncontextmenu = (event) => event.preventDefault();
 const maskShortcutKeys = new Set();
 document.addEventListener('keydown', (event) => maskShortcutKeys.add(event.key.toLowerCase()));
@@ -1764,7 +1789,9 @@ maskEditCanvas.onpointerdown = (event) => {
   } else if (event.button === 0) {
     maskHistory.push(maskEditCanvas.toDataURL('image/png'));
     if (maskHistory.length > 20) maskHistory.shift();
-    maskDrawing = true; maskPaintPointerId = event.pointerId; lastTerrainPaintPoint = null; paintMask(event);
+    maskDrawing = true; maskPaintPointerId = event.pointerId; lastTerrainPaintPoint = null;
+    lastMaskPointerEvent = { pointerId: event.pointerId, buttons: 1, clientX: event.clientX, clientY: event.clientY };
+    paintMask(event); scheduleBrushRepetition();
   } else return;
   maskEditCanvas.setPointerCapture(event.pointerId);
 };
@@ -1780,7 +1807,8 @@ maskEditCanvas.onpointermove = (event) => {
     const y = (event.clientY - rectangle.top) * canvas.height / rectangle.height;
     brushCursor.style.left = `${x}px`; brushCursor.style.top = `${y}px`;
     brushCursor.style.display = maskTool === 'fill' ? 'none' : 'block';
-    if (!(event.buttons & 1)) { maskDrawing = false; maskPaintPointerId = null; return; }
+    if (!(event.buttons & 1)) { maskDrawing = false; maskPaintPointerId = null; stopBrushRepetition(); return; }
+    lastMaskPointerEvent = { pointerId: event.pointerId, buttons: 1, clientX: event.clientX, clientY: event.clientY };
     paintMask(event);
   }
 };
@@ -1790,6 +1818,7 @@ function stopMaskPointer(event) {
   event?.stopPropagation();
   maskDrawing = false; maskPanning = false; maskPaintPointerId = null;
   lastTerrainPaintPoint = null;
+  stopBrushRepetition();
 }
 maskEditCanvas.onpointerup = stopMaskPointer;
 maskEditCanvas.onpointercancel = stopMaskPointer;
@@ -1889,6 +1918,7 @@ function createProjectData() {
     descriptionTemplates: state.descriptionTemplates,
     terrainColors: state.terrainColors,
     terrainBrushRotation: state.terrainBrushRotation,
+    terrainBrushRepetition: state.terrainBrushRepetition,
     mapFilter: state.mapFilter,
     maskObjects,
     imageSets: state.imageSets.map((set) => ({ id: set.id, name: set.name, assets: set.assets.map(serializeAsset) })),
@@ -1943,6 +1973,7 @@ $('#projectInput').addEventListener('change', async (event) => {
     state.descriptionTemplates = project.descriptionTemplates || [];
     state.terrainColors = { ...state.terrainColors, ...project.terrainColors };
     setTerrainBrushRotation(project.terrainBrushRotation || 0);
+    setBrushRepetition(project.terrainBrushRepetition ?? 100);
     state.mapFilter = project.mapFilter === 'nearest' ? 'nearest' : 'linear';
     $('#mapFilterSetting').value = state.mapFilter; applyMapFilter();
     state.imageSets = await Promise.all(project.imageSets.map(async (set) => ({
@@ -2166,6 +2197,7 @@ $('#languageSelect').addEventListener('change', (event) => applyLanguage(event.t
 
 const firstLayer = createLayer();
 state.layers.push(firstLayer);
+setBrushRepetition(state.terrainBrushRepetition);
 selectLayer(firstLayer.id);
 applyLanguage(state.language);
 updateTransform();
