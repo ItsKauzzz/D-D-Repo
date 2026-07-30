@@ -1083,10 +1083,10 @@ async function generate(layer = selectedLayer()) {
   // therefore creates proportionally more spawn points instead of leaving gaps.
   // Keep only a one-pixel floor to avoid division by zero at the slider limit.
   const footprint = Math.max(1, 48 * layer.settings.scale * averageVariation);
-  // Below the default scale, progressively apply an additional boost of up to
-  // 5x. This sits on top of the inverse-square footprint compensation above.
+  // Below the default scale, apply only a gentle boost of up to 2x. The former
+  // 5x multiplier made even intensity 1 overcrowded for very small sprites.
   const smallScaleBoost = layer.settings.scale < 1
-    ? 1 + (1 - layer.settings.scale) * 4
+    ? 1 + (1 - layer.settings.scale)
     : 1;
   // 100 is the base occupancy; 1000 layers roughly ten passes over the same
   // footprint and is intended to produce an almost completely filled mask.
@@ -1392,9 +1392,8 @@ function renderEditingSetAssets() {
 
 const SET_PACKAGE_FORMAT = 'atlasmith-image-sets';
 
-function selectedExportSetIds() {
-  return [...document.querySelectorAll('#exportSetList input:checked')].map((input) => input.value);
-}
+const exportSetSelection = new Set();
+function selectedExportSetIds() { return [...exportSetSelection]; }
 
 function updateExportSetsButton() {
   $('#confirmExportSets').disabled = !selectedExportSetIds().length;
@@ -1402,19 +1401,24 @@ function updateExportSetsButton() {
 
 function renderExportSetList() {
   const list = $('#exportSetList');
-  list.replaceChildren(...state.imageSets.map((set) => {
+  const term = $('#exportSetSearch').value.trim().toLocaleLowerCase();
+  const visibleSets = state.imageSets.filter((set) => set.name.toLocaleLowerCase().includes(term));
+  list.replaceChildren(...visibleSets.map((set) => {
     const label = document.createElement('label'); label.className = 'export-set-option';
     const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = set.id;
+    checkbox.checked = exportSetSelection.has(set.id);
     const name = document.createElement('b'); name.textContent = set.name;
     const count = document.createElement('small'); count.textContent = `${set.assets.length} imagem(ns)`;
-    checkbox.onchange = updateExportSetsButton;
+    checkbox.onchange = () => { if (checkbox.checked) exportSetSelection.add(set.id); else exportSetSelection.delete(set.id); updateExportSetsButton(); };
     label.append(checkbox, name, count); return label;
   }));
-  if (!state.imageSets.length) list.innerHTML = '<div class="set-empty">Nenhum conjunto disponível para exportar.</div>';
+  if (!visibleSets.length) list.innerHTML = `<div class="set-empty">${state.imageSets.length ? 'Nenhum conjunto encontrado.' : 'Nenhum conjunto disponível para exportar.'}</div>`;
   updateExportSetsButton();
 }
 
 function openExportSetsModal() {
+  exportSetSelection.clear();
+  $('#exportSetSearch').value = '';
   renderExportSetList();
   $('#exportSetsModal').hidden = false;
 }
@@ -1424,9 +1428,17 @@ async function portableAssetSource(asset) {
   if (!asset.image.complete) await new Promise((resolve, reject) => { asset.image.addEventListener('load', resolve, { once: true }); asset.image.addEventListener('error', reject, { once: true }); });
   const width = asset.image.naturalWidth, height = asset.image.naturalHeight;
   if (!width || !height) throw new Error(`Não foi possível carregar ${asset.file.name}`);
-  const portableCanvas = document.createElement('canvas'); portableCanvas.width = width; portableCanvas.height = height;
-  portableCanvas.getContext('2d').drawImage(asset.image, 0, 0);
-  return portableCanvas.toDataURL('image/png');
+  // Read the original bytes instead of redrawing the image. Redrawing local or
+  // CDN assets can taint the temporary canvas and make toDataURL throw.
+  const response = await fetch(asset.image.currentSrc || asset.image.src);
+  if (!response.ok) throw new Error(`Não foi possível incluir ${asset.file.name} (${response.status})`);
+  const blob = await response.blob();
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error(`Não foi possível ler ${asset.file.name}`));
+    reader.readAsDataURL(blob);
+  });
 }
 
 async function exportImageSets(setIds) {
@@ -1440,8 +1452,9 @@ async function exportImageSets(setIds) {
   downloadFile('atlasmith-conjuntos.atlasmith-sets', JSON.stringify(packageData, null, 2), 'application/json');
 }
 
-$('#selectAllExportSets').onclick = () => { document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = true; }); updateExportSetsButton(); };
-$('#clearExportSets').onclick = () => { document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = false; }); updateExportSetsButton(); };
+$('#selectAllExportSets').onclick = () => { document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = true; exportSetSelection.add(input.value); }); updateExportSetsButton(); };
+$('#clearExportSets').onclick = () => { exportSetSelection.clear(); document.querySelectorAll('#exportSetList input').forEach((input) => { input.checked = false; }); updateExportSetsButton(); };
+$('#exportSetSearch').addEventListener('input', renderExportSetList);
 $('#closeExportSets').onclick = () => { $('#exportSetsModal').hidden = true; };
 $('#exportSetsModal').addEventListener('click', (event) => { if (event.target === $('#exportSetsModal')) $('#exportSetsModal').hidden = true; });
 $('#confirmExportSets').onclick = async () => {
