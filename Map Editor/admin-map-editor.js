@@ -5,6 +5,8 @@ const stage = document.querySelector('#stage');
 const $ = (selector) => document.querySelector(selector);
 document.addEventListener('contextmenu', (event) => event.preventDefault());
 
+const bundledIconFiles = ["anchor_1.png", "anchor_2.png", "architecture_1.png", "beacon_1.png", "book_1.png", "bridge_1.png", "bridge_2.png", "bush_1.png", "bush_2.png", "cactus_1.png", "cactus_2.png", "camp_1.png", "camp_2.png", "camp_3.png", "camp_4.png", "castle.png", "castle_2.png", "castle_3.png", "castle_4.png", "castle_8.png", "cave_1.png", "cave_2.png", "cave_3.png", "chest.png", "chest_1.png", "church_1.png", "church_2.png", "coins_1.png", "crystal_1.png", "farm_1.png", "farm_2.png", "farm_3.png", "farm_4.png", "farms_1.png", "flag_1.png", "fortress_1.png", "fountain_1.png", "gate_1.png", "graveyard_1.png", "hot_springs_1.png", "house_1.png", "house_2.png", "house_3.png", "house_4.png", "house_5.png", "house_6.png", "house_7.png", "house_8.png", "island_1.png", "kraken_1.png", "log_1.png", "mannor_1.png", "map_1.png", "market_1.png", "mill_1.png", "mine_1.png", "mine_2.png", "mine_3.png", "monastery_1.png", "monastery_2.png", "monolith_1.png", "monolith_2.png", "mountain_2.png", "mountain_3.png", "mountain_4.png", "mountain_5.png", "mountain_8.png", "mountain_9.png", "port_1.png", "portal_1.png", "portal_2.png", "pound_1.png", "pound_2.png", "rocks_1.png", "rocks_2.png", "rocks_3.png", "rocks_4.png", "rocks_5.png", "rocks_6.png", "rocks_7.png", "rocks_8.png", "rocks_9.png", "rune_1.png", "rune_2.png", "ship_1.png", "shipwreck_1.png", "shop_1.png", "shop_2.png", "sign_1.png", "skulls_1.png", "small_castle_1.png", "stadium_1.png", "statue_1.png", "swamp.png", "tower_1.png", "tower_2.png", "tower_3.png", "tower_4.png", "tower_5.png", "tower_6.png", "tree_1.png", "tree_10.png", "tree_2.png", "tree_3.png", "tree_4.png", "tree_5.png", "tree_6.png", "tree_7.png", "tree_8.png", "tree_9.png", "village_1.png", "village_2.png", "vulcano_1.png", "waterfall_1.png", "well_1.png", "windmill_1.png", "windmill_2.png", "windmill_3.png", "windmill_4.png"];
+
 const state = {
   layers: [],
   selectedId: null,
@@ -15,7 +17,21 @@ const state = {
   lastX: 0,
   lastY: 0,
   generationToken: 0,
-  imageSets: [],
+  imageSets: Object.entries(bundledIconFiles.reduce((groups, fileName) => {
+      const name = fileName.replace(/_\d+(?=\.png$)/, '').replace(/\.png$/, '');
+      (groups[name] ||= []).push(fileName);
+      return groups;
+    }, {}))
+    .map(([name, fileNames]) => ({
+      id: `preset-${name}`,
+      name: name.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
+      bundled: true,
+      assets: fileNames.map((fileName) => {
+        const image = new Image();
+        image.src = `Assets/Icons/${fileName}`;
+        return { file: { name: fileName }, image, anchorX: 0.5, anchorY: 0.5 };
+      }),
+    })),
   contextLayerId: null,
   placingObject: false,
   poiTypes: [
@@ -1690,10 +1706,12 @@ $('#terrainBrushRotation').addEventListener('input', (event) => setTerrainBrushR
 $('#terrainBrushRotationValue').addEventListener('input', (event) => setTerrainBrushRotation(event.target.value));
 $('#clearTerrainBrush').onclick = () => { state.terrainBrushImage = null; state.terrainBrushMode = 'hard'; $('#terrainBrushName').textContent = ''; $('#clearTerrainBrush').hidden = true; document.querySelector('[data-terrain-brush="hard"]').classList.add('active'); };
 document.querySelectorAll('[data-terrain-brush]').forEach((button) => {
-  button.onclick = () => {
-    state.terrainBrushMode = button.dataset.terrainBrush; state.terrainBrushImage = null;
+  button.onclick = async () => {
+    state.terrainBrushMode = button.dataset.terrainBrush;
+    state.terrainBrushImage = button.dataset.brushSrc ? await imageFromSource(button.dataset.brushSrc) : null;
     document.querySelectorAll('[data-terrain-brush]').forEach((item) => item.classList.toggle('active', item === button));
-    $('#clearTerrainBrush').hidden = true;
+    $('#terrainBrushName').textContent = button.dataset.brushSrc?.split('/').pop() || '';
+    $('#clearTerrainBrush').hidden = !state.terrainBrushImage;
   };
 });
 
@@ -2304,7 +2322,7 @@ setBrushRepetition(state.terrainBrushRepetition);
 selectLayer(firstLayer.id);
 applyLanguage(state.language);
 updateTransform();
-fetch('data/poi-types.json')
+fetch('../data/poi-types.json')
   .then((response) => response.ok ? response.json() : Promise.reject(new Error('Tipos indisponíveis')))
   .then((types) => { state.poiTypes = types; populateObjectOptions(); redraw(); })
   .catch(() => { /* The embedded defaults keep local file usage functional. */ });
