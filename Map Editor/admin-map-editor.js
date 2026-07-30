@@ -74,6 +74,7 @@ const state = {
   terrainBrushRepetition: 100,
   mapFilter: 'linear',
   projectFileHandle: null,
+  theme: localStorage.getItem('atlasmith-theme') || 'atlasmith',
   activeMapTool: 'select',
   movingLayer: false,
 };
@@ -128,6 +129,7 @@ Object.assign(phraseTranslations.en, {
   'Nenhum conjunto encontrado.': 'No sets found.', 'Nenhum conjunto criado ainda.': 'No sets created yet.', 'Usar': 'Use', 'Editar': 'Edit', 'Novo conjunto': 'New set',
   'Criar uma região com esta máscara': 'Create a region from this mask', 'Região vinculada': 'Linked region', 'Selecione uma região criada': 'Select an existing region', 'Crie uma layer de região primeiro': 'Create a region layer first',
   'A região vinculada usará a máscara deste terreno no mapa exportado.': 'The linked region will use this terrain mask in the exported map.', 'Intermediário': 'Balanced',
+  Aparência: 'Appearance', Idioma: 'Language', Tema: 'Theme', Claro: 'Light', 'Vinho e dourado': 'Wine and gold', 'Marrom e verde': 'Brown and green',
 });
 Object.assign(phraseTranslations.ja, {
   File: 'ファイル', Manage: '管理', Abrir: '開く', Salvar: '保存', 'Salvar como': '名前を付けて保存', 'Exportar como PNG': 'PNGとして書き出す', 'Exportar projeto completo': '完全なプロジェクトを書き出す', 'Exportar mapa': 'マップを書き出す',
@@ -138,6 +140,7 @@ Object.assign(phraseTranslations.ja, {
   'Nenhum conjunto encontrado.': 'セットが見つかりません。', 'Nenhum conjunto criado ainda.': 'セットはまだありません。', 'Usar': '使用', 'Editar': '編集', 'Novo conjunto': '新規セット',
   'Criar uma região com esta máscara': 'このマスクから地域を作成', 'Região vinculada': 'リンクする地域', 'Selecione uma região criada': '既存の地域を選択', 'Crie uma layer de região primeiro': '先に地域レイヤーを作成してください',
   'A região vinculada usará a máscara deste terreno no mapa exportado.': 'リンクした地域は、書き出したマップでこの地形マスクを使用します。', 'Intermediário': '中間',
+  Aparência: '外観', Idioma: '言語', Tema: 'テーマ', Claro: 'ライト', 'Vinho e dourado': 'ワインとゴールド', 'Marrom e verde': 'ブラウンとグリーン',
 });
 function translateDocument(root = document.body) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -174,6 +177,7 @@ document.addEventListener('click', (event) => {
 const closeAppMenus = () => document.querySelectorAll('.app-menu-dropdown').forEach((menu) => { menu.hidden = true; menu.previousElementSibling.classList.remove('active'); });
 $('#menuManagePoiTypes').onclick = () => { closeAppMenus(); $('#managePoiTypes').click(); };
 $('#menuManageSets').onclick = () => { closeAppMenus(); $('#manageObjectSets').click(); };
+$('#menuManageMap').onclick = () => { closeAppMenus(); $('#projectSettingsBtn').click(); };
 $('#menuImportSets').onclick = () => { closeAppMenus(); $('#setPackageInput').click(); };
 $('#menuExportSets').onclick = () => { closeAppMenus(); openExportSetsModal(); };
 $('#menuExportProject').onclick = () => { closeAppMenus(); $('#exportBtn').click(); };
@@ -219,7 +223,6 @@ function applyLanguage(language) {
   $('#generateBtn').textContent = t('generate');
   $('#layerContextMenu [data-action="rename"]').textContent = t('rename');
   $('#layerContextMenu [data-action="delete"]').textContent = t('delete');
-  $('.language-picker').firstChild.textContent = `${t('language')} `;
   const layer = selectedLayer();
   if (layer) {
     $('#createMaskBtn').textContent = layer.mask ? t('editMask') : t('createMask');
@@ -228,6 +231,13 @@ function applyLanguage(language) {
     if (layer.type === 'object') renderObjectAnchorPreview(layer.object);
   }
   translateDocument();
+}
+
+function applyTheme(theme) {
+  state.theme = ['atlasmith', 'light', 'wine', 'earth'].includes(theme) ? theme : 'atlasmith';
+  document.documentElement.dataset.theme = state.theme;
+  localStorage.setItem('atlasmith-theme', state.theme);
+  $('#themeSetting').value = state.theme;
 }
 
 function createLayer(type = 'terrain') {
@@ -1305,6 +1315,7 @@ $('#assetModal').addEventListener('click', (event) => {
   if (event.target === $('#assetModal')) $('#assetModal').hidden = true;
 });
 $('#projectSettingsBtn').onclick = () => {
+  $('#languageSelect').value = state.language; $('#themeSetting').value = state.theme;
   $('#mapWidthSetting').value = canvas.width; $('#mapHeightSetting').value = canvas.height;
   $('#mapFilterSetting').value = state.mapFilter;
   $('#distanceScaleKm').value = state.distanceScaleKm;
@@ -2361,6 +2372,7 @@ function createProjectData() {
     terrainBrushRotation: state.terrainBrushRotation,
     terrainBrushRepetition: state.terrainBrushRepetition,
     mapFilter: state.mapFilter,
+    theme: state.theme,
     maskObjects,
     imageSets: state.imageSets.map((set) => ({ id: set.id, name: set.name, assets: set.assets.map(serializeAsset) })),
     layers: state.layers.map((layer) => ({
@@ -2418,6 +2430,7 @@ $('#projectInput').addEventListener('change', async (event) => {
     state.travelSpeeds = { ...state.travelSpeeds, ...project.travelSpeeds };
     state.descriptionTemplates = project.descriptionTemplates || [];
     state.terrainColors = { ...state.terrainColors, ...project.terrainColors };
+    applyTheme(project.theme || state.theme);
     setTerrainBrushRotation(project.terrainBrushRotation || 0);
     setBrushRepetition(project.terrainBrushRepetition ?? 100);
     state.mapFilter = ['linear', 'balanced', 'nearest'].includes(project.mapFilter) ? project.mapFilter : 'linear';
@@ -2780,9 +2793,11 @@ $('#previewMapBtn').onclick = async () => {
 window.addEventListener('resize', () => { if (selectedLayer()?.mask) fit(); });
 
 $('#languageSelect').addEventListener('change', (event) => applyLanguage(event.target.value));
+$('#themeSetting').addEventListener('change', (event) => applyTheme(event.target.value));
 
 const firstLayer = createLayer();
 state.layers.push(firstLayer);
+applyTheme(state.theme);
 setBrushRepetition(state.terrainBrushRepetition);
 selectLayer(firstLayer.id);
 applyLanguage(state.language);
