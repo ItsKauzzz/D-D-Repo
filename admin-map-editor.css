@@ -164,6 +164,8 @@ input[type='range']::-moz-range-thumb { width: 11px; height: 11px; border: 3px s
 .brush-size-control input { margin: 0; }
 .terrain-brush-upload { padding: 6px 8px; border: 1px solid #465043; border-radius: 6px; color: var(--accent); cursor: pointer; }
 .terrain-brush-presets { display: flex; gap: 4px; }
+.height-level-popup { position: absolute; left: 0; bottom: calc(100% + 8px); min-width: 180px; padding: 8px 12px; border: 1px solid #ffffff55; border-radius: 8px; color: #fff; font-size: 12px; box-shadow: 0 8px 25px #0009; opacity: 0; transform: translateY(6px); transition: opacity .16s, transform .16s; pointer-events: none; }
+.height-level-popup.visible { opacity: 1; transform: translateY(0); }
 .terrain-brush-presets button { width: 28px; height: 28px; padding: 0; border: 1px solid #465043; border-radius: 50%; background: #202521; color: var(--muted); cursor: pointer; }
 .terrain-brush-presets button.active { border-color: var(--accent); color: var(--accent); }
 .brush-size-control > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

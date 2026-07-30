@@ -127,7 +127,7 @@ function createLayer(type = 'terrain') {
   return {
     id: crypto.randomUUID?.() || `${Date.now()}-${number}`,
     type,
-    name: type === 'image' ? `Imagem ${number}` : type === 'object' ? `Objeto ${number}` : type === 'region' ? `Região ${number}` : type === 'path' ? `Caminho ${number}` : type === 'folder' ? `Folder ${number}` : (number === 1 ? 'Cobertura vegetal' : `Terreno ${number}`),
+    name: type === 'image' ? `Imagem ${number}` : type === 'object' ? `Objeto ${number}` : type === 'region' ? `Região ${number}` : type === 'path' ? `Caminho ${number}` : type === 'folder' ? `Folder ${number}` : type === 'ground' ? 'Ground / base' : (number === 1 ? 'Cobertura vegetal' : `Terreno ${number}`),
     parentId: null,
     collapsed: false,
     visible: true,
@@ -222,7 +222,7 @@ function redraw(includeObjects = true, showSelection = true, includePaths = true
       ctx.restore();
     }
   }
-  for (const layer of [...state.layers].reverse()) if (layer.visible && layer.type === 'terrain' && layer.heightOutput.width) ctx.drawImage(layer.heightOutput, 0, 0);
+  for (const layer of [...state.layers].reverse()) if (layer.visible && ['ground', 'terrain'].includes(layer.type) && layer.heightOutput.width) ctx.drawImage(layer.heightOutput, 0, 0);
 
   // Every generated asset and placed object shares one Y-sorted scene, even
   // when the entries came from different layers.
@@ -360,7 +360,7 @@ function renderLayers() {
   for (const layer of state.layers) {
     const button = document.createElement('button');
     button.className = `layer-card${layer.id === state.selectedId ? ' active' : ''}${layer.visible ? '' : ' is-hidden'}`;
-    const layerMeta = layer.type === 'image' ? ['▧', 'Imagem'] : layer.type === 'object' ? ['⌖', 'Objeto'] : layer.type === 'region' ? ['◒', 'Região'] : layer.type === 'path' ? ['〰', 'Caminho'] : layer.type === 'folder' ? ['▰', 'Folder'] : ['⌁', 'Terreno'];
+    const layerMeta = layer.type === 'image' ? ['▧', 'Imagem'] : layer.type === 'object' ? ['⌖', 'Objeto'] : layer.type === 'region' ? ['◒', 'Região'] : layer.type === 'path' ? ['〰', 'Caminho'] : layer.type === 'folder' ? ['▰', 'Folder'] : layer.type === 'ground' ? ['▰', 'Ground / base'] : ['⌁', 'Terreno'];
     button.innerHTML = `<span class="layer-icon">${layerMeta[0]}</span><div><b></b><small>${layerMeta[1]}</small></div><span class="visibility" title="Alternar visibilidade">◉</span>`;
     button.draggable = true;
     button.dataset.layerId = layer.id;
@@ -507,8 +507,8 @@ function selectLayer(id) {
   $('#imageOffsetXValue').value = layer.settings.imageOffsetX;
   $('#imageOffsetYValue').value = layer.settings.imageOffsetY;
   $('#imageOpacityValue').value = Math.round(layer.settings.imageOpacity * 100);
-  $('#typeBadge').textContent = layer.type === 'image' ? 'Imagem' : layer.type === 'object' ? 'Objeto' : layer.type === 'region' ? 'Região' : layer.type === 'path' ? 'Caminho' : layer.type === 'folder' ? 'Folder' : 'Terreno';
-  document.querySelectorAll('.terrain-control, .image-control, .object-control, .region-control, .path-control').forEach((control) => {
+  $('#typeBadge').textContent = layer.type === 'image' ? 'Imagem' : layer.type === 'object' ? 'Objeto' : layer.type === 'region' ? 'Região' : layer.type === 'path' ? 'Caminho' : layer.type === 'folder' ? 'Folder' : layer.type === 'ground' ? 'Ground / base' : 'Terreno';
+  document.querySelectorAll('.terrain-control, .ground-control, .image-control, .object-control, .region-control, .path-control').forEach((control) => {
     control.hidden = !control.classList.contains(`${layer.type}-control`);
   });
   const upload = document.querySelector('.upload');
@@ -523,6 +523,7 @@ function selectLayer(id) {
   }
   if (layer.type === 'path') fillPathInspector(layer);
   if (layer.type === 'terrain' || layer.type === 'region') renderMaskPreview(layer);
+  if (layer.type === 'ground') $('#groundMaskName').textContent = layer.maskName || 'Nenhuma máscara de ground/base';
   updateOutputs();
   renderLayers();
   renderAssets();
@@ -1438,7 +1439,24 @@ let maskPanY = 0;
 let maskPaintPointerId = null;
 let maskHistory = [];
 let lastTerrainPaintPoint = null;
+let lastTerrainHeightLevel = '';
+let heightLevelPopupTimer = 0;
 const brushCursor = $('#brushCursor');
+
+function showTerrainHeightLevel(value, force = false) {
+  if (!state.terrainHeightEditing) return;
+  const height = Math.max(0, Math.min(100, Number(value) || 0));
+  const level = height < 30 ? ['Água profunda', state.terrainColors.deep] : height < 60 ? ['Água média', state.terrainColors.medium] : height < 90 ? ['Água rasa', state.terrainColors.shallow] : ['Terra', state.terrainColors.land];
+  if (!force && level[0] === lastTerrainHeightLevel) return;
+  lastTerrainHeightLevel = level[0];
+  const popup = $('#heightLevelPopup');
+  popup.textContent = `${level[0]} • Height ${Math.round(height)}`;
+  popup.style.background = level[1];
+  popup.hidden = false;
+  requestAnimationFrame(() => popup.classList.add('visible'));
+  clearTimeout(heightLevelPopupTimer);
+  heightLevelPopupTimer = setTimeout(() => { popup.classList.remove('visible'); setTimeout(() => { popup.hidden = true; }, 180); }, 1400);
+}
 
 function perlinCoastNoise(x, y) {
   const hash = (ix, iy) => {
@@ -1506,8 +1524,8 @@ function renderTerrainHeight(layer, sourceCanvas = null, dirty = null) {
   outputContext.putImageData(colored, region.x, region.y); redraw();
 }
 
-$('#editTerrainHeight').onclick = () => {
-  const layer = selectedLayer(); if (layer?.type !== 'terrain') return;
+function openTerrainHeightEditor(layer) {
+  if (!layer || !['ground', 'terrain'].includes(layer.type)) return;
   stage.style.display = 'block'; $('#emptyState').style.display = 'none';
   maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
   maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
@@ -1516,11 +1534,38 @@ $('#editTerrainHeight').onclick = () => {
   state.terrainHeightEditing = layer.id; state.maskEditing = layer.id; maskHistory = [];
   maskEditCanvas.style.display = 'block'; maskEditCanvas.style.opacity = '0';
   $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
+  lastTerrainHeightLevel = '';
   $('#brushSizeControl span').textContent = 'Height'; $('#brushOpacity').max = '100'; $('#brushOpacity').step = '1'; $('#brushOpacity').value = '100'; $('#brushOpacity').dispatchEvent(new Event('input'));
+  showTerrainHeightLevel(100, true);
   $('#terrainBrushPresets').hidden = false; $('#terrainBrushUpload').hidden = false; $('#clearTerrainBrush').hidden = !state.terrainBrushImage;
   $('#terrainBrushRotationLabel').hidden = false; $('#terrainBrushRotation').hidden = false; $('#terrainBrushRotationValue').hidden = false;
   renderTerrainHeight(layer, maskEditCanvas); $('#saveState').textContent = 'Editando altura do terreno';
-};
+}
+
+$('#editTerrainHeight').onclick = () => openTerrainHeightEditor(selectedLayer());
+$('#editGroundHeight').onclick = () => openTerrainHeightEditor(selectedLayer());
+$('#groundMaskInput').addEventListener('change', async (event) => {
+  const file = event.target.files[0];
+  const layer = selectedLayer();
+  if (!file || layer?.type !== 'ground') return;
+  const source = await fileImage(file);
+  const normalized = document.createElement('canvas'); normalized.width = canvas.width; normalized.height = canvas.height;
+  const normalizedContext = normalized.getContext('2d', { willReadFrequently: true });
+  normalizedContext.fillStyle = '#fff'; normalizedContext.fillRect(0, 0, normalized.width, normalized.height);
+  normalizedContext.drawImage(source, 0, 0, normalized.width, normalized.height);
+  const pixels = normalizedContext.getImageData(0, 0, normalized.width, normalized.height);
+  for (let index = 0; index < pixels.data.length; index += 4) {
+    const gray = Math.round((pixels.data[index] + pixels.data[index + 1] + pixels.data[index + 2]) / 3);
+    pixels.data[index] = pixels.data[index + 1] = pixels.data[index + 2] = gray; pixels.data[index + 3] = 255;
+  }
+  normalizedContext.putImageData(pixels, 0, 0);
+  layer.heightMap = await imageFromSource(normalized.toDataURL('image/png'));
+  layer.maskName = file.name;
+  $('#groundMaskName').textContent = file.name;
+  renderTerrainHeight(layer, normalized);
+  $('#saveState').textContent = 'Máscara de ground/base aplicada';
+  event.target.value = '';
+});
 $('#terrainBrushInput').addEventListener('change', async (event) => {
   const file = event.target.files[0]; if (!file) return;
   state.terrainBrushImage = await fileImage(file); state.terrainBrushMode = 'image'; document.querySelectorAll('[data-terrain-brush]').forEach((item) => item.classList.remove('active')); $('#terrainBrushName').textContent = file.name; $('#clearTerrainBrush').hidden = false; event.target.value = '';
@@ -1616,12 +1661,16 @@ $('#brushSize').oninput = (event) => {
   $('#brushSizeValue').value = event.target.value;
   brushCursor.style.width = `${event.target.value}px`; brushCursor.style.height = `${event.target.value}px`;
 };
-$('#brushOpacity').oninput = (event) => { $('#brushOpacityValue').value = state.terrainHeightEditing ? Math.round(event.target.value) : Math.round(event.target.value * 100); };
+$('#brushOpacity').oninput = (event) => {
+  $('#brushOpacityValue').value = state.terrainHeightEditing ? Math.round(event.target.value) : Math.round(event.target.value * 100);
+  showTerrainHeightLevel(event.target.value);
+};
 $('#brushOpacityValue').addEventListener('change', (event) => {
   const heightMode = Boolean(state.terrainHeightEditing);
   const value = Math.max(0, Math.min(100, Number(event.target.value) || 0));
   event.target.value = value;
   $('#brushOpacity').value = heightMode ? value : value / 100;
+  if (heightMode) showTerrainHeightLevel(value);
 });
 bindNumberInput('brushSizeValue', 'brushSize', () => {});
 function paintMask(event) {
@@ -1799,6 +1848,10 @@ function serializeAsset(asset) {
 }
 
 function createProjectData() {
+  const maskObjects = state.layers.flatMap((layer) => [
+    layer.mask ? { id: `${layer.id}:mask`, layerId: layer.id, kind: 'distribution', name: layer.maskName || `${layer.name} mask`, source: layer.mask.src } : null,
+    layer.heightMap ? { id: `${layer.id}:height`, layerId: layer.id, kind: layer.type === 'ground' ? 'ground-base' : 'heightmap', name: layer.maskName || `${layer.name} height`, source: layer.heightMap.src } : null,
+  ].filter(Boolean));
   return {
     format: 'teralium-map-project', version: 2,
     canvas: { width: canvas.width, height: canvas.height },
@@ -1811,9 +1864,11 @@ function createProjectData() {
     terrainColors: state.terrainColors,
     terrainBrushRotation: state.terrainBrushRotation,
     mapFilter: state.mapFilter,
+    maskObjects,
     imageSets: state.imageSets.map((set) => ({ id: set.id, name: set.name, assets: set.assets.map(serializeAsset) })),
     layers: state.layers.map((layer) => ({
       id: layer.id, type: layer.type, name: layer.name, visible: layer.visible, parentId: layer.parentId, collapsed: layer.collapsed, selectedAssetIndex: layer.selectedAssetIndex,
+      maskObjectId: layer.mask ? `${layer.id}:mask` : null, heightMapObjectId: layer.heightMap ? `${layer.id}:height` : null,
       maskName: layer.maskName, maskSource: layer.mask?.src || null, heightMapSource: layer.heightMap?.src || null, imageSource: layer.image?.src || null,
       assets: layer.assets.map(serializeAsset), settings: layer.settings, object: layer.object, region: layer.region, path: layer.path,
       placements: (layer.placements || []).map(({ x, y, assetIndex, variation, rotation, mirrored }) => ({ x, y, assetIndex, variation, rotation, mirrored })),
@@ -1873,8 +1928,12 @@ $('#projectInput').addEventListener('change', async (event) => {
       if (saved.object) layer.object = saved.object;
       if (saved.region) layer.region = { ...layer.region, ...saved.region };
       if (saved.path) layer.path = saved.path;
-      if (saved.maskSource) layer.mask = await imageFromSource(saved.maskSource);
-      if (saved.heightMapSource) { layer.heightMap = await imageFromSource(saved.heightMapSource); renderTerrainHeight(layer); }
+      const maskObject = project.maskObjects?.find((item) => item.id === saved.maskObjectId);
+      const heightMapObject = project.maskObjects?.find((item) => item.id === saved.heightMapObjectId);
+      const maskSource = maskObject?.source || saved.maskSource;
+      const heightMapSource = heightMapObject?.source || saved.heightMapSource;
+      if (maskSource) layer.mask = await imageFromSource(maskSource);
+      if (heightMapSource) { layer.heightMap = await imageFromSource(heightMapSource); renderTerrainHeight(layer); }
       if (saved.imageSource) layer.image = await imageFromSource(saved.imageSource);
       layer.assets = await Promise.all(saved.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source), anchorX: asset.anchorX, anchorY: asset.anchorY })));
       layer.placements = saved.placements || [];
@@ -2009,7 +2068,7 @@ $('#exportBtn').onclick = () => {
   ];
   state.layers.forEach((layer, index) => {
     if (layer.mask) files.push({ name: `mascaras/${index + 1}-${safeFileName(layer.maskName, layer.name)}.png`, bytes: dataUrlBytes(layer.mask.src) });
-    if (layer.heightMap) files.push({ name: `alturas/${index + 1}-${safeFileName(layer.name, 'terreno')}.png`, bytes: dataUrlBytes(layer.heightMap.src) });
+    if (layer.heightMap) files.push({ name: `${layer.type === 'ground' ? 'ground-base' : 'alturas'}/${index + 1}-${safeFileName(layer.name, 'terreno')}.png`, bytes: dataUrlBytes(layer.heightMap.src) });
     if (layer.image) files.push({ name: `assets/camadas/${index + 1}-${safeFileName(layer.name, 'imagem')}.png`, bytes: dataUrlBytes(layer.image.src) });
     layer.assets.forEach((asset, assetIndex) => files.push({ name: `assets/camadas/${index + 1}/${assetIndex + 1}-${safeFileName(asset.file.name, 'asset')}`, bytes: dataUrlBytes(asset.image.src) }));
   });
