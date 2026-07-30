@@ -1695,6 +1695,11 @@ function setBrushRepetition(value) {
   $('#brushRepetition').value = state.terrainBrushRepetition;
   $('#brushRepetitionValue').value = state.terrainBrushRepetition;
 }
+function brushStampSpacing(brushSize) {
+  const repetition = state.terrainBrushRepetition / 100;
+  // 0% leaves one brush-width between stamps; 100% stamps every canvas pixel.
+  return Math.max(1, brushSize - repetition * (brushSize - 1));
+}
 $('#brushRepetition').addEventListener('input', (event) => setBrushRepetition(event.target.value));
 $('#brushRepetitionValue').addEventListener('change', (event) => setBrushRepetition(event.target.value));
 $('#brushOpacity').oninput = (event) => {
@@ -1735,7 +1740,8 @@ function paintMask(event) {
   const brushSize = Number($('#brushSize').value), radius = brushSize / 2;
   if (heightLayer) {
     if (lastTerrainPaintPoint) {
-      const distance = Math.hypot(x - lastTerrainPaintPoint.x, y - lastTerrainPaintPoint.y), steps = Math.max(1, Math.ceil(distance / Math.max(2, brushSize * 0.22)));
+      const distance = Math.hypot(x - lastTerrainPaintPoint.x, y - lastTerrainPaintPoint.y);
+      const steps = Math.max(1, Math.ceil(distance / brushStampSpacing(brushSize)));
       for (let step = 1; step <= steps; step++) paintTerrainHeight(heightLayer, lastTerrainPaintPoint.x + (x - lastTerrainPaintPoint.x) * step / steps, lastTerrainPaintPoint.y + (y - lastTerrainPaintPoint.y) * step / steps, brushSize, false);
       const radius = brushSize / 2, left = Math.min(lastTerrainPaintPoint.x, x) - radius, top = Math.min(lastTerrainPaintPoint.y, y) - radius;
       renderTerrainHeight(heightLayer, maskEditCanvas, { x: left, y: top, width: Math.abs(x - lastTerrainPaintPoint.x) + brushSize, height: Math.abs(y - lastTerrainPaintPoint.y) + brushSize });
@@ -1747,7 +1753,15 @@ function paintMask(event) {
     maskEditContext.globalAlpha = heightLayer ? 1 : Number($('#brushOpacity').value);
     const level = Math.round(Number($('#brushOpacity').value) * 255);
     maskEditContext.fillStyle = heightLayer ? `rgb(${level},${level},${level})` : '#000';
-    maskEditContext.beginPath(); maskEditContext.arc(x, y, radius, 0, Math.PI * 2); maskEditContext.fill(); maskEditContext.globalAlpha = 1;
+    const start = lastTerrainPaintPoint || { x, y };
+    const distance = Math.hypot(x - start.x, y - start.y);
+    const steps = Math.max(1, Math.ceil(distance / brushStampSpacing(brushSize)));
+    for (let step = 1; step <= steps; step++) {
+      const stampX = start.x + (x - start.x) * step / steps, stampY = start.y + (y - start.y) * step / steps;
+      maskEditContext.beginPath(); maskEditContext.arc(stampX, stampY, radius, 0, Math.PI * 2); maskEditContext.fill();
+    }
+    maskEditContext.globalAlpha = 1;
+    lastTerrainPaintPoint = { x, y };
   }
 }
 function stopBrushRepetition() {
