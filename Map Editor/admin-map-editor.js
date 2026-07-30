@@ -187,7 +187,7 @@ async function saveProjectToHandle(saveAs = false) {
     let handle = saveAs ? null : state.projectFileHandle;
     if (!handle && window.showSaveFilePicker) handle = await window.showSaveFilePicker({ suggestedName: 'projeto-teralium.json', types: [{ description: 'Projeto Teralium', accept: { 'application/json': ['.json', '.teralium'] } }] });
     if (!handle) { $('#saveProjectBtn').click(); return; }
-    await maskChunkSaveChain; updateTaskProgress('Serializando projeto', 35); await nextFrame();
+    await flushPendingMaskChunks('Codificando chunks do projeto'); updateTaskProgress('Serializando projeto', 35); await nextFrame();
     const writable = await handle.createWritable(); await writable.write(JSON.stringify(createProjectData())); updateTaskProgress('Gravando projeto', 80); await writable.close();
     state.projectFileHandle = handle; $('#saveState').textContent = 'Projeto salvo';
   } catch (error) { if (error.name !== 'AbortError') window.alert(`Não foi possível salvar: ${error.message}`); }
@@ -1725,6 +1725,31 @@ function blobDataUrl(blob) {
   });
 }
 
+async function flushPendingMaskChunks(label = 'Salvando chunks da máscara') {
+  const pending = state.layers.flatMap((layer) => [
+    ...[...(layer.pendingMaskChunks || new Map())].map(([key, chunk]) => ({ layer, key, chunk, pendingProperty: 'pendingMaskChunks', chunksProperty: 'maskChunks' })),
+    ...[...(layer.pendingHeightChunks || new Map())].map(([key, chunk]) => ({ layer, key, chunk, pendingProperty: 'pendingHeightChunks', chunksProperty: 'heightChunks' })),
+  ]);
+  if (!pending.length) return maskChunkSaveChain;
+  maskChunkSaveChain = maskChunkSaveChain.then(async () => {
+    showTaskProgress(label, 0);
+    try {
+      for (let index = 0; index < pending.length; index++) {
+        const { layer, key, chunk, pendingProperty, chunksProperty } = pending[index];
+        const chunkCanvas = document.createElement('canvas'); chunkCanvas.width = chunk.width; chunkCanvas.height = chunk.height;
+        chunkCanvas.getContext('2d').putImageData(chunk.pixels, 0, 0);
+        const source = await blobDataUrl(await canvasChunkBlob(chunkCanvas));
+        layer[chunksProperty] ||= new Map();
+        layer[chunksProperty].set(key, { x: chunk.x, y: chunk.y, width: chunk.width, height: chunk.height, source });
+        if (layer[pendingProperty]?.get(key) === chunk) layer[pendingProperty].delete(key);
+        updateTaskProgress(label, (index + 1) / pending.length * 100);
+        await nextFrame();
+      }
+    } finally { hideTaskProgress(); }
+  });
+  return maskChunkSaveChain;
+}
+
 function showTerrainHeightLevel(value, force = false) {
   if (!state.terrainHeightEditing) return;
   const height = Math.max(0, Math.min(100, Number(value) || 0));
@@ -2023,8 +2048,16 @@ async function commitMaskEdits() {
     const bounds = maskChunkBounds(key);
     return { ...bounds, pixels: maskEditContext.getImageData(bounds.x, bounds.y, bounds.width, bounds.height) };
   });
+  const dirtyRectangle = captured.reduce((dirty, chunk) => {
+    if (!dirty) return { x: chunk.x, y: chunk.y, width: chunk.width, height: chunk.height };
+    const right = Math.max(dirty.x + dirty.width, chunk.x + chunk.width);
+    const bottom = Math.max(dirty.y + dirty.height, chunk.y + chunk.height);
+    const x = Math.min(dirty.x, chunk.x), y = Math.min(dirty.y, chunk.y);
+    return { x, y, width: right - x, height: bottom - y };
+  }, null);
   const targetProperty = heightMode ? 'heightMap' : 'mask';
   const chunksProperty = heightMode ? 'heightChunks' : 'maskChunks';
+  const pendingProperty = heightMode ? 'pendingHeightChunks' : 'pendingMaskChunks';
   if (!(layer[targetProperty] instanceof HTMLCanvasElement)) {
     const merged = document.createElement('canvas'); merged.width = canvas.width; merged.height = canvas.height;
     const mergedContext = merged.getContext('2d');
@@ -2037,29 +2070,21 @@ async function commitMaskEdits() {
   const mergedContext = layer[targetProperty].getContext('2d');
   captured.forEach((chunk) => mergedContext.putImageData(chunk.pixels, chunk.x, chunk.y));
   layer[chunksProperty] ||= new Map();
+  layer[pendingProperty] ||= new Map();
+  captured.forEach((chunk) => layer[pendingProperty].set(chunk.key, chunk));
   layer.maskPixels = null; layer.maskPath = null; layer.clip = null; layer.bounds = null;
   if (!heightMode) { layer.maskName = 'Máscara criada no editor'; $('#maskName').textContent = layer.maskName; updateReadyState(); }
-  $('#saveState').textContent = `Salvando ${captured.length} chunk(s)…`;
-  maskChunkSaveChain = maskChunkSaveChain.then(async () => {
-    showTaskProgress('Salvando alterações da máscara', 0);
-    try {
-      for (let index = 0; index < captured.length; index++) {
-        const chunk = captured[index];
-        const chunkCanvas = document.createElement('canvas'); chunkCanvas.width = chunk.width; chunkCanvas.height = chunk.height;
-        chunkCanvas.getContext('2d').putImageData(chunk.pixels, 0, 0);
-        const source = await blobDataUrl(await canvasChunkBlob(chunkCanvas));
-        layer[chunksProperty].set(chunk.key, { x: chunk.x, y: chunk.y, width: chunk.width, height: chunk.height, source });
-        updateTaskProgress('Salvando alterações da máscara', (index + 1) / captured.length * 100);
-        await nextFrame();
-      }
-      if (revision === maskCommitRevision) {
-        if (heightMode) { renderTerrainHeight(layer, layer.heightMap); $('#saveState').textContent = 'Terreno atualizado automaticamente'; }
-        else if (layer.type === 'region') await applyRegionPriority(layer);
-        else if (layer.type === 'terrain' && layer.assets.length) await generate(layer);
-        else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
-      }
-    } finally { hideTaskProgress(); }
-  });
+  if (revision === maskCommitRevision) {
+    if (heightMode) {
+      // paintTerrainHeight already refreshed this area while the stroke was in
+      // progress. Keep the union for callers that need an explicit partial
+      // refresh, without performing the former full-canvas render on release.
+      layer.heightDirtyRectangle = dirtyRectangle;
+      $('#saveState').textContent = `${captured.length} chunk(s) de altura pendente(s)`;
+    } else if (layer.type === 'region') await applyRegionPriority(layer);
+    else if (layer.type === 'terrain' && layer.assets.length) await generate(layer);
+    else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
+  }
   return maskChunkSaveChain;
 }
 
@@ -2307,7 +2332,7 @@ function createProjectData() {
 $('#saveProjectBtn').onclick = async () => {
   showTaskProgress('Salvando projeto', 0);
   try {
-    await maskChunkSaveChain; updateTaskProgress('Serializando projeto', 40); await nextFrame();
+    await flushPendingMaskChunks('Codificando chunks do projeto'); updateTaskProgress('Serializando projeto', 40); await nextFrame();
     const project = createProjectData(); updateTaskProgress('Preparando download', 85);
     downloadFile('projeto-teralium.json', JSON.stringify(project), 'application/json'); $('#saveState').textContent = 'Projeto salvo';
   } finally { hideTaskProgress(); }
@@ -2505,7 +2530,7 @@ $('#exportBtn').onclick = async () => {
   $('#saveState').textContent = 'Exportando projeto…';
   showTaskProgress('Preparando exportação', 0);
   try {
-    await maskChunkSaveChain; redraw(true, false); await nextFrame();
+    await flushPendingMaskChunks('Codificando chunks para exportação'); redraw(true, false); await nextFrame();
     const project = createProjectData();
     const files = [{ name: 'projeto-teralium.json', bytes: JSON.stringify(project, null, 2) }, { name: 'mapa-render-final.png', bytes: new Uint8Array(await (await canvasChunkBlob(canvas)).arrayBuffer()) }];
     for (let index = 0; index < state.layers.length; index++) {
@@ -2580,7 +2605,7 @@ async function prepareMergedLayerSources(label) {
   const layers = state.layers.filter((layer) => layer.mask instanceof HTMLCanvasElement);
   showTaskProgress(label, 0);
   try {
-    await maskChunkSaveChain;
+    await flushPendingMaskChunks('Codificando chunks para exportação');
     for (let index = 0; index < layers.length; index++) {
       layers[index].maskExportSource = await drawableDataUrl(layers[index].mask);
       updateTaskProgress(label, (index + 1) / Math.max(1, layers.length) * 100); await nextFrame();
