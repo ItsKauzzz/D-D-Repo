@@ -1478,8 +1478,10 @@ function renderTerrainHeight(layer, sourceCanvas = null, dirty = null) {
   const colors = [state.terrainColors.deep, state.terrainColors.medium, state.terrainColors.shallow, state.terrainColors.land].map((color) => [parseInt(color.slice(1, 3), 16), parseInt(color.slice(3, 5), 16), parseInt(color.slice(5, 7), 16)]);
   const coastColors = [state.terrainColors.coastLand, state.terrainColors.coastWave].map((color) => [parseInt(color.slice(1, 3), 16), parseInt(color.slice(3, 5), 16), parseInt(color.slice(5, 7), 16)]);
   for (let index = 0; index < heightData.data.length; index += 4) {
-    const height = heightData.data[index] / 255;
-    const localPixel = index / 4, localX = localPixel % region.width, localY = Math.floor(localPixel / region.width), land = height >= 0.5;
+    // The editable heightmap is intentionally intuitive for mask painting:
+    // white is height 0 (deep water) and black is height 100 (land).
+    const height = 1 - heightData.data[index] / 255;
+    const localPixel = index / 4, localX = localPixel % region.width, localY = Math.floor(localPixel / region.width), land = height >= 0.9;
     const noise = state.terrainColors.coastVariation ? 1 + (perlinCoastNoise(region.x + localX, region.y + localY) - 0.5) * 2 * state.terrainColors.coastNoiseMultiplier : 1;
     const thickness = Math.max(0, (land ? state.terrainColors.coastLandThickness : state.terrainColors.coastWaveThickness) * noise);
     const searchRadius = Math.ceil(thickness + coastBlur);
@@ -1487,11 +1489,12 @@ function renderTerrainHeight(layer, sourceCanvas = null, dirty = null) {
     for (let distance = 1; distance <= searchRadius && !Number.isFinite(coastDistance); distance++) for (const [dx, dy] of [[-distance, 0], [distance, 0], [0, -distance], [0, distance], [-distance, -distance], [distance, -distance], [-distance, distance], [distance, distance]]) {
       const nx = localX + dx, ny = localY + dy;
       if (nx >= 0 && ny >= 0 && nx < region.width && ny < region.height) {
-        const neighborLand = heightData.data[(ny * region.width + nx) * 4] / 255 >= 0.5;
+        const neighborHeight = 1 - heightData.data[(ny * region.width + nx) * 4] / 255;
+        const neighborLand = neighborHeight >= 0.9;
         if (neighborLand !== land) { coastDistance = Math.hypot(dx, dy); break; }
       }
     }
-    const baseColor = height < 1 / 6 ? colors[0] : height < 1 / 3 ? colors[1] : height < 0.5 ? colors[2] : colors[3];
+    const baseColor = height < 0.3 ? colors[0] : height < 0.6 ? colors[1] : height < 0.9 ? colors[2] : colors[3];
     const coastRange = thickness + coastBlur;
     const coastAmount = Number.isFinite(coastDistance) && coastRange > 0
       ? Math.max(0, Math.min(1, (coastRange - coastDistance + 1) / Math.max(1, coastBlur + 1)))
@@ -1509,11 +1512,11 @@ $('#editTerrainHeight').onclick = () => {
   maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
   maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
   if (layer.heightMap) maskEditContext.drawImage(layer.heightMap, 0, 0, canvas.width, canvas.height);
-  else { maskEditContext.fillStyle = 'rgb(0,0,0)'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); }
+  else { maskEditContext.fillStyle = '#fff'; maskEditContext.fillRect(0, 0, canvas.width, canvas.height); }
   state.terrainHeightEditing = layer.id; state.maskEditing = layer.id; maskHistory = [];
   maskEditCanvas.style.display = 'block'; maskEditCanvas.style.opacity = '0';
   $('#maskTools').hidden = false; $('#brushSizeControl').hidden = false;
-  $('#brushSizeControl span').textContent = 'Height'; $('#brushOpacity').max = '0.5'; $('#brushOpacity').value = '0.5'; $('#brushOpacity').dispatchEvent(new Event('input'));
+  $('#brushSizeControl span').textContent = 'Height'; $('#brushOpacity').max = '100'; $('#brushOpacity').step = '1'; $('#brushOpacity').value = '100'; $('#brushOpacity').dispatchEvent(new Event('input'));
   $('#terrainBrushPresets').hidden = false; $('#terrainBrushUpload').hidden = false; $('#clearTerrainBrush').hidden = !state.terrainBrushImage;
   $('#terrainBrushRotationLabel').hidden = false; $('#terrainBrushRotation').hidden = false; $('#terrainBrushRotationValue').hidden = false;
   renderTerrainHeight(layer, maskEditCanvas); $('#saveState').textContent = 'Editando altura do terreno';
@@ -1555,7 +1558,8 @@ function paintTerrainHeight(layer, x, y, brushSize, renderPreview = true) {
     brushContext.setTransform(1, 0, 0, 1, 0, 0);
     customPixels = brushContext.getImageData(0, 0, width, height).data;
   }
-  const selectedLevel = Number($('#brushOpacity').value) * 255;
+  const selectedHeight = Math.max(0, Math.min(100, Number($('#brushOpacity').value)));
+  const selectedGray = 255 - Math.round(selectedHeight / 100 * 255);
   for (let py = 0; py < height; py++) for (let px = 0; px < width; px++) {
     const index = (py * width + px) * 4;
     const normalizedDistance = Math.hypot(left + px + 0.5 - x, top + py + 0.5 - y) / radius;
@@ -1574,11 +1578,12 @@ function paintTerrainHeight(layer, x, y, brushSize, renderPreview = true) {
       falloff = edge * edge * (3 - 2 * edge);
     }
     const current = target.data[index];
-    // The selected height is the eraser's ceiling: pixels below it are kept,
-    // while pixels above it are smoothly lowered to that threshold.
+    const blended = Math.round(current + (selectedGray - current) * falloff);
+    // Brush raises terrain (towards black); eraser lowers it (towards white).
+    // The Height control is the target in both directions.
     const next = maskTool === 'eraser'
-      ? Math.min(current, Math.round(selectedLevel + (current - selectedLevel) * (1 - falloff)))
-      : Math.max(current, Math.round(selectedLevel * falloff));
+      ? Math.max(current, blended)
+      : Math.min(current, blended);
     target.data[index] = target.data[index + 1] = target.data[index + 2] = next; target.data[index + 3] = 255;
   }
   maskEditContext.putImageData(target, left, top);
@@ -1587,6 +1592,7 @@ function paintTerrainHeight(layer, x, y, brushSize, renderPreview = true) {
 
 $('#createMaskBtn').onclick = () => {
   const layer = selectedLayer();
+  $('#brushOpacity').max = '1'; $('#brushOpacity').step = '0.01'; $('#brushOpacity').value = '1'; $('#brushOpacityValue').value = '100';
   maskEditCanvas.width = canvas.width; maskEditCanvas.height = canvas.height;
   maskEditContext.clearRect(0, 0, canvas.width, canvas.height);
   if (layer.mask) maskEditContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
@@ -1610,18 +1616,23 @@ $('#brushSize').oninput = (event) => {
   $('#brushSizeValue').value = event.target.value;
   brushCursor.style.width = `${event.target.value}px`; brushCursor.style.height = `${event.target.value}px`;
 };
-$('#brushOpacity').oninput = (event) => { $('#brushOpacityValue').value = Math.round(event.target.value * 100); };
+$('#brushOpacity').oninput = (event) => { $('#brushOpacityValue').value = state.terrainHeightEditing ? Math.round(event.target.value) : Math.round(event.target.value * 100); };
+$('#brushOpacityValue').addEventListener('change', (event) => {
+  const heightMode = Boolean(state.terrainHeightEditing);
+  const value = Math.max(0, Math.min(100, Number(event.target.value) || 0));
+  event.target.value = value;
+  $('#brushOpacity').value = heightMode ? value : value / 100;
+});
 bindNumberInput('brushSizeValue', 'brushSize', () => {});
-bindNumberInput('brushOpacityValue', 'brushOpacity', () => {}, 100);
 function paintMask(event) {
   if (!maskDrawing || maskPaintPointerId !== event.pointerId || !(event.buttons & 1)) return;
   const heightLayer = state.terrainHeightEditing ? state.layers.find((layer) => layer.id === state.terrainHeightEditing) : null;
   if (maskTool === 'fill') {
     if (heightLayer) {
-      const data = maskEditContext.getImageData(0, 0, canvas.width, canvas.height), level = Math.round(Number($('#brushOpacity').value) * 255);
+      const data = maskEditContext.getImageData(0, 0, canvas.width, canvas.height);
+      const level = 255 - Math.round(Math.max(0, Math.min(100, Number($('#brushOpacity').value))) / 100 * 255);
       for (let index = 0; index < data.data.length; index += 4) {
-        const value = maskTool === 'eraser' ? 0 : Math.max(data.data[index], level);
-        data.data[index] = data.data[index + 1] = data.data[index + 2] = value; data.data[index + 3] = 255;
+        data.data[index] = data.data[index + 1] = data.data[index + 2] = level; data.data[index + 3] = 255;
       }
       maskEditContext.putImageData(data, 0, 0); renderTerrainHeight(heightLayer, maskEditCanvas); maskDrawing = false; return;
     }
