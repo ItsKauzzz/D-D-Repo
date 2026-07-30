@@ -54,6 +54,11 @@
     </div>
   </aside>
 
+  <nav id="mapTools" class="map-tools" aria-label="Ferramentas do mapa">
+    <button type="button" data-map-tool="select" class="active" title="Selecionar camada" aria-label="Selecionar camada">⌖</button>
+    <button type="button" data-map-tool="move" title="Mover camada" aria-label="Mover camada">✥</button>
+  </nav>
+
   <main id="viewport">
     <div id="stage"><canvas id="mapCanvas" width="1600" height="1000"></canvas><canvas id="maskEditCanvas" width="1600" height="1000"></canvas><div id="brushCursor" class="brush-cursor"></div></div>
     <div class="empty-state" id="emptyState">

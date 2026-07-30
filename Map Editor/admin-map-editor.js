@@ -74,6 +74,8 @@ const state = {
   terrainBrushRepetition: 100,
   mapFilter: 'linear',
   projectFileHandle: null,
+  activeMapTool: 'select',
+  movingLayer: false,
 };
 
 const translations = {
@@ -253,7 +255,7 @@ function createLayer(type = 'terrain') {
     heightMap: null,
     heightOutput: document.createElement('canvas'),
     placements: [],
-    settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, standardizedDistribution: false, rotation: true, mirror: true, slice: false, createRegion: false, regionLayerId: '', imageOffsetX: 0, imageOffsetY: 0, imageOpacity: 1 },
+    settings: { density: 45, scale: 1, sizeVariation: true, sizeMin: 0.7, sizeMax: 1.3, seed: `Teralium-0${number}`, standardizedDistribution: false, rotation: true, mirror: true, slice: false, createRegion: false, regionLayerId: '', layerOffsetX: 0, layerOffsetY: 0, imageOffsetX: 0, imageOffsetY: 0, imageOpacity: 1 },
   };
 }
 
@@ -325,11 +327,11 @@ function redraw(includeObjects = true, showSelection = true, includePaths = true
     if (layer.type === 'image' && layer.image) {
       ctx.save();
       ctx.globalAlpha = layer.settings.imageOpacity;
-      ctx.drawImage(layer.image, layer.settings.imageOffsetX, layer.settings.imageOffsetY, canvas.width, canvas.height);
+      ctx.drawImage(layer.image, layer.settings.imageOffsetX + (layer.settings.layerOffsetX || 0), layer.settings.imageOffsetY + (layer.settings.layerOffsetY || 0), canvas.width, canvas.height);
       ctx.restore();
     }
   }
-  for (const layer of [...state.layers].reverse()) if (layer.visible && ['ground', 'terrain'].includes(layer.type) && layer.heightOutput.width) ctx.drawImage(layer.heightOutput, 0, 0);
+  for (const layer of [...state.layers].reverse()) if (layer.visible && ['ground', 'terrain'].includes(layer.type) && layer.heightOutput.width) ctx.drawImage(layer.heightOutput, layer.settings.layerOffsetX || 0, layer.settings.layerOffsetY || 0);
 
   // Every generated asset and placed object shares one Y-sorted scene, even
   // when the entries came from different layers.
@@ -340,19 +342,19 @@ function redraw(includeObjects = true, showSelection = true, includePaths = true
     if (layer.type === 'terrain') {
       if (layer.placements?.length) {
         if (layer.settings.slice && layer.mask && !layer.maskPath) prepareMask(layer);
-        layer.placements.forEach((placement) => depthEntries.push({ y: placement.y, layerIndex, layer, placement }));
+        layer.placements.forEach((placement) => depthEntries.push({ y: placement.y + (layer.settings.layerOffsetY || 0), layerIndex, layer, placement }));
       }
       else if (layer.output.width) depthEntries.push({ y: -Infinity, layerIndex, layer });
     }
     if (layer.type === 'object' && layer.object?.x !== null && (includeObjects || !layer.object.poi)) {
-      depthEntries.push({ y: layer.object.y + (layer.object.offsetY ?? 0), layerIndex, object: layer.object });
+      depthEntries.push({ y: layer.object.y + (layer.object.offsetY ?? 0) + (layer.settings.layerOffsetY || 0), layerIndex, layer, object: layer.object });
     }
   });
   depthEntries.sort((first, second) => first.y - second.y || second.layerIndex - first.layerIndex);
   for (const entry of depthEntries) {
-    if (entry.object) drawMapObject(entry.object);
+    if (entry.object) drawMapObject(entry.object, entry.layer);
     else if (entry.placement) drawTerrainPlacement(entry.layer, entry.placement, ctx);
-    else ctx.drawImage(entry.layer.output, 0, 0);
+    else ctx.drawImage(entry.layer.output, entry.layer.settings.layerOffsetX || 0, entry.layer.settings.layerOffsetY || 0);
   }
   if (includePaths) for (const layer of [...state.layers].reverse()) if (layer.visible && layer.type === 'path') drawPathLayer(layer);
 
@@ -369,20 +371,21 @@ function drawSelectedLayerHighlight(layer) {
     for (const [x, y] of [[-3, 0], [3, 0], [0, -3], [0, 3], [-2, -2], [2, -2], [-2, 2], [2, 2]]) outlineContext.drawImage(layer.mask, x, y, canvas.width, canvas.height);
     outlineContext.globalCompositeOperation = 'source-in'; outlineContext.fillStyle = accent; outlineContext.fillRect(0, 0, canvas.width, canvas.height);
     outlineContext.globalCompositeOperation = 'destination-out'; outlineContext.drawImage(layer.mask, 0, 0, canvas.width, canvas.height);
-    ctx.drawImage(outline, 0, 0);
-    ctx.save(); ctx.globalAlpha = 0.12; ctx.drawImage(layer.mask, 0, 0, canvas.width, canvas.height); ctx.restore();
+    const offsetX = layer.settings.layerOffsetX || 0, offsetY = layer.settings.layerOffsetY || 0;
+    ctx.drawImage(outline, offsetX, offsetY);
+    ctx.save(); ctx.globalAlpha = 0.12; ctx.drawImage(layer.mask, offsetX, offsetY, canvas.width, canvas.height); ctx.restore();
   }
   if (layer.type === 'path' && layer.path.points.length) {
-    const preset = pathPreset(layer); ctx.save(); ctx.strokeStyle = accent; ctx.lineWidth = preset.stroke + 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
+    const preset = pathPreset(layer); ctx.save(); ctx.translate(layer.settings.layerOffsetX || 0, layer.settings.layerOffsetY || 0); ctx.strokeStyle = accent; ctx.lineWidth = preset.stroke + 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
     layer.path.points.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y)); ctx.stroke(); ctx.restore(); drawPathLayer(layer);
   }
-  if (layer.type === 'image' && layer.image) { ctx.save(); ctx.strokeStyle = accent; ctx.lineWidth = 4; ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4); ctx.restore(); }
+  if (layer.type === 'image' && layer.image) { ctx.save(); ctx.strokeStyle = accent; ctx.lineWidth = 4; ctx.strokeRect(2 + layer.settings.imageOffsetX + (layer.settings.layerOffsetX || 0), 2 + layer.settings.imageOffsetY + (layer.settings.layerOffsetY || 0), canvas.width - 4, canvas.height - 4); ctx.restore(); }
   if (layer.type === 'object' && layer.object?.x !== null) {
     const icon = state.imageSets.find((set) => set.id === layer.object.iconSetId)?.assets[0]?.image;
     if (icon) {
       const height = 48 * (layer.object.scale ?? 1), width = icon.naturalWidth / icon.naturalHeight * height;
-      const x = layer.object.x + (layer.object.offsetX ?? 0) - width * (layer.object.anchorX ?? 0.5);
-      const y = layer.object.y + (layer.object.offsetY ?? 0) - height * (layer.object.anchorY ?? 1);
+      const x = layer.object.x + (layer.object.offsetX ?? 0) + (layer.settings.layerOffsetX || 0) - width * (layer.object.anchorX ?? 0.5);
+      const y = layer.object.y + (layer.object.offsetY ?? 0) + (layer.settings.layerOffsetY || 0) - height * (layer.object.anchorY ?? 1);
       ctx.save(); ctx.strokeStyle = accent; ctx.lineWidth = 3; ctx.strokeRect(x - 4, y - 4, width + 8, height + 8); ctx.restore();
     }
   }
@@ -396,6 +399,7 @@ function drawPathLayer(layer) {
   if (!layer.path?.points.length) return;
   const preset = pathPreset(layer);
   ctx.save();
+  ctx.translate(layer.settings.layerOffsetX || 0, layer.settings.layerOffsetY || 0);
   ctx.strokeStyle = preset.color;
   ctx.lineWidth = preset.stroke;
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -428,6 +432,7 @@ function drawTerrainPlacement(layer, placement, context) {
   const width = asset.naturalWidth * layer.settings.scale * placement.variation;
   const height = asset.naturalHeight * layer.settings.scale * placement.variation;
   context.save();
+  context.translate(layer.settings.layerOffsetX || 0, layer.settings.layerOffsetY || 0);
   if (layer.settings.slice && layer.maskPath) context.clip(layer.maskPath);
   context.translate(placement.x, placement.y);
   context.rotate(placement.rotation);
@@ -436,14 +441,14 @@ function drawTerrainPlacement(layer, placement, context) {
   context.restore();
 }
 
-function drawMapObject(object) {
+function drawMapObject(object, layer = null) {
   const set = state.imageSets.find((item) => item.id === object.iconSetId);
   const icon = set?.assets[0]?.image;
   if (!icon) return;
   const size = 48 * (object.scale ?? 1);
   const width = icon.naturalWidth / icon.naturalHeight * size;
-  const x = object.x + (object.offsetX ?? 0);
-  const y = object.y + (object.offsetY ?? 0);
+  const x = object.x + (object.offsetX ?? 0) + (layer?.settings.layerOffsetX || 0);
+  const y = object.y + (object.offsetY ?? 0) + (layer?.settings.layerOffsetY || 0);
   ctx.save();
   ctx.globalAlpha = object.opacity ?? 1;
   ctx.drawImage(icon, x - width * (object.anchorX ?? 0.5), y - size * (object.anchorY ?? 1), width, size);
@@ -463,7 +468,6 @@ function drawMapObject(object) {
 function renderLayers() {
   const list = $('#layerList');
   list.replaceChildren();
-  const regionGroups = new Map();
   for (const layer of state.layers) {
     const button = document.createElement('button');
     button.className = `layer-card${layer.id === state.selectedId ? ' active' : ''}${layer.visible ? '' : ' is-hidden'}`;
@@ -509,16 +513,7 @@ function renderLayers() {
       renderLayers();
       redraw();
     });
-    if (layer.type === 'region') {
-      const groupName = layer.region.group || 'Regiões';
-      let group = regionGroups.get(groupName);
-      if (!group) {
-        group = document.createElement('section'); group.className = 'region-layer-group';
-        const title = document.createElement('p'); title.textContent = groupName;
-        group.append(title); regionGroups.set(groupName, group); list.append(group);
-      }
-      group.append(button);
-    } else list.append(button);
+    list.append(button);
   }
   for (const folder of state.layers.filter((layer) => layer.type === 'folder')) {
     const folderButton = list.querySelector(`[data-layer-id="${folder.id}"]`);
@@ -2473,6 +2468,69 @@ $('#projectInput').addEventListener('change', async (event) => {
   event.target.value = '';
 });
 
+function editorWorldPoint(event) {
+  const rectangle = viewport.getBoundingClientRect();
+  return { x: (event.clientX - rectangle.left - state.x) / state.zoom, y: (event.clientY - rectangle.top - state.y) / state.zoom };
+}
+
+function maskCoverageAt(layer, x, y) {
+  const localX = Math.floor(x - (layer.settings.layerOffsetX || 0)), localY = Math.floor(y - (layer.settings.layerOffsetY || 0));
+  if (!layer.mask || localX < 0 || localY < 0 || localX >= canvas.width || localY >= canvas.height) return 0;
+  const sample = document.createElement('canvas'); sample.width = sample.height = 1;
+  const sampleContext = sample.getContext('2d', { willReadFrequently: true });
+  sampleContext.drawImage(layer.mask, localX, localY, 1, 1, 0, 0, 1, 1);
+  const pixel = sampleContext.getImageData(0, 0, 1, 1).data;
+  return pixel[3] / 255 * (1 - (pixel[0] + pixel[1] + pixel[2]) / 765);
+}
+
+function distanceToSegment(point, start, end) {
+  const dx = end.x - start.x, dy = end.y - start.y;
+  const lengthSquared = dx * dx + dy * dy;
+  const amount = lengthSquared ? Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared)) : 0;
+  return Math.hypot(point.x - (start.x + dx * amount), point.y - (start.y + dy * amount));
+}
+
+function layerAtPoint(point) {
+  for (const layer of state.layers) {
+    if (!layer.visible || layer.type === 'folder') continue;
+    const offsetX = layer.settings.layerOffsetX || 0, offsetY = layer.settings.layerOffsetY || 0;
+    if (layer.type === 'object' && layer.object?.x !== null) {
+      const icon = state.imageSets.find((set) => set.id === layer.object.iconSetId)?.assets[0]?.image;
+      if (icon) {
+        const height = 48 * (layer.object.scale ?? 1), width = icon.naturalWidth / icon.naturalHeight * height;
+        const left = layer.object.x + (layer.object.offsetX || 0) + offsetX - width * (layer.object.anchorX ?? 0.5);
+        const top = layer.object.y + (layer.object.offsetY || 0) + offsetY - height * (layer.object.anchorY ?? 1);
+        if (point.x >= left && point.x <= left + width && point.y >= top && point.y <= top + height) return layer;
+      }
+    }
+    if (layer.type === 'path' && layer.path?.points.length > 1) {
+      const local = { x: point.x - offsetX, y: point.y - offsetY };
+      if (layer.path.points.slice(1).some((end, index) => distanceToSegment(local, layer.path.points[index], end) <= Math.max(8, pathPreset(layer).stroke / 2 + 5))) return layer;
+    }
+    if (layer.type === 'terrain' && layer.placements?.some((placement) => {
+      const asset = layer.assets[placement.assetIndex]?.image || placement.asset;
+      const radius = Math.max(asset?.naturalWidth || 0, asset?.naturalHeight || 0) * layer.settings.scale * placement.variation / 2;
+      return Math.hypot(point.x - placement.x - offsetX, point.y - placement.y - offsetY) <= radius;
+    })) return layer;
+    if (['terrain', 'region'].includes(layer.type) && maskCoverageAt(layer, point.x, point.y) > 0.04) return layer;
+    if (layer.type === 'image' && layer.image) {
+      const imageX = offsetX + layer.settings.imageOffsetX, imageY = offsetY + layer.settings.imageOffsetY;
+      if (point.x >= imageX && point.y >= imageY && point.x <= imageX + canvas.width && point.y <= imageY + canvas.height) return layer;
+    }
+    if (layer.type === 'ground' && layer.heightOutput.width && point.x >= offsetX && point.y >= offsetY && point.x <= offsetX + canvas.width && point.y <= offsetY + canvas.height) return layer;
+  }
+  return null;
+}
+
+document.querySelectorAll('[data-map-tool]').forEach((button) => {
+  button.onclick = () => {
+    state.activeMapTool = button.dataset.mapTool;
+    document.querySelectorAll('[data-map-tool]').forEach((item) => item.classList.toggle('active', item === button));
+    viewport.dataset.mapTool = state.activeMapTool;
+  };
+});
+viewport.dataset.mapTool = state.activeMapTool;
+
 viewport.addEventListener('pointerdown', (event) => {
   if (state.drawingPath && selectedLayer()?.type === 'path' && event.button === 0) {
     const rectangle = viewport.getBoundingClientRect();
@@ -2492,17 +2550,35 @@ viewport.addEventListener('pointerdown', (event) => {
     redraw();
     return;
   }
+  if (event.button === 0 && state.activeMapTool === 'select') {
+    const layer = layerAtPoint(editorWorldPoint(event));
+    if (layer) selectLayer(layer.id);
+    return;
+  }
+  if (event.button === 0 && state.activeMapTool === 'move') {
+    if (!selectedLayer() || selectedLayer().type === 'folder') return;
+    state.movingLayer = true; state.lastX = event.clientX; state.lastY = event.clientY;
+    viewport.classList.add('moving-layer'); viewport.setPointerCapture(event.pointerId); return;
+  }
   state.drag = true; state.lastX = event.clientX; state.lastY = event.clientY;
   viewport.classList.add('dragging');
   viewport.setPointerCapture(event.pointerId);
 });
 viewport.addEventListener('pointermove', (event) => {
+  if (state.movingLayer) {
+    const layer = selectedLayer();
+    if (!layer) return;
+    layer.settings.layerOffsetX = (layer.settings.layerOffsetX || 0) + (event.clientX - state.lastX) / state.zoom;
+    layer.settings.layerOffsetY = (layer.settings.layerOffsetY || 0) + (event.clientY - state.lastY) / state.zoom;
+    state.lastX = event.clientX; state.lastY = event.clientY; redraw(); return;
+  }
   if (!state.drag) return;
   state.x += event.clientX - state.lastX; state.y += event.clientY - state.lastY;
   state.lastX = event.clientX; state.lastY = event.clientY;
   updateTransform();
 });
-viewport.addEventListener('pointerup', () => { state.drag = false; viewport.classList.remove('dragging'); });
+viewport.addEventListener('pointerup', () => { state.drag = false; state.movingLayer = false; viewport.classList.remove('dragging', 'moving-layer'); });
+viewport.addEventListener('pointercancel', () => { state.drag = false; state.movingLayer = false; viewport.classList.remove('dragging', 'moving-layer'); });
 viewport.addEventListener('wheel', (event) => {
   event.preventDefault();
   const rectangle = viewport.getBoundingClientRect();
@@ -2607,7 +2683,7 @@ function exportablePois() {
     const iconSet = state.imageSets.find((set) => set.id === object.iconSetId);
     const gallerySet = state.imageSets.find((set) => set.id === object.gallerySetId);
     const type = state.poiTypes.find((item) => item.id === object.type) || state.poiTypes.at(-1);
-    return { ...object, description: String(object.description ?? object.descricao ?? ''), simpleDescription: String(object.description ?? object.descricao ?? ''), x: object.x + (object.offsetX ?? 0), y: object.y + (object.offsetY ?? 0), id: layer.id, icon: iconSet?.assets[0]?.image.src || '', gallery: gallerySet?.assets.map((asset) => asset.image.src) || [], typeName: type?.name || object.type, color: type?.color || '#fff' };
+    return { ...object, description: String(object.description ?? object.descricao ?? ''), simpleDescription: String(object.description ?? object.descricao ?? ''), x: object.x + (object.offsetX ?? 0) + (layer.settings.layerOffsetX || 0), y: object.y + (object.offsetY ?? 0) + (layer.settings.layerOffsetY || 0), id: layer.id, icon: iconSet?.assets[0]?.image.src || '', gallery: gallerySet?.assets.map((asset) => asset.image.src) || [], typeName: type?.name || object.type, color: type?.color || '#fff' };
   }).filter((poi) => poi.icon);
 }
 
@@ -2622,7 +2698,7 @@ function exportableRegions() {
   return candidates.map(({ sourceLayer, regionLayer, terrainMask }) => {
     const scratch = document.createElement('canvas'); scratch.width = canvas.width; scratch.height = canvas.height;
     const regionContext = scratch.getContext('2d', { willReadFrequently: true });
-    regionContext.drawImage(sourceLayer.mask, 0, 0, canvas.width, canvas.height);
+    regionContext.drawImage(sourceLayer.mask, sourceLayer.settings.layerOffsetX || 0, sourceLayer.settings.layerOffsetY || 0, canvas.width, canvas.height);
     const imageData = regionContext.getImageData(0, 0, canvas.width, canvas.height);
     const pixels = imageData.data;
     if (terrainMask) {
@@ -2646,7 +2722,7 @@ function exportablePaths() {
   return state.layers.filter((layer) => layer.visible && layer.type === 'path' && layer.path?.showOnMap && layer.path.points.length > 1).map((layer) => {
     const preset = pathPreset(layer);
     const gallery = state.imageSets.find((set) => set.id === layer.path.gallerySetId)?.assets.map((asset) => asset.image.src) || [];
-    return { id: layer.id, name: layer.path.name, description: layer.path.description, points: layer.path.points, distance: layer.path.distance || calculatePathDistance(layer.path.points), gallery, preset };
+    return { id: layer.id, name: layer.path.name, description: layer.path.description, points: layer.path.points.map((point) => ({ x: point.x + (layer.settings.layerOffsetX || 0), y: point.y + (layer.settings.layerOffsetY || 0) })), distance: layer.path.distance || calculatePathDistance(layer.path.points), gallery, preset };
   });
 }
 
