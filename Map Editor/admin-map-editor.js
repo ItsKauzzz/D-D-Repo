@@ -2638,10 +2638,23 @@ async function prepareMergedLayerSources(label) {
 
 $('#exportMapBtn').onclick = async () => { await prepareMergedLayerSources('Mesclando máscaras do mapa'); downloadFile('mapa-teralium.html', createMapHtml(), 'text/html'); };
 $('#previewMapBtn').onclick = async () => {
-  await prepareMergedLayerSources('Preparando pré-visualização');
-  const url = URL.createObjectURL(new Blob([createMapHtml()], { type: 'text/html' }));
-  window.open(url, '_blank');
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  // Reserve the tab synchronously while this click still counts as a user
+  // gesture. Opening it after the awaited chunk merge is blocked as a popup by
+  // browsers, particularly when Atlasmith itself is running from file://.
+  const previewWindow = window.open('about:blank', '_blank');
+  if (!previewWindow) { window.alert('O navegador bloqueou a aba de pré-visualização. Permita pop-ups para o Atlasmith.'); return; }
+  previewWindow.document.title = 'Preparando pré-visualização…';
+  previewWindow.document.body.innerHTML = '<p style="background:#101311;color:#edf0ed;font:14px sans-serif;margin:0;padding:24px">Preparando pré-visualização…</p>';
+  try {
+    await prepareMergedLayerSources('Preparando pré-visualização');
+    const url = URL.createObjectURL(new Blob([createMapHtml()], { type: 'text/html' }));
+    previewWindow.location.replace(url);
+    previewWindow.opener = null;
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (error) {
+    previewWindow.close();
+    window.alert(`Não foi possível abrir a pré-visualização: ${error.message}`);
+  }
 };
 
 window.addEventListener('resize', () => { if (selectedLayer()?.mask) fit(); });
