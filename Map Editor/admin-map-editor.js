@@ -2116,13 +2116,16 @@ function paintDistributionStamp(x, y, brushSize) {
 
 let maskCommitTimer = 0;
 let maskCommitRevision = 0;
-function scheduleMaskCommit() {
+function scheduleMaskCommit(delay = 180) {
   clearTimeout(maskCommitTimer);
-  maskCommitTimer = setTimeout(() => maskDrawing ? scheduleMaskCommit() : commitMaskEdits(), 180);
+  maskCommitTimer = setTimeout(() => maskDrawing ? scheduleMaskCommit() : commitMaskEdits(), delay);
 }
 
 async function commitMaskEdits() {
   clearTimeout(maskCommitTimer); maskCommitTimer = 0;
+  // Yield before canvas reads, region prioritization, and terrain generation so
+  // callers such as pointerup can finish without inheriting that expensive work.
+  await nextFrame();
   const layer = state.layers.find((item) => item.id === state.maskEditing);
   if (!layer || !strokeDirtyChunks.size) return maskChunkSaveChain;
   const revision = ++maskCommitRevision;
@@ -2167,8 +2170,13 @@ async function commitMaskEdits() {
       layer.heightDirtyRectangle = dirtyRectangle;
       $('#saveState').textContent = `${captured.length} chunk(s) de altura pendente(s)`;
     } else if (layer.type === 'region') await applyRegionPriority(layer);
-    else if (layer.type === 'terrain' && layer.assets.length) await generate(layer);
-    else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
+    else if (layer.type === 'terrain' && layer.assets.length) {
+      // Generating thousands of placements here used to block the main thread as
+      // soon as a brush stroke ended. Keep painting responsive and let the
+      // existing Generate fill action perform that explicitly.
+      redraw();
+      $('#saveState').textContent = 'Máscara atualizada • clique em Gerar preenchimento';
+    } else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
   }
   return maskChunkSaveChain;
 }
@@ -2287,7 +2295,7 @@ function stopMaskPointer(event) {
   stopBrushRepetition();
   if (painted && state.maskEditing) {
     if (strokeChunkSnapshots.size) { maskHistory.push([...strokeChunkSnapshots.values()]); if (maskHistory.length > 20) maskHistory.shift(); }
-    commitMaskEdits();
+    scheduleMaskCommit(0);
   }
 }
 maskEditCanvas.onpointerup = stopMaskPointer;
