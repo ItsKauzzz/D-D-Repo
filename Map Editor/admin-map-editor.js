@@ -493,6 +493,27 @@ function drawMapObject(object, layer = null) {
   ctx.restore();
 }
 
+function layerIsDescendant(layerId, ancestorId) {
+  let current = state.layers.find((layer) => layer.id === layerId);
+  const visited = new Set();
+  while (current?.parentId && !visited.has(current.id)) {
+    if (current.parentId === ancestorId) return true;
+    visited.add(current.id); current = state.layers.find((layer) => layer.id === current.parentId);
+  }
+  return false;
+}
+function normalizeLayerTreeOrder() {
+  const ordered = [], visited = new Set();
+  const append = (layer) => { if (visited.has(layer.id)) return; visited.add(layer.id); ordered.push(layer); state.layers.filter((child) => child.parentId === layer.id).forEach(append); };
+  state.layers.filter((layer) => !state.layers.some((parent) => parent.type === 'folder' && parent.id === layer.parentId)).forEach(append);
+  state.layers.filter((layer) => !visited.has(layer.id)).forEach((layer) => { layer.parentId = null; append(layer); });
+  state.layers = ordered;
+}
+function setFolderVisibility(folder, visible) {
+  folder.visible = visible;
+  state.layers.filter((child) => child.parentId === folder.id).forEach((child) => child.type === 'folder' ? setFolderVisibility(child, visible) : child.visible = visible);
+}
+
 function renderLayers() {
   const list = $('#layerList');
   list.replaceChildren();
@@ -521,39 +542,53 @@ function renderLayers() {
     });
     button.addEventListener('dragstart', () => button.classList.add('dragging'));
     button.addEventListener('dragend', () => button.classList.remove('dragging'));
-    button.addEventListener('dragover', (event) => { event.preventDefault(); button.classList.add('drag-over'); });
-    button.addEventListener('dragleave', () => button.classList.remove('drag-over'));
+    button.addEventListener('dragover', (event) => {
+      event.preventDefault(); event.stopPropagation();
+      const ratio = (event.clientY - button.getBoundingClientRect().top) / button.offsetHeight;
+      button.dataset.dropPosition = layer.type === 'folder' && ratio > .25 && ratio < .75 ? 'inside' : ratio < .5 ? 'before' : 'after';
+      button.classList.add('drag-over');
+    });
+    button.addEventListener('dragleave', () => { button.classList.remove('drag-over'); delete button.dataset.dropPosition; });
     button.addEventListener('drop', (event) => {
-      event.preventDefault();
-      button.classList.remove('drag-over');
+      event.preventDefault(); event.stopPropagation();
+      const position = button.dataset.dropPosition || 'after'; button.classList.remove('drag-over'); delete button.dataset.dropPosition;
       const draggedId = document.querySelector('.layer-card.dragging')?.dataset.layerId;
-      if (!draggedId || draggedId === layer.id) return;
-      const from = state.layers.findIndex((item) => item.id === draggedId);
-      const to = state.layers.findIndex((item) => item.id === layer.id);
-      const [moved] = state.layers.splice(from, 1);
-      moved.parentId = layer.type === 'folder' ? layer.id : layer.parentId;
-      state.layers.splice(to, 0, moved);
-      renderLayers(); redraw();
+      const moved = state.layers.find((item) => item.id === draggedId);
+      if (!moved || moved.id === layer.id || (moved.type === 'folder' && layerIsDescendant(layer.id, moved.id))) return;
+      state.layers.splice(state.layers.indexOf(moved), 1);
+      if (position === 'inside' && layer.type === 'folder') {
+        moved.parentId = layer.id;
+        let insertAt = state.layers.indexOf(layer) + 1;
+        while (insertAt < state.layers.length && layerIsDescendant(state.layers[insertAt].id, layer.id)) insertAt++;
+        state.layers.splice(insertAt, 0, moved);
+        layer.collapsed = false;
+      } else {
+        moved.parentId = layer.parentId || null;
+        const targetIndex = state.layers.indexOf(layer);
+        state.layers.splice(targetIndex + (position === 'after' ? 1 : 0), 0, moved);
+      }
+      normalizeLayerTreeOrder(); renderLayers(); redraw();
     });
     button.querySelector('.visibility').addEventListener('click', (event) => {
       event.stopPropagation();
       layer.visible = !layer.visible;
-      if (layer.type === 'folder') state.layers.forEach((item) => { if (item.parentId === layer.id) item.visible = layer.visible; });
+      if (layer.type === 'folder') setFolderVisibility(layer, layer.visible);
       renderLayers();
       redraw();
     });
     list.append(button);
   }
-  for (const folder of state.layers.filter((layer) => layer.type === 'folder')) {
-    const folderButton = list.querySelector(`[data-layer-id="${folder.id}"]`);
-    if (!folderButton) continue;
-    const wrapper = document.createElement('section'); wrapper.className = `folder-layer${folder.collapsed ? ' collapsed' : ''}`;
-    folderButton.parentElement.insertBefore(wrapper, folderButton); wrapper.append(folderButton);
-    const children = document.createElement('div'); children.className = 'folder-children'; wrapper.append(children);
-    state.layers.filter((layer) => layer.parentId === folder.id && layer.id !== folder.id).forEach((child) => {
-      const childButton = list.querySelector(`[data-layer-id="${child.id}"]`); if (childButton) children.append(childButton);
-    });
-  }
+  const buttons = new Map([...list.querySelectorAll('.layer-card')].map((button) => [button.dataset.layerId, button]));
+  list.replaceChildren(); normalizeLayerTreeOrder();
+  const buildLayerNode = (layer) => {
+    const button = buttons.get(layer.id);
+    if (layer.type !== 'folder') return button;
+    const wrapper = document.createElement('section'); wrapper.className = `folder-layer${layer.collapsed ? ' collapsed' : ''}`; wrapper.append(button);
+    const children = document.createElement('div'); children.className = 'folder-children';
+    state.layers.filter((child) => child.parentId === layer.id).forEach((child) => children.append(buildLayerNode(child)));
+    wrapper.append(children); return wrapper;
+  };
+  state.layers.filter((layer) => !layer.parentId).forEach((layer) => list.append(buildLayerNode(layer)));
   translateDocument(list);
 }
 
@@ -2901,19 +2936,25 @@ $('#exportLoreModal').addEventListener('click', (event) => { if (event.target ==
 function escapeLoreHtml(value) {
   const element = document.createElement('div'); element.textContent = String(value ?? ''); return element.innerHTML;
 }
-function loreEntry(name, description = '', pages = []) {
+function loreCarousel(images = []) {
+  const sources = [...new Set(images.filter(Boolean))];
+  if (!sources.length) return '';
+  return `<div class="lore-carousel">${sources.map((source, index) => `<img src="${source}" alt="Imagem ${index + 1}"${index ? ' hidden' : ''}>`).join('')}<button class="previous" type="button" aria-label="Imagem anterior">‹</button><button class="next" type="button" aria-label="Próxima imagem">›</button><small>1 / ${sources.length}</small></div>`;
+}
+function loreEntry(name, description = '', pages = [], images = []) {
   const simple = String(description || '').trim();
   const meaningfulPages = (pages || []).filter((page) => String(page.content || '').replace(/<[^>]*>/g, '').trim() || (page.images || []).length);
   const displayedSimple = meaningfulPages.some((page) => page.autoOverview) ? '' : simple;
   if ($('#loreIgnoreBlankLayers').checked && !displayedSimple && !meaningfulPages.length) return '';
+  const allImages = [...images, ...meaningfulPages.flatMap((page) => page.images || [])];
   const pageHtml = meaningfulPages.map((page) => `<section class="lore-page"><h3>${escapeLoreHtml(page.title || 'Página')}</h3>${sanitizeDescriptionHtml(page.content || '<p>Sem descrição.</p>')}</section>`).join('');
-  return `<article class="entry"><h2>${escapeLoreHtml(name || 'Sem nome')}</h2>${displayedSimple ? `<p>${escapeLoreHtml(displayedSimple)}</p>` : ''}${pageHtml}</article>`;
+  return `<article class="entry">${loreCarousel(allImages)}<h2>${escapeLoreHtml(name || 'Sem nome')}</h2>${displayedSimple ? `<p>${escapeLoreHtml(displayedSimple)}</p>` : ''}${pageHtml}</article>`;
 }
 function loreSectionHtml(section) {
   let entries = [];
-  if (section === 'objects') entries = state.layers.filter((layer) => layer.type === 'object').map((layer) => loreEntry(layer.object?.name || layer.name, layer.object?.description, layer.object?.descriptionPages));
+  if (section === 'objects') entries = state.layers.filter((layer) => layer.type === 'object').map((layer) => { const gallery = state.imageSets.find((set) => set.id === layer.object?.gallerySetId)?.assets.map((asset) => asset.image.src) || []; return loreEntry(layer.object?.name || layer.name, layer.object?.description, descriptionPagesWithOverview(layer.object), gallery); });
   if (section === 'regions') entries = state.layers.filter((layer) => layer.type === 'region').map((layer) => loreEntry(layer.region?.name || layer.name, layer.region?.description));
-  if (section === 'paths') entries = state.layers.filter((layer) => layer.type === 'path').map((layer) => loreEntry(layer.path?.name || layer.name, layer.path?.description));
+  if (section === 'paths') entries = state.layers.filter((layer) => layer.type === 'path').map((layer) => { const gallery = state.imageSets.find((set) => set.id === layer.path?.gallerySetId)?.assets.map((asset) => asset.image.src) || []; return loreEntry(layer.path?.name || layer.name, layer.path?.description, descriptionPagesWithOverview(layer.path), gallery); });
   if (section === 'layers') entries = state.layers.filter((layer) => !['object', 'region', 'path'].includes(layer.type)).map((layer) => loreEntry(layer.name, layer.description));
   entries = entries.filter(Boolean);
   return entries.length ? `<section class="chapter"><h1>${loreSectionLabels[section]}</h1>${entries.join('')}</section>` : '';
@@ -2924,12 +2965,10 @@ function createLoreHtml() {
   const bodySize = Math.max(8, Math.min(24, Number($('#loreBodySize').value) || 11));
   const background = $('#loreBackgroundColor').value, titleColor = $('#loreTitleColor').value, textColor = $('#loreTextColor').value;
   const contents = loreSectionOrder.filter((section) => loreSectionEnabled.has(section)).map(loreSectionHtml).join('');
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Atlasmith Lore</title><style>@page{size:A4;margin:18mm}*{box-sizing:border-box}html,body{background:${background};color:${textColor};font:${bodySize}pt ${bodyFont};line-height:1.55;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0;padding:18mm}h1,h2,h3{font-family:${titleFont};color:${titleColor};break-after:avoid}h1{font-size:${titleSize}pt;border-bottom:2px solid ${titleColor};padding-bottom:8px}h2{font-size:${Math.max(12,titleSize*.7)}pt;margin-bottom:6px}h3{font-size:${Math.max(10,titleSize*.52)}pt}.chapter{break-before:page}.chapter:first-child{break-before:auto}.entry{break-inside:avoid;margin:0 0 22px}.entry p{white-space:pre-wrap}.lore-page{margin-left:14px;padding-left:14px;border-left:2px solid ${titleColor}}@media print{body{padding:0}}</style></head><body>${contents || '<p>Nenhum conteúdo selecionado.</p>'}<script>addEventListener('load',()=>setTimeout(()=>print(),150));<\/script></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Atlasmith Lore</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:${background};color:${textColor};font:${bodySize}pt ${bodyFont};line-height:1.55}.lore-nav{position:fixed;inset:0 auto 0 0;width:260px;padding:24px 15px;overflow:auto;border-right:1px solid ${titleColor};background:${background};z-index:5}.lore-nav h1{font:700 ${Math.max(15,titleSize*.65)}pt ${titleFont};color:${titleColor}}.lore-nav a{display:block;padding:7px 9px;border-radius:6px;color:${textColor};text-decoration:none}.lore-nav a:hover{background:${titleColor};color:${background}}main{max-width:1000px;margin-left:260px;padding:35px 5vw 80px}h1,h2,h3{font-family:${titleFont};color:${titleColor}}.chapter>h1{font-size:${titleSize}pt;border-bottom:2px solid ${titleColor};padding-bottom:8px}.entry{margin:0 0 55px;scroll-margin-top:24px}.entry h2{font-size:${Math.max(12,titleSize*.7)}pt;margin-bottom:6px}.lore-page{margin:14px 0 0 14px;padding-left:14px;border-left:2px solid ${titleColor}}.lore-carousel{position:relative;width:100%;height:min(52vh,480px);margin-bottom:22px;border-radius:12px;overflow:hidden;background:#0004}.lore-carousel img{width:100%;height:100%;object-fit:contain}.lore-carousel button{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:50%;background:#0009;color:#fff;font-size:28px;cursor:pointer}.lore-carousel .previous{left:12px}.lore-carousel .next{right:12px}.lore-carousel small{position:absolute;right:12px;bottom:10px;padding:3px 7px;border-radius:9px;background:#000b;color:#fff}@media(max-width:720px){.lore-nav{position:relative;width:100%;max-height:35vh;border-right:0;border-bottom:1px solid ${titleColor}}main{margin-left:0;padding:24px}.lore-carousel{height:42vh}}</style></head><body><aside class="lore-nav"><h1>Atlasmith Lore</h1><nav></nav></aside><main>${contents || '<p>Nenhum conteúdo selecionado.</p>'}</main><script>document.querySelectorAll('.entry').forEach((entry,index)=>{entry.id='lore-'+index;const link=document.createElement('a');link.href='#'+entry.id;link.textContent=entry.querySelector('h2')?.textContent||('Entrada '+(index+1));document.querySelector('.lore-nav nav').append(link)});document.querySelectorAll('.lore-carousel').forEach(carousel=>{const images=[...carousel.querySelectorAll('img')],counter=carousel.querySelector('small');let index=0;const show=next=>{index=(next+images.length)%images.length;images.forEach((image,i)=>image.hidden=i!==index);counter.textContent=(index+1)+' / '+images.length};carousel.querySelector('.previous').onclick=()=>show(index-1);carousel.querySelector('.next').onclick=()=>show(index+1);if(images.length<2)carousel.querySelectorAll('button').forEach(button=>button.hidden=true)});<\/script></body></html>`;
 }
 $('#confirmExportLore').onclick = () => {
-  const printWindow = window.open('about:blank', '_blank');
-  if (!printWindow) { window.alert('Permita pop-ups para gerar o PDF de Lore.'); return; }
-  printWindow.document.open(); printWindow.document.write(createLoreHtml()); printWindow.document.close();
+  downloadFile('atlasmith-lore.html', createLoreHtml(), 'text/html');
   $('#exportLoreModal').hidden = true;
 };
 
