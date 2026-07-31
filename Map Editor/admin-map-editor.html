@@ -239,6 +239,8 @@
         <label>Largura <span><input id="mapWidthSetting" type="number" min="1" value="1600"> px</span></label>
         <label>Altura <span><input id="mapHeightSetting" type="number" min="1" value="1000"> px</span></label>
         <label>Filtro de imagens <select id="mapFilterSetting"><option value="linear">Linear</option><option value="balanced">Intermediário</option><option value="nearest">Mais próximo (pixel)</option></select></label>
+        <label>Tamanho das chunks <select id="maskChunkSizeSetting"><option value="128">128 px</option><option value="256">256 px</option><option value="512">512 px</option><option value="1024">1024 px</option><option value="2048">2048 px</option></select></label>
+        <label class="check-row"><input id="debugChunkGridSetting" type="checkbox"> Debug: mostrar grid das chunks</label>
         <button id="applyMapSettings" type="button" class="position-object">Aplicar tamanho</button>
       </fieldset>
       <label class="project-scale-setting">Escala do mapa <span><b>100px</b> equivalem a <input id="distanceScaleKm" type="number" min="0.01" step="1" value="100"> km</span></label>

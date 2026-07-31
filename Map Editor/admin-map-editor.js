@@ -73,6 +73,8 @@ const state = {
   terrainBrushRotation: 0,
   terrainBrushRepetition: 100,
   mapFilter: 'linear',
+  maskChunkSize: 512,
+  debugChunkGrid: false,
   projectFileHandle: null,
   theme: localStorage.getItem('atlasmith-theme') || 'atlasmith',
   activeMapTool: 'select',
@@ -326,6 +328,11 @@ function fit() {
   state.x = (viewport.clientWidth - canvas.width * state.zoom) / 2;
   state.y = (viewport.clientHeight - canvas.height * state.zoom) / 2;
   updateTransform();
+}
+
+function updateChunkDebugGrid() {
+  stage.classList.toggle('chunk-debug', state.debugChunkGrid);
+  stage.style.setProperty('--chunk-size', `${state.maskChunkSize}px`);
 }
 
 function redraw(includeObjects = true, showSelection = true, includePaths = true) {
@@ -1347,6 +1354,7 @@ $('#interfaceSettingsModal').addEventListener('click', (event) => { if (event.ta
 function openMapSettings() {
   $('#mapWidthSetting').value = canvas.width; $('#mapHeightSetting').value = canvas.height;
   $('#mapFilterSetting').value = state.mapFilter;
+  $('#maskChunkSizeSetting').value = state.maskChunkSize; $('#debugChunkGridSetting').checked = state.debugChunkGrid;
   $('#distanceScaleKm').value = state.distanceScaleKm;
   $('#speedWalking').value = state.travelSpeeds.walking; $('#speedHorse').value = state.travelSpeeds.horse; $('#speedShip').value = state.travelSpeeds.ship; $('#speedAir').value = state.travelSpeeds.air;
   $('#terrainWaterShallow').value = state.terrainColors.shallow; $('#terrainWaterMedium').value = state.terrainColors.medium; $('#terrainWaterDeep').value = state.terrainColors.deep; $('#terrainLandColor').value = state.terrainColors.land;
@@ -1375,7 +1383,17 @@ $('#applyMapSettings').onclick = () => {
     });
     stage.style.display = 'block'; $('#emptyState').style.display = 'none'; fit();
   }
-  applyMapFilter(); redraw(); $('#saveState').textContent = 'Configurações do mapa aplicadas';
+  const nextChunkSize = Number($('#maskChunkSizeSetting').value) || 512;
+  if (nextChunkSize !== state.maskChunkSize) {
+    state.maskChunkSize = nextChunkSize;
+    state.layers.forEach((layer) => {
+      for (const property of ['maskChunks', 'heightChunks', 'pendingMaskChunks', 'pendingHeightChunks']) {
+        if (layer[property] instanceof Map) layer[property] = new Map([...layer[property].values()].map((chunk, index) => [`previous:${index}:${chunk.x}:${chunk.y}`, chunk]));
+      }
+    });
+  }
+  state.debugChunkGrid = $('#debugChunkGridSetting').checked;
+  updateChunkDebugGrid(); applyMapFilter(); redraw(); $('#saveState').textContent = 'Configurações do mapa aplicadas';
 };
 $('#closeProjectSettings').onclick = () => { $('#projectSettingsModal').hidden = true; };
 $('#projectSettingsModal').addEventListener('click', (event) => { if (event.target === $('#projectSettingsModal')) $('#projectSettingsModal').hidden = true; });
@@ -1763,7 +1781,7 @@ let maskPanX = 0;
 let maskPanY = 0;
 let maskPaintPointerId = null;
 let maskHistory = [];
-const MASK_CHUNK_SIZE = 512;
+function maskChunkSize() { return state.maskChunkSize; }
 let strokeDirtyChunks = new Set();
 let strokeChunkSnapshots = new Map();
 let maskChunkSaveChain = Promise.resolve();
@@ -1776,15 +1794,15 @@ const brushCursor = $('#brushCursor');
 
 function maskChunkBounds(key) {
   const [column, row] = key.split(':').map(Number);
-  const x = column * MASK_CHUNK_SIZE, y = row * MASK_CHUNK_SIZE;
-  return { key, x, y, width: Math.min(MASK_CHUNK_SIZE, canvas.width - x), height: Math.min(MASK_CHUNK_SIZE, canvas.height - y) };
+  const x = column * maskChunkSize(), y = row * maskChunkSize();
+  return { key, x, y, width: Math.min(maskChunkSize(), canvas.width - x), height: Math.min(maskChunkSize(), canvas.height - y) };
 }
 
 function markMaskChunksDirty(x, y, width, height) {
   const left = Math.max(0, Math.floor(x)), top = Math.max(0, Math.floor(y));
   const right = Math.min(canvas.width - 1, Math.ceil(x + width) - 1), bottom = Math.min(canvas.height - 1, Math.ceil(y + height) - 1);
   if (right < left || bottom < top) return;
-  for (let row = Math.floor(top / MASK_CHUNK_SIZE); row <= Math.floor(bottom / MASK_CHUNK_SIZE); row++) for (let column = Math.floor(left / MASK_CHUNK_SIZE); column <= Math.floor(right / MASK_CHUNK_SIZE); column++) {
+  for (let row = Math.floor(top / maskChunkSize()); row <= Math.floor(bottom / maskChunkSize()); row++) for (let column = Math.floor(left / maskChunkSize()); column <= Math.floor(right / maskChunkSize()); column++) {
     const key = `${column}:${row}`;
     if (!strokeChunkSnapshots.has(key)) {
       const bounds = maskChunkBounds(key);
@@ -2121,6 +2139,41 @@ function scheduleMaskCommit(delay = 180) {
   maskCommitTimer = setTimeout(() => maskDrawing ? scheduleMaskCommit() : commitMaskEdits(), delay);
 }
 
+async function generateTerrainChunks(layer, chunks) {
+  if (!layer.assets.length || !chunks.length) return;
+  const dirtyKeys = new Set(chunks.map((chunk) => chunk.key));
+  layer.placements = (layer.placements || []).filter((placement) => {
+    const key = `${Math.floor(placement.x / maskChunkSize())}:${Math.floor(placement.y / maskChunkSize())}`;
+    return !dirtyKeys.has(key);
+  });
+  const averageVariation = layer.settings.sizeVariation ? (layer.settings.sizeMin + layer.settings.sizeMax) / 2 : 1;
+  const footprint = Math.max(1, 48 * layer.settings.scale * averageVariation);
+  const smallScaleBoost = layer.settings.scale < 1 ? 1 + (1 - layer.settings.scale) : 1;
+  const added = [];
+  for (const chunk of chunks) {
+    const random = randomFactory(hashSeed(`${layer.settings.seed}:${chunk.key}`));
+    const area = chunk.width * chunk.height;
+    const proportionalLimit = Math.max(1, Math.ceil(1250000 * area / (canvas.width * canvas.height)));
+    const attempts = Math.min(proportionalLimit, Math.round(area / (footprint * footprint) * layer.settings.density / 100 * smallScaleBoost));
+    for (let iteration = 0; iteration < attempts; iteration++) {
+      if (iteration && iteration % 2500 === 0) await nextFrame();
+      const x = chunk.x + random() * chunk.width, y = chunk.y + random() * chunk.height;
+      const localX = Math.min(chunk.width - 1, Math.floor(x - chunk.x));
+      const localY = Math.min(chunk.height - 1, Math.floor(y - chunk.y));
+      const pixel = (localY * chunk.width + localX) * 4;
+      const alpha = chunk.pixels.data[pixel + 3] / 255;
+      const darkness = 1 - (chunk.pixels.data[pixel] + chunk.pixels.data[pixel + 1] + chunk.pixels.data[pixel + 2]) / 765;
+      if (alpha * darkness <= 0 || random() > alpha * darkness) continue;
+      const assetIndex = Math.floor(random() * layer.assets.length);
+      added.push({ x, y, assetIndex, asset: layer.assets[assetIndex].image, variation: layer.settings.sizeVariation ? layer.settings.sizeMin + random() * (layer.settings.sizeMax - layer.settings.sizeMin) : 1, rotation: layer.settings.rotation ? random() * Math.PI * 2 : 0, mirrored: layer.settings.mirror && random() > 0.5 });
+    }
+  }
+  layer.placements.push(...added);
+  layer.placements.sort((first, second) => first.y - second.y);
+  redraw();
+  $('#saveState').textContent = `${chunks.length} chunk(s) atualizada(s) • ${added.length} objeto(s) renderizado(s)`;
+}
+
 async function commitMaskEdits() {
   clearTimeout(maskCommitTimer); maskCommitTimer = 0;
   // Yield before canvas reads, region prioritization, and terrain generation so
@@ -2170,13 +2223,8 @@ async function commitMaskEdits() {
       layer.heightDirtyRectangle = dirtyRectangle;
       $('#saveState').textContent = `${captured.length} chunk(s) de altura pendente(s)`;
     } else if (layer.type === 'region') await applyRegionPriority(layer);
-    else if (layer.type === 'terrain' && layer.assets.length) {
-      // Generating thousands of placements here used to block the main thread as
-      // soon as a brush stroke ended. Keep painting responsive and let the
-      // existing Generate fill action perform that explicitly.
-      redraw();
-      $('#saveState').textContent = 'Máscara atualizada • clique em Gerar preenchimento';
-    } else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
+    else if (layer.type === 'terrain' && layer.assets.length) await generateTerrainChunks(layer, captured);
+    else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
   }
   return maskChunkSaveChain;
 }
@@ -2420,6 +2468,8 @@ function createProjectData() {
     terrainBrushRotation: state.terrainBrushRotation,
     terrainBrushRepetition: state.terrainBrushRepetition,
     mapFilter: state.mapFilter,
+    maskChunkSize: state.maskChunkSize,
+    debugChunkGrid: state.debugChunkGrid,
     theme: state.theme,
     maskObjects,
     imageSets: state.imageSets.map((set) => ({ id: set.id, name: set.name, assets: set.assets.map(serializeAsset) })),
@@ -2482,6 +2532,8 @@ $('#projectInput').addEventListener('change', async (event) => {
     setTerrainBrushRotation(project.terrainBrushRotation || 0);
     setBrushRepetition(project.terrainBrushRepetition ?? 100);
     state.mapFilter = ['linear', 'balanced', 'nearest'].includes(project.mapFilter) ? project.mapFilter : 'linear';
+    state.maskChunkSize = [128, 256, 512, 1024, 2048].includes(Number(project.maskChunkSize)) ? Number(project.maskChunkSize) : 512;
+    state.debugChunkGrid = Boolean(project.debugChunkGrid); updateChunkDebugGrid();
     $('#mapFilterSetting').value = state.mapFilter; applyMapFilter();
     state.imageSets = await Promise.all(project.imageSets.map(async (set) => ({
       ...set, assets: await Promise.all(set.assets.map(async (asset) => ({ file: { name: asset.name }, image: await imageFromSource(asset.source), anchorX: asset.anchorX, anchorY: asset.anchorY }))),
@@ -2499,12 +2551,12 @@ $('#projectInput').addEventListener('change', async (event) => {
       if (maskSource || maskObject?.chunks?.length) {
         layer.mask = await canvasFromChunks(maskObject?.chunks, maskSource);
         layer.maskBaseSource = maskSource || null;
-        layer.maskChunks = new Map((maskObject?.chunks || []).map((chunk) => [`${Math.floor(chunk.x / MASK_CHUNK_SIZE)}:${Math.floor(chunk.y / MASK_CHUNK_SIZE)}`, chunk]));
+        layer.maskChunks = new Map((maskObject?.chunks || []).map((chunk, index) => [`saved:${index}:${chunk.x}:${chunk.y}`, chunk]));
       }
       if (heightMapSource || heightMapObject?.chunks?.length) {
         layer.heightMap = await canvasFromChunks(heightMapObject?.chunks, heightMapSource);
         layer.heightMapBaseSource = heightMapSource || null;
-        layer.heightChunks = new Map((heightMapObject?.chunks || []).map((chunk) => [`${Math.floor(chunk.x / MASK_CHUNK_SIZE)}:${Math.floor(chunk.y / MASK_CHUNK_SIZE)}`, chunk]));
+        layer.heightChunks = new Map((heightMapObject?.chunks || []).map((chunk, index) => [`saved:${index}:${chunk.x}:${chunk.y}`, chunk]));
         renderTerrainHeight(layer);
       }
       if (saved.imageSource) layer.image = await imageFromSource(saved.imageSource);
