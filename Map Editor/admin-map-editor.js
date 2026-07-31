@@ -207,8 +207,8 @@ async function saveProjectToHandle(saveAs = false) {
     let handle = saveAs ? null : state.projectFileHandle;
     if (!handle && window.showSaveFilePicker) handle = await window.showSaveFilePicker({ suggestedName: 'projeto-teralium.zip', types: [{ description: 'Projeto Atlasmith', accept: { 'application/zip': ['.zip'] } }] });
     if (!handle) { $('#saveProjectBtn').click(); return; }
-    await flushPendingMaskChunks('Codificando chunks do projeto'); updateTaskProgress('Comprimindo imagens', 35); await nextFrame();
-    const writable = await handle.createWritable(); await writable.write(await createCompressedProjectArchive()); updateTaskProgress('Gravando projeto', 80); await writable.close();
+    await flushPendingMaskChunks('Codificando chunks do projeto'); updateTaskProgress('Preparando dados do projeto', 35); await nextFrame();
+    const writable = await handle.createWritable(); await writable.write(await createProjectArchive()); updateTaskProgress('Gravando projeto', 80); await writable.close();
     state.projectFileHandle = handle; $('#saveState').textContent = 'Projeto salvo';
   } catch (error) { if (error.name !== 'AbortError') window.alert(`Não foi possível salvar: ${error.message}`); }
   finally { hideTaskProgress(); }
@@ -2597,30 +2597,21 @@ async function jpegProjectImage(source, cache) {
   }
   const dataUrl = await blobDataUrl(result); cache.set(source, dataUrl); return dataUrl;
 }
-async function compressProjectImages(project) {
+async function compressGalleryImages(project) {
+  // Only images embedded in description galleries are flattened to JPEG.
+  // Sprite sets, icons, terrain assets, layer images and rendered canvases keep
+  // their original source and transparency.
   const cache = new Map();
-  const compressAssets = async (assets = []) => {
-    for (const asset of assets) {
-      asset.source = await jpegProjectImage(asset.source, cache);
-      asset.name = `${String(asset.name || 'imagem').replace(/\.[^.]+$/, '')}.jpg`;
-    }
-  };
-  for (const set of project.imageSets || []) await compressAssets(set.assets);
-  for (const layer of project.layers || []) {
-    await compressAssets(layer.assets);
-    if (layer.imageSource) layer.imageSource = await jpegProjectImage(layer.imageSource, cache);
-    if (layer.outputSource) layer.outputSource = await jpegProjectImage(layer.outputSource, cache);
-    for (const entity of [layer.object, layer.path]) for (const page of entity?.descriptionPages || []) {
-      for (let index = 0; index < (page.images || []).length; index++) page.images[index] = await jpegProjectImage(page.images[index], cache);
-    }
+  for (const layer of project.layers || []) for (const entity of [layer.object, layer.path]) for (const page of entity?.descriptionPages || []) {
+    for (let index = 0; index < (page.images || []).length; index++) page.images[index] = await jpegProjectImage(page.images[index], cache);
   }
   for (const template of project.descriptionTemplates || []) for (const page of template.pages || []) {
     for (let index = 0; index < (page.images || []).length; index++) page.images[index] = await jpegProjectImage(page.images[index], cache);
   }
   return project;
 }
-async function createCompressedProjectArchive() {
-  const project = await compressProjectImages(createProjectData());
+async function createProjectArchive() {
+  const project = await compressGalleryImages(createProjectData());
   return zipProject([{ name: 'projeto-teralium.json', bytes: JSON.stringify(project) }]);
 }
 
@@ -2683,8 +2674,8 @@ function createProjectData() {
 $('#saveProjectBtn').onclick = async () => {
   showTaskProgress('Salvando projeto', 0);
   try {
-    await flushPendingMaskChunks('Codificando chunks do projeto'); updateTaskProgress('Comprimindo imagens', 40); await nextFrame();
-    const archive = await createCompressedProjectArchive(); updateTaskProgress('Preparando download', 85);
+    await flushPendingMaskChunks('Codificando chunks do projeto'); updateTaskProgress('Preparando dados do projeto', 40); await nextFrame();
+    const archive = await createProjectArchive(); updateTaskProgress('Preparando download', 85);
     downloadFile('projeto-teralium.zip', archive, 'application/zip'); $('#saveState').textContent = 'Projeto salvo';
   } finally { hideTaskProgress(); }
 };
@@ -2935,6 +2926,8 @@ function dataUrlBytes(source) {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
+function dataUrlExtension(source) { const mime = source.match(/^data:image\/([^;,]+)/)?.[1]?.toLowerCase(); return mime === 'jpeg' ? 'jpg' : mime === 'svg+xml' ? 'svg' : mime || 'png'; }
+
 function crc32(bytes) {
   let crc = 0xffffffff;
   for (const byte of bytes) {
@@ -2983,22 +2976,21 @@ $('#exportBtn').onclick = async () => {
   showTaskProgress('Preparando exportação', 0);
   try {
     await flushPendingMaskChunks('Codificando chunks para exportação'); redraw(true, false); await nextFrame();
-    const project = await compressProjectImages(createProjectData());
-    const exportImageCache = new Map();
-    const finalMapJpeg = await jpegProjectImage(canvas.toDataURL('image/png'), exportImageCache);
-    const files = [{ name: 'projeto-teralium.json', bytes: JSON.stringify(project, null, 2) }, { name: 'mapa-render-final.jpg', bytes: dataUrlBytes(finalMapJpeg) }];
+    const project = await compressGalleryImages(createProjectData());
+    const files = [{ name: 'projeto-teralium.json', bytes: JSON.stringify(project, null, 2) }, { name: 'mapa-render-final.png', bytes: dataUrlBytes(canvas.toDataURL('image/png')) }];
     for (let index = 0; index < state.layers.length; index++) {
       const layer = state.layers[index];
       updateTaskProgress('Mesclando chunks das camadas', 10 + (index + 1) / Math.max(1, state.layers.length) * 65);
       if (layer.mask) files.push({ name: `mascaras/${index + 1}-${safeFileName(layer.maskName, layer.name)}.png`, bytes: dataUrlBytes(await drawableDataUrl(layer.mask)) });
       if (layer.heightMap) files.push({ name: `${layer.type === 'ground' ? 'ground-base' : 'alturas'}/${index + 1}-${safeFileName(layer.name, 'terreno')}.png`, bytes: dataUrlBytes(await drawableDataUrl(layer.heightMap)) });
-      if (layer.image) files.push({ name: `assets/camadas/${index + 1}-${safeFileName(layer.name, 'imagem')}.jpg`, bytes: dataUrlBytes(await jpegProjectImage(await drawableDataUrl(layer.image), exportImageCache)) });
-      for (let assetIndex = 0; assetIndex < layer.assets.length; assetIndex++) files.push({ name: `assets/camadas/${index + 1}/${assetIndex + 1}-${safeFileName(layer.assets[assetIndex].file.name.replace(/\.[^.]+$/, ''), 'asset')}.jpg`, bytes: dataUrlBytes(await jpegProjectImage(await portableAssetSource(layer.assets[assetIndex]), exportImageCache)) });
+      if (layer.image) { const source = await drawableDataUrl(layer.image); files.push({ name: `assets/camadas/${index + 1}-${safeFileName(layer.name, 'imagem')}.${dataUrlExtension(source)}`, bytes: dataUrlBytes(source) }); }
+      for (let assetIndex = 0; assetIndex < layer.assets.length; assetIndex++) { const source = await portableAssetSource(layer.assets[assetIndex]); files.push({ name: `assets/camadas/${index + 1}/${assetIndex + 1}-${safeFileName(layer.assets[assetIndex].file.name, 'asset')}`, bytes: dataUrlBytes(source) }); }
       await nextFrame();
     }
     for (let setIndex = 0; setIndex < state.imageSets.length; setIndex++) for (let assetIndex = 0; assetIndex < state.imageSets[setIndex].assets.length; assetIndex++) {
       const asset = state.imageSets[setIndex].assets[assetIndex];
-      files.push({ name: `assets/biblioteca/${setIndex + 1}-${safeFileName(state.imageSets[setIndex].name, 'conjunto')}/${assetIndex + 1}-${safeFileName(asset.file.name.replace(/\.[^.]+$/, ''), 'asset')}.jpg`, bytes: dataUrlBytes(await jpegProjectImage(await portableAssetSource(asset), exportImageCache)) });
+      const source = await portableAssetSource(asset);
+      files.push({ name: `assets/biblioteca/${setIndex + 1}-${safeFileName(state.imageSets[setIndex].name, 'conjunto')}/${assetIndex + 1}-${safeFileName(asset.file.name, 'asset')}`, bytes: dataUrlBytes(source) });
     }
     updateTaskProgress('Compactando projeto', 85); await nextFrame();
     downloadFile('projeto-teralium.zip', zipProject(files), 'application/zip'); updateTaskProgress('Projeto exportado', 100);
