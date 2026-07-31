@@ -2170,8 +2170,13 @@ async function commitMaskEdits() {
       layer.heightDirtyRectangle = dirtyRectangle;
       $('#saveState').textContent = `${captured.length} chunk(s) de altura pendente(s)`;
     } else if (layer.type === 'region') await applyRegionPriority(layer);
-    else if (layer.type === 'terrain' && layer.assets.length) await generate(layer);
-    else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
+    else if (layer.type === 'terrain' && layer.assets.length) {
+      // Generating thousands of placements here used to block the main thread as
+      // soon as a brush stroke ended. Keep painting responsive and let the
+      // existing Generate fill action perform that explicitly.
+      redraw();
+      $('#saveState').textContent = 'Máscara atualizada • clique em Gerar preenchimento';
+    } else { redraw(); $('#saveState').textContent = 'Máscara atualizada automaticamente'; }
   }
   return maskChunkSaveChain;
 }
