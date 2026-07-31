@@ -44,6 +44,7 @@
       <button data-layer-type="ground"><span>▰</span><b>Ground / base</b></button>
       <button data-layer-type="image"><span>▧</span><b>Imagem</b></button>
       <button data-layer-type="object"><span>⌖</span><b>Objeto</b></button>
+      <button data-layer-type="decoration"><span>✦</span><b>Decoração</b></button>
       <button data-layer-type="region"><span>◒</span><b>Região</b></button>
       <button data-layer-type="path"><span>〰</span><b>Caminhos</b></button>
       <button data-layer-type="folder"><span>▰</span><b>Folder</b></button>
@@ -164,6 +165,17 @@
         <small id="objectPosition">Ainda não posicionado</small>
       </div>
     </section>
+    <section class="decoration-control decoration-inspector" hidden>
+      <div class="section-title"><b>Sprites do projeto</b><span id="decorationSelectionCount">0 selecionados</span></div>
+      <p class="decoration-help">Clique para selecionar. Segure Ctrl para selecionar vários sprites e sortear entre eles.</p>
+      <div id="decorationSpriteGrid" class="decoration-sprite-grid"></div>
+      <div class="decoration-settings">
+        <label>SIZE <input id="decorationSizeValue" class="value-input" type="number" min="0.05" max="10" step="0.05" value="1"><input id="decorationSize" type="range" min="0.05" max="10" step="0.05" value="1"></label>
+        <label class="check-row"><input id="decorationSizeVariation" type="checkbox"> Size variation</label>
+        <label class="check-row"><input id="decorationRandomRotation" type="checkbox"> Random rotation</label>
+        <label class="check-row"><input id="decorationRandomMirror" type="checkbox"> Random mirror</label>
+      </div>
+    </section>
     <section class="region-control" hidden>
       <div class="object-form">
         <label>Nome da região<input id="regionName" placeholder="Ex.: Reino do Norte"></label>
@@ -221,6 +233,7 @@
     <button data-action="rename">Renomear</button>
     <button data-action="toggle">Ocultar</button>
     <button data-action="duplicate">Duplicar camada</button>
+    <button data-action="folderize">Adicionar a nova pasta</button>
     <button data-action="delete" class="danger">Excluir camada</button>
   </div>
   <div id="interfaceSettingsModal" class="modal-backdrop" hidden>

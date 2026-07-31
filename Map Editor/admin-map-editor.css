@@ -341,3 +341,11 @@ html:not([data-theme='atlasmith']) .asset-modal { border-radius: var(--ui-radius
 .layer-card.drag-over[data-drop-position='before'] { box-shadow: inset 0 3px var(--accent); }
 .layer-card.drag-over[data-drop-position='after'] { box-shadow: inset 0 -3px var(--accent); }
 .folder-children .folder-layer { margin-left: 4px; }
+.poi-type-item { grid-template-columns: minmax(0,1fr) 48px 64px 32px; }
+.decoration-inspector { display:flex; flex-direction:column; min-height:calc(100vh - 84px); padding-bottom:145px!important; }
+.decoration-help { color:var(--muted); font-size:11px; line-height:1.4; }
+.decoration-sprite-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; overflow-y:auto; }
+.decoration-sprite { aspect-ratio:1; padding:5px; border:1px solid var(--line); border-radius:7px; background:var(--surface-deep); cursor:pointer; }
+.decoration-sprite img { width:100%; height:100%; object-fit:contain; }
+.decoration-sprite.selected { border-color:var(--accent); box-shadow:inset 0 0 0 2px var(--accent); }
+.decoration-settings { position:fixed; z-index:13; right:0; bottom:0; width:var(--right); display:grid; gap:8px; padding:13px 20px; border-top:1px solid var(--line); background:var(--panel); }
