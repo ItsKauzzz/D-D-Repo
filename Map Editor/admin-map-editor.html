@@ -241,6 +241,7 @@
         <label>Filtro de imagens <select id="mapFilterSetting"><option value="linear">Linear</option><option value="balanced">Intermediário</option><option value="nearest">Mais próximo (pixel)</option></select></label>
         <label>Tamanho das chunks <select id="maskChunkSizeSetting"><option value="128">128 px</option><option value="256">256 px</option><option value="512">512 px</option><option value="1024">1024 px</option><option value="2048">2048 px</option></select></label>
         <label class="check-row"><input id="debugChunkGridSetting" type="checkbox"> Debug: mostrar grid das chunks</label>
+        <label class="check-row"><input id="objectsAlwaysOnTopSetting" type="checkbox"> Objetos sempre no topo</label>
         <button id="applyMapSettings" type="button" class="position-object">Aplicar tamanho</button>
       </fieldset>
       <label class="project-scale-setting">Escala do mapa <span><b>100px</b> equivalem a <input id="distanceScaleKm" type="number" min="0.01" step="1" value="100"> km</span></label>
@@ -268,7 +269,7 @@
     <div class="settings-modal lore-export-modal" role="dialog" aria-modal="true" aria-labelledby="exportLoreTitle">
       <div class="modal-head"><div><p class="panel-label">LORE</p><h2 id="exportLoreTitle">Exportar Lore em PDF</h2></div><button id="closeExportLore" aria-label="Fechar">×</button></div>
       <p class="modal-copy">Escolha o conteúdo, a ordem e a aparência do documento.</p>
-      <fieldset class="speed-settings"><legend>Ordem do conteúdo</legend><div id="loreSectionOrder" class="lore-section-order"></div></fieldset>
+      <fieldset class="speed-settings"><legend>Ordem do conteúdo</legend><div id="loreSectionOrder" class="lore-section-order"></div><label class="check-row"><input id="loreIgnoreBlankLayers" type="checkbox"> Ignorar camadas em branco</label></fieldset>
       <fieldset class="speed-settings"><legend>Tipografia</legend>
         <label>Fonte dos títulos <select id="loreTitleFont"><option value="Georgia, serif">Georgia</option><option value="Arial, sans-serif">Arial</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option><option value="'Courier New', monospace">Courier</option></select></label>
         <label>Fonte do texto <select id="loreBodyFont"><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option><option value="'Courier New', monospace">Courier</option></select></label>
