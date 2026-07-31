@@ -263,7 +263,7 @@ function createLayer(type = 'terrain') {
     assets: [],
     selectedAssetIndex: 0,
     image: null,
-    decoration: type === 'decoration' ? { selectedAssetIds: [], size: 1, sizeVariation: false, randomRotation: false, randomMirror: false, placements: [], preview: null } : null,
+    decoration: type === 'decoration' ? { selectedAssetIds: [], size: 1, sizeVariation: false, sizeMin: .8, sizeMax: 1.2, randomRotation: false, randomMirror: false, eraseSize: 80, tool: 'place', placements: [], preview: null } : null,
     object: type === 'object' ? { name: '', type: 'vila', iconSetId: '', selectedIconIndex: 0, gallerySetId: '', description: '', detailedTemplateId: '', descriptionPages: [], poi: true, x: null, y: null, scale: 1, opacity: 1, offsetX: 0, offsetY: 0, anchorX: 0.5, anchorY: 1 } : null,
     region: type === 'region' ? { group: 'Regiões', presetId: 'regions', name: `Região ${number}`, color: '#6fa86b', fillMode: 'fill', outlineThickness: 3, outlineDashed: false, outlineGap: 12, defaultOverview: false, drawnAt: 0 } : null,
     path: type === 'path' ? { name: `Caminho ${number}`, description: '', descriptionPages: [], gallerySetId: '', showOnMap: true, presetId: 'road', points: [], distance: 0 } : null,
@@ -638,6 +638,16 @@ function projectSpriteEntries() {
   return state.imageSets.flatMap((set) => set.assets.map((asset, index) => ({ id: `${set.id}:${index}`, set, asset })));
 }
 function decorationAsset(assetId) { return projectSpriteEntries().find((entry) => entry.id === assetId)?.asset || null; }
+function decorationPreview(layer, point) {
+  const decoration = layer.decoration, choices = decoration.selectedAssetIds || []; if (!choices.length) return null;
+  const minimum = Math.min(decoration.sizeMin ?? .8, decoration.sizeMax ?? 1.2), maximum = Math.max(decoration.sizeMin ?? .8, decoration.sizeMax ?? 1.2);
+  return { assetId: choices[Math.floor(Math.random() * choices.length)], x: point.x, y: point.y, size: decoration.size * (decoration.sizeVariation ? minimum + Math.random() * (maximum - minimum) : 1), rotation: decoration.randomRotation ? Math.random() * Math.PI * 2 : 0, mirrored: decoration.randomMirror && Math.random() > .5 };
+}
+function eraseDecorations(layer, point) {
+  const radius = (layer.decoration.eraseSize || 80) / 2, before = layer.decoration.placements.length;
+  layer.decoration.placements = layer.decoration.placements.filter((placement) => Math.hypot(placement.x - point.x, placement.y - point.y) > radius);
+  return before !== layer.decoration.placements.length;
+}
 function drawDecorationPlacement(layer, placement, context = ctx, alpha = 1) {
   const asset = decorationAsset(placement.assetId); if (!asset?.image) return;
   const size = 48 * (placement.size || 1), ratio = (asset.image.naturalWidth || 48) / (asset.image.naturalHeight || 48), width = size * ratio;
@@ -655,6 +665,8 @@ function renderDecorationInspector(layer) {
   }
   $('#decorationSelectionCount').textContent = `${selected.size} selecionado(s)`;
   $('#decorationSize').value = $('#decorationSizeValue').value = layer.decoration.size || 1;
+  $('#decorationSizeMin').value = layer.decoration.sizeMin ?? .8; $('#decorationSizeMax').value = layer.decoration.sizeMax ?? 1.2; $('#decorationSizeRangeValue').value = `${layer.decoration.sizeMin ?? .8}×–${layer.decoration.sizeMax ?? 1.2}×`; $('#decorationSizeVariationFields').hidden = !layer.decoration.sizeVariation;
+  $('#decorationEraserSize').value = $('#decorationEraserSizeValue').value = layer.decoration.eraseSize || 80; $('#decorationEraserSizeField').hidden = layer.decoration.tool !== 'eraser'; document.querySelectorAll('[data-decoration-tool]').forEach((button) => button.classList.toggle('active', button.dataset.decorationTool === layer.decoration.tool));
   $('#decorationSizeVariation').checked = Boolean(layer.decoration.sizeVariation); $('#decorationRandomRotation').checked = Boolean(layer.decoration.randomRotation); $('#decorationRandomMirror').checked = Boolean(layer.decoration.randomMirror);
 }
 function renderTerrainAnchorPreview(layer) {
@@ -1338,9 +1350,12 @@ async function generate(layer = selectedLayer()) {
 }
 
 for (const id of ['decorationSize', 'decorationSizeValue']) $(`#${id}`).addEventListener(id === 'decorationSize' ? 'input' : 'change', (event) => {
-  const layer = selectedLayer(); if (layer?.type !== 'decoration') return; layer.decoration.size = Math.max(.05, Math.min(10, Number(event.target.value) || 1)); $('#decorationSize').value = $('#decorationSizeValue').value = layer.decoration.size; redraw();
+  const layer = selectedLayer(); if (layer?.type !== 'decoration') return; layer.decoration.size = Math.max(.05, Math.min(10, Number(event.target.value) || 1)); $('#decorationSize').value = $('#decorationSizeValue').value = layer.decoration.size; if (layer.decoration.preview) layer.decoration.preview.size = layer.decoration.size; redraw();
 });
-for (const [id, property] of [['decorationSizeVariation','sizeVariation'],['decorationRandomRotation','randomRotation'],['decorationRandomMirror','randomMirror']]) $(`#${id}`).addEventListener('change', (event) => { const layer = selectedLayer(); if (layer?.type === 'decoration') layer.decoration[property] = event.target.checked; });
+for (const [id, property] of [['decorationSizeMin','sizeMin'],['decorationSizeMax','sizeMax']]) $(`#${id}`).addEventListener('input', (event) => { const layer = selectedLayer(); if (layer?.type !== 'decoration') return; layer.decoration[property] = Number(event.target.value); $('#decorationSizeRangeValue').value = `${Math.min(layer.decoration.sizeMin, layer.decoration.sizeMax)}×–${Math.max(layer.decoration.sizeMin, layer.decoration.sizeMax)}×`; });
+for (const id of ['decorationEraserSize','decorationEraserSizeValue']) $(`#${id}`).addEventListener(id === 'decorationEraserSize' ? 'input' : 'change', (event) => { const layer = selectedLayer(); if (layer?.type !== 'decoration') return; layer.decoration.eraseSize = Math.max(5, Math.min(500, Number(event.target.value) || 80)); $('#decorationEraserSize').value = $('#decorationEraserSizeValue').value = layer.decoration.eraseSize; });
+for (const [id, property] of [['decorationSizeVariation','sizeVariation'],['decorationRandomRotation','randomRotation'],['decorationRandomMirror','randomMirror']]) $(`#${id}`).addEventListener('change', (event) => { const layer = selectedLayer(); if (layer?.type !== 'decoration') return; layer.decoration[property] = event.target.checked; renderDecorationInspector(layer); });
+document.querySelectorAll('[data-decoration-tool]').forEach((button) => button.onclick = () => { const layer = selectedLayer(); if (layer?.type !== 'decoration') return; layer.decoration.tool = button.dataset.decorationTool; layer.decoration.preview = null; brushCursor.style.display = 'none'; renderDecorationInspector(layer); redraw(); });
 
 $('#addLayer').onclick = () => {
   const menu = $('#addLayerMenu');
@@ -2836,13 +2851,18 @@ document.querySelectorAll('[data-map-tool]').forEach((button) => {
 });
 viewport.dataset.mapTool = state.activeMapTool;
 
+document.addEventListener('keydown', (event) => {
+  if (event.code !== 'Space' || event.repeat || isTypingTarget(event.target)) return;
+  const layer = selectedLayer(); if (layer?.type !== 'decoration' || layer.decoration.tool === 'eraser' || !layer.decoration.preview) return;
+  event.preventDefault(); layer.decoration.preview = decorationPreview(layer, { x: layer.decoration.preview.x, y: layer.decoration.preview.y }); redraw();
+});
+
 viewport.addEventListener('pointerdown', (event) => {
   const decorationLayer = selectedLayer();
-  if (decorationLayer?.type === 'decoration' && event.button === 0 && decorationLayer.decoration.selectedAssetIds.length) {
-    const point = editorWorldPoint(event), choices = decorationLayer.decoration.selectedAssetIds, assetId = choices[Math.floor(Math.random() * choices.length)];
-    const variation = decorationLayer.decoration.sizeVariation ? .8 + Math.random() * .4 : 1;
-    decorationLayer.decoration.placements.push({ assetId, x: point.x, y: point.y, size: decorationLayer.decoration.size * variation, rotation: decorationLayer.decoration.randomRotation ? Math.random() * Math.PI * 2 : 0, mirrored: decorationLayer.decoration.randomMirror && Math.random() > .5 });
-    decorationLayer.decoration.preview = null; redraw(); return;
+  if (decorationLayer?.type === 'decoration' && event.button === 0) {
+    const point = editorWorldPoint(event);
+    if (decorationLayer.decoration.tool === 'eraser') { eraseDecorations(decorationLayer, point); redraw(); return; }
+    if (decorationLayer.decoration.selectedAssetIds.length) { const placement = decorationLayer.decoration.preview || decorationPreview(decorationLayer, point); placement.x = point.x; placement.y = point.y; decorationLayer.decoration.placements.push(placement); decorationLayer.decoration.preview = decorationPreview(decorationLayer, point); redraw(); return; }
   }
   if (state.drawingPath && selectedLayer()?.type === 'path' && event.button === 0) {
     const rectangle = viewport.getBoundingClientRect();
@@ -2878,8 +2898,11 @@ viewport.addEventListener('pointerdown', (event) => {
 });
 viewport.addEventListener('pointermove', (event) => {
   const decorationLayer = selectedLayer();
-  if (decorationLayer?.type === 'decoration' && decorationLayer.decoration.selectedAssetIds.length && !state.drag && !state.movingLayer) {
-    const point = editorWorldPoint(event); decorationLayer.decoration.preview = { assetId: decorationLayer.decoration.selectedAssetIds[0], x: point.x, y: point.y, size: decorationLayer.decoration.size, rotation: 0, mirrored: false }; redraw(); return;
+  if (decorationLayer?.type === 'decoration' && !state.drag && !state.movingLayer) {
+    const point = editorWorldPoint(event);
+    if (decorationLayer.decoration.tool === 'eraser') { decorationLayer.decoration.preview = null; brushCursor.style.left = `${point.x}px`; brushCursor.style.top = `${point.y}px`; brushCursor.style.width = brushCursor.style.height = `${decorationLayer.decoration.eraseSize || 80}px`; brushCursor.style.display = 'block'; if (event.buttons & 1) eraseDecorations(decorationLayer, point); redraw(); return; }
+    brushCursor.style.display = 'none';
+    if (decorationLayer.decoration.selectedAssetIds.length) { const previous = decorationLayer.decoration.preview; decorationLayer.decoration.preview = previous ? { ...previous, x: point.x, y: point.y } : decorationPreview(decorationLayer, point); redraw(); return; }
   }
   if (state.movingLayer) {
     const layer = selectedLayer();
@@ -2893,11 +2916,13 @@ viewport.addEventListener('pointermove', (event) => {
   state.lastX = event.clientX; state.lastY = event.clientY;
   updateTransform();
 });
-viewport.addEventListener('pointerleave', () => { const layer = selectedLayer(); if (layer?.type === 'decoration' && layer.decoration.preview) { layer.decoration.preview = null; redraw(); } });
+viewport.addEventListener('pointerleave', () => { brushCursor.style.display = 'none'; const layer = selectedLayer(); if (layer?.type === 'decoration' && layer.decoration.preview) { layer.decoration.preview = null; redraw(); } });
 viewport.addEventListener('pointerup', () => { state.drag = false; state.movingLayer = false; viewport.classList.remove('dragging', 'moving-layer'); });
 viewport.addEventListener('pointercancel', () => { state.drag = false; state.movingLayer = false; viewport.classList.remove('dragging', 'moving-layer'); });
 viewport.addEventListener('wheel', (event) => {
   event.preventDefault();
+  const decorationLayer = selectedLayer();
+  if (decorationLayer?.type === 'decoration' && maskShortcutKeys.has('f')) { const amount = event.deltaY < 0 ? .05 : -.05; decorationLayer.decoration.size = Math.max(.05, Math.min(10, Math.round((decorationLayer.decoration.size + amount) * 20) / 20)); $('#decorationSize').value = $('#decorationSizeValue').value = decorationLayer.decoration.size; if (decorationLayer.decoration.preview) decorationLayer.decoration.preview = decorationPreview(decorationLayer, { x: decorationLayer.decoration.preview.x, y: decorationLayer.decoration.preview.y }); redraw(); return; }
   const rectangle = viewport.getBoundingClientRect();
   const mouseX = event.clientX - rectangle.left;
   const mouseY = event.clientY - rectangle.top;

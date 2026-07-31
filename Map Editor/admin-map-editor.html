@@ -172,6 +172,13 @@
       <div class="decoration-settings">
         <label>SIZE <input id="decorationSizeValue" class="value-input" type="number" min="0.05" max="10" step="0.05" value="1"><input id="decorationSize" type="range" min="0.05" max="10" step="0.05" value="1"></label>
         <label class="check-row"><input id="decorationSizeVariation" type="checkbox"> Size variation</label>
+        <div id="decorationSizeVariationFields" class="range-field">
+          <div><span>Intervalo</span><output id="decorationSizeRangeValue">0.8×–1.2×</output></div>
+          <label><small>Mín.</small><input id="decorationSizeMin" type="range" min="0.05" max="10" step="0.05" value="0.8"></label>
+          <label><small>Máx.</small><input id="decorationSizeMax" type="range" min="0.05" max="10" step="0.05" value="1.2"></label>
+        </div>
+        <div class="decoration-tools"><button type="button" data-decoration-tool="place" class="active">✦ Colocar</button><button type="button" data-decoration-tool="eraser">⌫ Borracha</button></div>
+        <label id="decorationEraserSizeField" hidden>Brush da borracha <input id="decorationEraserSizeValue" class="value-input" type="number" min="5" max="500" value="80"><input id="decorationEraserSize" type="range" min="5" max="500" value="80"></label>
         <label class="check-row"><input id="decorationRandomRotation" type="checkbox"> Random rotation</label>
         <label class="check-row"><input id="decorationRandomMirror" type="checkbox"> Random mirror</label>
       </div>
