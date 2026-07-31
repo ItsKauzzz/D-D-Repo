@@ -314,3 +314,13 @@ html:not([data-theme='atlasmith']) textarea,
 html:not([data-theme='atlasmith']) .layer-card,
 html:not([data-theme='atlasmith']) .settings-modal,
 html:not([data-theme='atlasmith']) .asset-modal { border-radius: var(--ui-radius); }
+.object-thumbnails img { cursor: pointer; }
+.object-thumbnails img.selected { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Sprite navigation keeps the anchor preview usable without targeting tiny thumbnails. */
+.sprite-preview-navigation { display: grid; grid-template-columns: 26px minmax(0, 1fr) 26px; gap: 6px; align-items: center; }
+.object-anchor-field .sprite-preview-nav { width: 26px; height: 44px; aspect-ratio: auto; overflow: visible; padding: 0; border-radius: 7px; color: var(--accent); font-size: 24px; cursor: pointer; }
+.asset button { right: 1px; top: 1px; width: 13px; height: 13px; font-size: 10px; line-height: 13px; }
+
+/* Modal close actions float outside scrollable modal content and remain reachable. */
+.modal-head > button { position: fixed; z-index: 110; top: 14px; right: 14px; display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface-deep); box-shadow: 0 5px 20px #000a; color: var(--text); line-height: 1; }
+.modal-head > button:hover { border-color: var(--accent); color: var(--accent); }
