@@ -333,3 +333,7 @@ html:not([data-theme='atlasmith']) .asset-modal { border-radius: var(--ui-radius
 .folder-layer { min-width: 0; max-width: 100%; background: color-mix(in srgb, var(--panel) 72%, var(--bg)); border-color: var(--line); }
 .folder-layer > .layer-card { background: var(--surface); }
 .folder-layer > .layer-card .layer-icon { background: color-mix(in srgb, var(--accent) 24%, var(--surface-deep)); color: var(--accent); }
+.lore-export-modal { width: min(560px, 100%); }
+.lore-section-order { display: grid; gap: 6px; }
+.lore-section-row { display: grid; grid-template-columns: auto minmax(0, 1fr) 30px 30px; gap: 6px; align-items: center; padding: 7px; border: 1px solid var(--line); border-radius: var(--ui-radius); background: var(--surface-deep); }
+.lore-section-row button { width: 30px; height: 28px; padding: 0; border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; }

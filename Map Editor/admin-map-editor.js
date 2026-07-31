@@ -184,6 +184,7 @@ $('#menuImportSets').onclick = () => { closeAppMenus(); $('#setPackageInput').cl
 $('#menuExportSets').onclick = () => { closeAppMenus(); openExportSetsModal(); };
 $('#menuExportProject').onclick = () => { closeAppMenus(); $('#exportBtn').click(); };
 $('#menuExportMap').onclick = () => { closeAppMenus(); $('#exportMapBtn').click(); };
+$('#menuExportLore').onclick = () => { closeAppMenus(); openExportLoreModal(); };
 $('#menuExportPng').onclick = async () => {
   closeAppMenus(); showTaskProgress('Mesclando chunks e exportando PNG', 0);
   try { redraw(true, false); await nextFrame(); updateTaskProgress('Codificando PNG final', 55); downloadFile('mapa-render-final.png', await canvasChunkBlob(canvas), 'image/png'); updateTaskProgress('PNG exportado', 100); }
@@ -2831,6 +2832,71 @@ $('#exportBtn').onclick = async () => {
     $('#saveState').textContent = 'Projeto exportado';
   } finally { redraw(); hideTaskProgress(); }
 };
+const loreSectionLabels = { objects: 'Objetos', regions: 'Regiões', paths: 'Caminhos', layers: 'Outras camadas' };
+let loreSectionOrder = ['objects', 'regions', 'paths', 'layers'];
+const loreSectionEnabled = new Set(loreSectionOrder);
+
+function loreThemeColors() {
+  if (state.theme === 'light') return { background: '#ffffff', title: '#38551f', text: '#20261f' };
+  if (state.theme === 'wine') return { background: '#271719', title: '#d2a84e', text: '#f5e9df' };
+  if (state.theme === 'earth') return { background: '#242018', title: '#91b36b', text: '#eee8d7' };
+  return { background: '#303330', title: '#b7df72', text: '#edf0ed' };
+}
+
+function renderLoreSectionOrder() {
+  const container = $('#loreSectionOrder');
+  container.replaceChildren(...loreSectionOrder.map((section, index) => {
+    const row = document.createElement('div'); row.className = 'lore-section-row';
+    const enabled = document.createElement('input'); enabled.type = 'checkbox'; enabled.checked = loreSectionEnabled.has(section);
+    enabled.onchange = () => enabled.checked ? loreSectionEnabled.add(section) : loreSectionEnabled.delete(section);
+    const label = document.createElement('span'); label.textContent = loreSectionLabels[section];
+    const up = document.createElement('button'); up.type = 'button'; up.textContent = '↑'; up.title = 'Mover para cima'; up.disabled = index === 0;
+    const down = document.createElement('button'); down.type = 'button'; down.textContent = '↓'; down.title = 'Mover para baixo'; down.disabled = index === loreSectionOrder.length - 1;
+    up.onclick = () => { [loreSectionOrder[index - 1], loreSectionOrder[index]] = [section, loreSectionOrder[index - 1]]; renderLoreSectionOrder(); };
+    down.onclick = () => { [loreSectionOrder[index], loreSectionOrder[index + 1]] = [loreSectionOrder[index + 1], section]; renderLoreSectionOrder(); };
+    row.append(enabled, label, up, down); return row;
+  }));
+}
+
+function openExportLoreModal() {
+  const colors = loreThemeColors();
+  $('#loreBackgroundColor').value = colors.background; $('#loreTitleColor').value = colors.title; $('#loreTextColor').value = colors.text;
+  renderLoreSectionOrder(); $('#exportLoreModal').hidden = false;
+}
+$('#closeExportLore').onclick = () => { $('#exportLoreModal').hidden = true; };
+$('#exportLoreModal').addEventListener('click', (event) => { if (event.target === $('#exportLoreModal')) $('#exportLoreModal').hidden = true; });
+
+function escapeLoreHtml(value) {
+  const element = document.createElement('div'); element.textContent = String(value ?? ''); return element.innerHTML;
+}
+function loreEntry(name, description = '', pages = []) {
+  const simple = String(description || '').trim();
+  const pageHtml = (pages || []).map((page) => `<section class="lore-page"><h3>${escapeLoreHtml(page.title || 'Página')}</h3>${sanitizeDescriptionHtml(page.content || '<p>Sem descrição.</p>')}</section>`).join('');
+  return `<article class="entry"><h2>${escapeLoreHtml(name || 'Sem nome')}</h2>${simple ? `<p>${escapeLoreHtml(simple)}</p>` : ''}${pageHtml}</article>`;
+}
+function loreSectionHtml(section) {
+  let entries = [];
+  if (section === 'objects') entries = state.layers.filter((layer) => layer.type === 'object').map((layer) => loreEntry(layer.object?.name || layer.name, layer.object?.description, layer.object?.descriptionPages));
+  if (section === 'regions') entries = state.layers.filter((layer) => layer.type === 'region').map((layer) => loreEntry(layer.region?.name || layer.name, layer.region?.description));
+  if (section === 'paths') entries = state.layers.filter((layer) => layer.type === 'path').map((layer) => loreEntry(layer.path?.name || layer.name, layer.path?.description));
+  if (section === 'layers') entries = state.layers.filter((layer) => !['object', 'region', 'path'].includes(layer.type)).map((layer) => loreEntry(layer.name, layer.description));
+  return entries.length ? `<section class="chapter"><h1>${loreSectionLabels[section]}</h1>${entries.join('')}</section>` : '';
+}
+function createLoreHtml() {
+  const titleFont = $('#loreTitleFont').value, bodyFont = $('#loreBodyFont').value;
+  const titleSize = Math.max(12, Math.min(48, Number($('#loreTitleSize').value) || 26));
+  const bodySize = Math.max(8, Math.min(24, Number($('#loreBodySize').value) || 11));
+  const background = $('#loreBackgroundColor').value, titleColor = $('#loreTitleColor').value, textColor = $('#loreTextColor').value;
+  const contents = loreSectionOrder.filter((section) => loreSectionEnabled.has(section)).map(loreSectionHtml).join('');
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Atlasmith Lore</title><style>@page{size:A4;margin:18mm}*{box-sizing:border-box}html,body{background:${background};color:${textColor};font:${bodySize}pt ${bodyFont};line-height:1.55;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0;padding:18mm}h1,h2,h3{font-family:${titleFont};color:${titleColor};break-after:avoid}h1{font-size:${titleSize}pt;border-bottom:2px solid ${titleColor};padding-bottom:8px}h2{font-size:${Math.max(12,titleSize*.7)}pt;margin-bottom:6px}h3{font-size:${Math.max(10,titleSize*.52)}pt}.chapter{break-before:page}.chapter:first-child{break-before:auto}.entry{break-inside:avoid;margin:0 0 22px}.entry p{white-space:pre-wrap}.lore-page{margin-left:14px;padding-left:14px;border-left:2px solid ${titleColor}}@media print{body{padding:0}}</style></head><body>${contents || '<p>Nenhum conteúdo selecionado.</p>'}<script>addEventListener('load',()=>setTimeout(()=>print(),150));<\/script></body></html>`;
+}
+$('#confirmExportLore').onclick = () => {
+  const printWindow = window.open('about:blank', '_blank');
+  if (!printWindow) { window.alert('Permita pop-ups para gerar o PDF de Lore.'); return; }
+  printWindow.document.open(); printWindow.document.write(createLoreHtml()); printWindow.document.close();
+  $('#exportLoreModal').hidden = true;
+};
+
 function exportablePois() {
   return state.layers.filter((layer) => layer.visible && layer.type === 'object' && layer.object?.poi && layer.object.x !== null).map((layer) => {
     const object = layer.object;

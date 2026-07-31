@@ -11,7 +11,7 @@
     <a class="home-action" href="admin-tools.html" aria-label="Home">⌂ <span>Home</span></a>
     <div class="app-menu"><button type="button" class="app-menu-trigger">File</button><div class="app-menu-dropdown" hidden>
       <button id="menuOpenProject" type="button">Abrir</button><button id="menuSaveProject" type="button">Salvar</button><button id="menuSaveAsProject" type="button">Salvar como</button>
-      <hr><button id="menuExportPng" type="button">Exportar como PNG</button><button id="menuExportProject" type="button">Exportar projeto completo</button><button id="menuExportMap" type="button">Exportar mapa</button>
+      <hr><button id="menuExportPng" type="button">Exportar como PNG</button><button id="menuExportProject" type="button">Exportar projeto completo</button><button id="menuExportMap" type="button">Exportar mapa</button><button id="menuExportLore" type="button">Export Lore</button>
     </div></div>
     <div class="app-menu"><button type="button" class="app-menu-trigger">Manage</button><div class="app-menu-dropdown" hidden>
       <button id="menuManageMap" type="button">Mapa</button><hr>
@@ -262,6 +262,25 @@
         <label class="check-row"><input id="terrainCoastVariation" type="checkbox" checked> Variação Perlin nos contornos</label>
         <label>Multiplicador da variação <input id="terrainCoastNoiseMultiplier" type="number" min="0" max="3" step="0.1" value="0.6"></label>
       </fieldset></details>
+    </div>
+  </div>
+  <div id="exportLoreModal" class="modal-backdrop" hidden>
+    <div class="settings-modal lore-export-modal" role="dialog" aria-modal="true" aria-labelledby="exportLoreTitle">
+      <div class="modal-head"><div><p class="panel-label">LORE</p><h2 id="exportLoreTitle">Exportar Lore em PDF</h2></div><button id="closeExportLore" aria-label="Fechar">×</button></div>
+      <p class="modal-copy">Escolha o conteúdo, a ordem e a aparência do documento.</p>
+      <fieldset class="speed-settings"><legend>Ordem do conteúdo</legend><div id="loreSectionOrder" class="lore-section-order"></div></fieldset>
+      <fieldset class="speed-settings"><legend>Tipografia</legend>
+        <label>Fonte dos títulos <select id="loreTitleFont"><option value="Georgia, serif">Georgia</option><option value="Arial, sans-serif">Arial</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option><option value="'Courier New', monospace">Courier</option></select></label>
+        <label>Fonte do texto <select id="loreBodyFont"><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option><option value="'Courier New', monospace">Courier</option></select></label>
+        <label>Tamanho dos títulos <span><input id="loreTitleSize" type="number" min="12" max="48" value="26"> pt</span></label>
+        <label>Tamanho do texto <span><input id="loreBodySize" type="number" min="8" max="24" value="11"> pt</span></label>
+      </fieldset>
+      <fieldset class="speed-settings"><legend>Cores</legend>
+        <label>Fundo <input id="loreBackgroundColor" type="color" value="#303330"></label>
+        <label>Títulos <input id="loreTitleColor" type="color" value="#b7df72"></label>
+        <label>Texto <input id="loreTextColor" type="color" value="#edf0ed"></label>
+      </fieldset>
+      <button id="confirmExportLore" type="button" class="position-object">Gerar PDF</button>
     </div>
   </div>
   <div id="objectIconPickerModal" class="modal-backdrop" hidden>
