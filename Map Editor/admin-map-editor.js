@@ -82,69 +82,17 @@ const state = {
   movingLayer: false,
 };
 
-const translations = {
-  'pt-BR': { open: 'Abrir projeto', save: 'Salvar projeto', export: 'Exportar projeto', exportMap: 'Exportar mapa', layers: 'CAMADAS', inspector: 'INSPECTOR', uploadMask: 'Enviar máscara', uploadImage: 'Enviar imagem', createMask: '✦ Criar máscara', editMask: '✦ Editar máscara', generate: 'Gerar preenchimento', rename: 'Renomear', hide: 'Ocultar', show: 'Exibir', delete: 'Excluir camada', ready: 'Pronto', language: 'Language:' },
-  en: { open: 'Open project', save: 'Save project', export: 'Export project', exportMap: 'Export map', layers: 'LAYERS', inspector: 'INSPECTOR', uploadMask: 'Upload mask', uploadImage: 'Upload image', createMask: '✦ Create mask', editMask: '✦ Edit mask', generate: 'Generate fill', rename: 'Rename', hide: 'Hide', show: 'Show', delete: 'Delete layer', ready: 'Ready', language: 'Language:' },
-  ja: { open: 'プロジェクトを開く', save: 'プロジェクトを保存', export: 'プロジェクトを書き出す', exportMap: 'マップを書き出す', layers: 'レイヤー', inspector: 'インスペクター', uploadMask: 'マスクをアップロード', uploadImage: '画像をアップロード', createMask: '✦ マスクを作成', editMask: '✦ マスクを編集', generate: '塗りつぶしを生成', rename: '名前を変更', hide: '非表示', show: '表示', delete: 'レイヤーを削除', ready: '準備完了', language: 'Language:' },
-};
-
-const phraseTranslations = {
-  en: {
-    'CAMADAS': 'LAYERS', 'INSPECTOR': 'INSPECTOR', 'PRÓXIMOS TIPOS': 'COMING SOON', 'Pontos de interesse': 'Points of interest', 'Estradas': 'Roads',
-    'Navegação': 'Navigation', 'Arraste o mapa para mover. Use a roda do mouse para aplicar zoom.': 'Drag the map to pan. Use the mouse wheel to zoom.', 'Seu mapa começa aqui': 'Your map starts here',
-    'Envie uma máscara no inspector para criar a primeira camada.': 'Upload a mask in the inspector to create the first layer.', 'Ajustar': 'Fit', 'Terreno': 'Terrain', 'Imagem': 'Image', 'Objeto': 'Object', 'Região': 'Region',
-    'Preview e ponto âncora do terreno': 'Terrain preview and anchor point', 'Selecione uma imagem do mestre': 'Select a master image', 'Enviar máscara': 'Upload mask', 'PNG com transparência recomendado': 'Transparent PNG recommended',
-    'Nenhuma máscara selecionada': 'No mask selected', '✦ Criar máscara': '✦ Create mask', '✦ Editar máscara': '✦ Edit mask', 'Imagens do mestre': 'Master images', '＋ Adicionar imagens': '＋ Add images',
-    'Adicione árvores, pedras ou qualquer elemento que queira distribuir.': 'Add trees, rocks, or any element you want to distribute.', 'Intensidade': 'Intensity', 'Tamanho geral': 'General size', 'Variação de tamanho': 'Size variation',
-    'Intervalo': 'Range', 'Mín.': 'Min.', 'Máx.': 'Max.', 'Rotação aleatória': 'Random rotation', 'Mirror aleatório': 'Random mirror', 'Slice na máscara': 'Clip to mask', 'Gerar preenchimento': 'Generate fill',
-    'Preview e ponto âncora': 'Preview and anchor point', 'Selecione um ícone': 'Select an icon', 'Nome': 'Name', 'Tipo': 'Type', 'Ícone': 'Icon', 'Selecione um conjunto': 'Select a set', 'Galeria': 'Gallery', 'Sem galeria': 'No gallery',
-    '＋ Gerenciar conjuntos': '＋ Manage sets', 'Descrição': 'Description', 'Criar como ponto de interesse': 'Create as point of interest', 'Opacidade': 'Opacity', '⌖ Posicionar no mapa': '⌖ Position on map', 'Ainda não posicionado': 'Not positioned yet',
-    'Layer / tipo de região': 'Region layer / type', 'Nome da região': 'Region name', 'Cor': 'Color', 'Regiões desenhadas por último removem automaticamente as intersecções das regiões anteriores.': 'Regions drawn last automatically remove intersections from earlier regions.',
-    'A seed mantém o resultado reproduzível.': 'The seed keeps the result reproducible.', 'Arraste a camada para definir sua prioridade.': 'Drag the layer to set its priority.', 'BIBLIOTECA': 'LIBRARY', 'Conjuntos de imagens': 'Image sets',
-    'Reutilize o mesmo conjunto de imagens em diferentes camadas.': 'Reuse the same image set across different layers.', 'Novo conjunto': 'New set', 'Nenhuma imagem selecionada': 'No image selected', 'Criar conjunto': 'Create set',
-    'Renomear': 'Rename', 'Ocultar': 'Hide', 'Exibir': 'Show', 'Excluir camada': 'Delete layer', 'Brush': 'Brush', 'Offset X': 'X offset', 'Offset Y': 'Y offset', 'Seed': 'Seed', 'Selecionar imagens': 'Select images',
-    'Nome do local': 'Location name', 'História, detalhes e informações do local...': 'History, details, and location information...', 'Ex.: Fronteiras políticas': 'E.g. Political borders', 'Ex.: Reino do Norte': 'E.g. Northern Kingdom', 'Ex.: Árvores de pinheiro': 'E.g. Pine trees', 'Âncora': 'Anchor', 'Caminhos': 'Paths', 'Caminho': 'Path', 'Nome do caminho': 'Path name', 'Descrição do caminho...': 'Path description...', 'Mostrar no mapa': 'Show on map', 'Preset visual': 'Visual preset', 'Nome do preset': 'Preset name', 'Stroke': 'Stroke', 'Tracejado / pontilhado': 'Dashed / dotted', 'Espaço do tracejado': 'Dash spacing', 'Salvar como preset': 'Save as preset', 'Excluir preset': 'Delete preset', '〰 Desenhar caminho': '〰 Draw path', 'Distância: 0 km': 'Distance: 0 km', 'Folder': 'Folder', 'PROJETO': 'PROJECT', 'Configurações': 'Settings', 'Escala do mapa': 'Map scale', 'equivalem a': 'equals', 'Nome do tipo de região': 'Region type name', 'Mostrar por padrão no overview': 'Show by default in overview', 'Salvar preset de região': 'Save region preset', 'Preenchimento': 'Rendering', 'Thickness do outline': 'Outline thickness', 'Outline tracejado': 'Dashed outline', 'Velocidades médias': 'Average speeds', 'A pé': 'Walking', 'A cavalo': 'Horseback', 'De navio': 'By ship', 'De aeroplano / balão': 'By airplane / balloon',
-  },
-  ja: {
-    'CAMADAS': 'レイヤー', 'INSPECTOR': 'インスペクター', 'PRÓXIMOS TIPOS': '近日追加', 'Pontos de interesse': '地点', 'Estradas': '道路', 'Navegação': 'ナビゲーション',
-    'Arraste o mapa para mover. Use a roda do mouse para aplicar zoom.': 'ドラッグで移動、マウスホイールでズームします。', 'Seu mapa começa aqui': 'ここからマップを作成', 'Envie uma máscara no inspector para criar a primeira camada.': '最初のレイヤーを作るにはマスクをアップロードしてください。',
-    'Ajustar': '全体表示', 'Terreno': '地形', 'Imagem': '画像', 'Objeto': 'オブジェクト', 'Região': '地域', 'Preview e ponto âncora do terreno': '地形プレビューとアンカー', 'Selecione uma imagem do mestre': 'マスター画像を選択',
-    'Enviar máscara': 'マスクをアップロード', 'PNG com transparência recomendado': '透過PNG推奨', 'Nenhuma máscara selecionada': 'マスク未選択', '✦ Criar máscara': '✦ マスクを作成', '✦ Editar máscara': '✦ マスクを編集',
-    'Imagens do mestre': 'マスター画像', '＋ Adicionar imagens': '＋ 画像を追加', 'Adicione árvores, pedras ou qualquer elemento que queira distribuir.': '配置する木、岩、その他の要素を追加します。', 'Intensidade': '密度', 'Tamanho geral': '全体サイズ',
-    'Variação de tamanho': 'サイズのばらつき', 'Intervalo': '範囲', 'Mín.': '最小', 'Máx.': '最大', 'Rotação aleatória': 'ランダム回転', 'Mirror aleatório': 'ランダム反転', 'Slice na máscara': 'マスクで切り抜く', 'Gerar preenchimento': '配置を生成',
-    'Preview e ponto âncora': 'プレビューとアンカー', 'Selecione um ícone': 'アイコンを選択', 'Nome': '名前', 'Tipo': '種類', 'Ícone': 'アイコン', 'Selecione um conjunto': 'セットを選択', 'Galeria': 'ギャラリー', 'Sem galeria': 'ギャラリーなし',
-    '＋ Gerenciar conjuntos': '＋ セットを管理', 'Descrição': '説明', 'Criar como ponto de interesse': '地点として作成', 'Opacidade': '不透明度', '⌖ Posicionar no mapa': '⌖ マップに配置', 'Ainda não posicionado': '未配置',
-    'Layer / tipo de região': '地域レイヤー / 種類', 'Nome da região': '地域名', 'Cor': '色', 'Regiões desenhadas por último removem automaticamente as intersecções das regiões anteriores.': '後から描いた地域は以前の地域との重なりを自動的に削除します。',
-    'A seed mantém o resultado reproduzível.': 'シードにより結果を再現できます。', 'Arraste a camada para definir sua prioridade.': 'レイヤーをドラッグして優先順位を設定します。', 'BIBLIOTECA': 'ライブラリ', 'Conjuntos de imagens': '画像セット',
-    'Reutilize o mesmo conjunto de imagens em diferentes camadas.': '同じ画像セットを複数のレイヤーで再利用できます。', 'Novo conjunto': '新規セット', 'Nenhuma imagem selecionada': '画像未選択', 'Criar conjunto': 'セットを作成',
-    'Renomear': '名前を変更', 'Ocultar': '非表示', 'Exibir': '表示', 'Excluir camada': 'レイヤーを削除', 'Brush': 'ブラシ', 'Offset X': 'Xオフセット', 'Offset Y': 'Yオフセット', 'Seed': 'シード', 'Selecionar imagens': '画像を選択',
-    'Nome do local': '場所の名前', 'História, detalhes e informações do local...': '場所の歴史、詳細、情報...', 'Ex.: Fronteiras políticas': '例：政治的国境', 'Ex.: Reino do Norte': '例：北の王国', 'Ex.: Árvores de pinheiro': '例：松の木', 'Âncora': 'アンカー', 'Caminhos': '道', 'Caminho': '道', 'Nome do caminho': '道の名前', 'Descrição do caminho...': '道の説明...', 'Mostrar no mapa': 'マップに表示', 'Preset visual': '表示プリセット', 'Nome do preset': 'プリセット名', 'Stroke': '線幅', 'Tracejado / pontilhado': '破線 / 点線', 'Espaço do tracejado': '破線間隔', 'Salvar como preset': 'プリセットとして保存', 'Excluir preset': 'プリセットを削除', '〰 Desenhar caminho': '〰 道を描く', 'Distância: 0 km': '距離: 0 km', 'Folder': 'フォルダー', 'PROJETO': 'プロジェクト', 'Configurações': '設定', 'Escala do mapa': 'マップ縮尺', 'equivalem a': '相当', 'Nome do tipo de região': '地域タイプ名', 'Mostrar por padrão no overview': '概要に既定表示', 'Salvar preset de região': '地域プリセットを保存', 'Preenchimento': '描画方式', 'Thickness do outline': 'アウトライン幅', 'Outline tracejado': '破線アウトライン', 'Velocidades médias': '平均速度', 'A pé': '徒歩', 'A cavalo': '馬', 'De navio': '船', 'De aeroplano / balão': '飛行機 / 気球',
-  },
-};
+const translations = {};
+const phraseTranslations = {};
+const languageFiles = { 'pt-BR': 'lang/lang_pt.json', en: 'lang/lang_eng.json', ja: 'lang/lang_ja.json' };
+async function loadLanguageCatalogs() {
+  await Promise.all(Object.entries(languageFiles).map(async ([language, file]) => {
+    const response = await fetch(file); if (!response.ok) throw new Error(`Não foi possível carregar ${file}`);
+    const catalog = await response.json(); translations[language] = catalog.ui || {}; phraseTranslations[language] = catalog.phrases || {};
+  }));
+}
 
 const originalNodeText = new WeakMap();
-Object.assign(phraseTranslations.en, {
-  File: 'File', Manage: 'Manage', Abrir: 'Open', Salvar: 'Save', 'Salvar como': 'Save as', 'Exportar como PNG': 'Export as PNG', 'Exportar projeto completo': 'Export full project', 'Exportar mapa': 'Export map',
-  'Tipos de objeto': 'Object types', 'Conjuntos de imagens': 'Image sets', Mapa: 'Map', Largura: 'Width', Altura: 'Height', 'Filtro de imagens': 'Image filter', Linear: 'Linear', 'Mais próximo (pixel)': 'Nearest (pixel)', 'Aplicar tamanho': 'Apply size',
-  'Configurações de terreno': 'Terrain settings', 'Cores de altura do terreno': 'Terrain height colors', 'Água rasa': 'Shallow water', 'Água média': 'Medium water', 'Água profunda': 'Deep water', 'Nível da terra': 'Land level', 'Ondas costeiras': 'Coastal waves',
-  'Ground / base': 'Ground / base', 'Terrain sprites': 'Terrain sprites', 'Enviar máscara de ground/base': 'Upload ground/base mask', 'Imagem em preto e branco • branco = água, preto = terra': 'Black and white image • white = water, black = land',
-  'Nenhuma máscara de ground/base': 'No ground/base mask', '▦ Editar ground/base': '▦ Edit ground/base', 'Distribuição padronizada': 'Standardized distribution', 'Pesquisar conjuntos...': 'Search sets...',
-  'Nenhum conjunto encontrado.': 'No sets found.', 'Nenhum conjunto criado ainda.': 'No sets created yet.', 'Usar': 'Use', 'Editar': 'Edit', 'Novo conjunto': 'New set',
-  'Criar uma região com esta máscara': 'Create a region from this mask', 'Região vinculada': 'Linked region', 'Selecione uma região criada': 'Select an existing region', 'Crie uma layer de região primeiro': 'Create a region layer first',
-  'A região vinculada usará a máscara deste terreno no mapa exportado.': 'The linked region will use this terrain mask in the exported map.', 'Intermediário': 'Balanced',
-  Aparência: 'Appearance', Idioma: 'Language', Tema: 'Theme', Claro: 'Light', 'Vinho e dourado': 'Wine and gold', 'Marrom e verde': 'Brown and green',
-});
-Object.assign(phraseTranslations.ja, {
-  File: 'ファイル', Manage: '管理', Abrir: '開く', Salvar: '保存', 'Salvar como': '名前を付けて保存', 'Exportar como PNG': 'PNGとして書き出す', 'Exportar projeto completo': '完全なプロジェクトを書き出す', 'Exportar mapa': 'マップを書き出す',
-  'Tipos de objeto': 'オブジェクトタイプ', 'Conjuntos de imagens': '画像セット', Mapa: 'マップ', Largura: '幅', Altura: '高さ', 'Filtro de imagens': '画像フィルター', Linear: 'リニア', 'Mais próximo (pixel)': '最近傍（ピクセル）', 'Aplicar tamanho': 'サイズを適用',
-  'Configurações de terreno': '地形設定', 'Cores de altura do terreno': '地形高さの色', 'Água rasa': '浅瀬', 'Água média': '中層水', 'Água profunda': '深海', 'Nível da terra': '陸地レベル', 'Ondas costeiras': '沿岸の波',
-  'Ground / base': 'グラウンド / ベース', 'Terrain sprites': '地形スプライト', 'Enviar máscara de ground/base': 'グラウンド / ベースマスクをアップロード', 'Imagem em preto e branco • branco = água, preto = terra': '白黒画像 • 白 = 水、黒 = 陸地',
-  'Nenhuma máscara de ground/base': 'グラウンド / ベースマスクなし', '▦ Editar ground/base': '▦ グラウンド / ベースを編集', 'Distribuição padronizada': '均等配置', 'Pesquisar conjuntos...': 'セットを検索...',
-  'Nenhum conjunto encontrado.': 'セットが見つかりません。', 'Nenhum conjunto criado ainda.': 'セットはまだありません。', 'Usar': '使用', 'Editar': '編集', 'Novo conjunto': '新規セット',
-  'Criar uma região com esta máscara': 'このマスクから地域を作成', 'Região vinculada': 'リンクする地域', 'Selecione uma região criada': '既存の地域を選択', 'Crie uma layer de região primeiro': '先に地域レイヤーを作成してください',
-  'A região vinculada usará a máscara deste terreno no mapa exportado.': 'リンクした地域は、書き出したマップでこの地形マスクを使用します。', 'Intermediário': '中間',
-  Aparência: '外観', Idioma: '言語', Tema: 'テーマ', Claro: 'ライト', 'Vinho e dourado': 'ワインとゴールド', 'Marrom e verde': 'ブラウンとグリーン',
-});
 function translateDocument(root = document.body) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
@@ -162,7 +110,7 @@ function translateDocument(root = document.body) {
   });
 }
 
-function t(key) { return translations[state.language]?.[key] || translations['pt-BR'][key] || key; }
+function t(key) { return translations[state.language]?.[key] || translations['pt-BR']?.[key] || key; }
 
 document.querySelectorAll('.app-menu-trigger').forEach((trigger) => {
   trigger.onclick = (event) => {
@@ -263,7 +211,7 @@ function createLayer(type = 'terrain') {
     assets: [],
     selectedAssetIndex: 0,
     image: null,
-    decoration: type === 'decoration' ? { selectedAssetIds: [], size: 1, sizeVariation: false, sizeMin: .8, sizeMax: 1.2, randomRotation: false, randomMirror: false, eraseSize: 80, tool: 'place', placements: [], preview: null } : null,
+    decoration: type === 'decoration' ? { selectedAssetIds: [], size: 1, sizeVariation: false, sizeMin: .8, sizeMax: 1.2, zOffset: 0, randomRotation: false, randomMirror: false, eraseSize: 80, tool: 'place', placements: [], preview: null } : null,
     object: type === 'object' ? { name: '', type: 'vila', iconSetId: '', selectedIconIndex: 0, gallerySetId: '', description: '', detailedTemplateId: '', descriptionPages: [], poi: true, x: null, y: null, scale: 1, opacity: 1, offsetX: 0, offsetY: 0, anchorX: 0.5, anchorY: 1 } : null,
     region: type === 'region' ? { group: 'Regiões', presetId: 'regions', name: `Região ${number}`, color: '#6fa86b', fillMode: 'fill', outlineThickness: 3, outlineDashed: false, outlineGap: 12, defaultOverview: false, drawnAt: 0 } : null,
     path: type === 'path' ? { name: `Caminho ${number}`, description: '', descriptionPages: [], gallerySetId: '', showOnMap: true, presetId: 'road', points: [], distance: 0 } : null,
@@ -368,7 +316,7 @@ function redraw(includeObjects = true, showSelection = true, includePaths = true
       else if (layer.output.width) depthEntries.push({ y: -Infinity, layerIndex, layer });
     }
     if (layer.type === 'decoration') {
-      (layer.decoration?.placements || []).forEach((placement) => depthEntries.push({ y: placement.y + (layer.settings.layerOffsetY || 0), layerIndex, layer, decoration: placement }));
+      (layer.decoration?.placements || []).forEach((placement) => depthEntries.push({ y: placement.y + (layer.settings.layerOffsetY || 0) + (layer.decoration.zOffset || 0), layerIndex, layer, decoration: placement }));
     }
     if (layer.type === 'object' && layer.object?.x !== null && (includeObjects || !layer.object.poi)) {
       depthEntries.push({ y: layer.object.y + (layer.object.offsetY ?? 0) + (layer.settings.layerOffsetY || 0), layerIndex, layer, object: layer.object });
@@ -665,6 +613,7 @@ function renderDecorationInspector(layer) {
   }
   $('#decorationSelectionCount').textContent = `${selected.size} selecionado(s)`;
   $('#decorationSize').value = $('#decorationSizeValue').value = layer.decoration.size || 1;
+  $('#decorationZOffset').value = layer.decoration.zOffset || 0;
   $('#decorationSizeMin').value = layer.decoration.sizeMin ?? .8; $('#decorationSizeMax').value = layer.decoration.sizeMax ?? 1.2; $('#decorationSizeRangeValue').value = `${layer.decoration.sizeMin ?? .8}×–${layer.decoration.sizeMax ?? 1.2}×`; $('#decorationSizeVariationFields').hidden = !layer.decoration.sizeVariation;
   $('#decorationEraserSize').value = $('#decorationEraserSizeValue').value = layer.decoration.eraseSize || 80; $('#decorationEraserSizeField').hidden = layer.decoration.tool !== 'eraser'; document.querySelectorAll('[data-decoration-tool]').forEach((button) => button.classList.toggle('active', button.dataset.decorationTool === layer.decoration.tool));
   $('#decorationSizeVariation').checked = Boolean(layer.decoration.sizeVariation); $('#decorationRandomRotation').checked = Boolean(layer.decoration.randomRotation); $('#decorationRandomMirror').checked = Boolean(layer.decoration.randomMirror);
@@ -1349,6 +1298,7 @@ async function generate(layer = selectedLayer()) {
   hideTaskProgress();
 }
 
+$('#decorationZOffset').addEventListener('input', (event) => { const layer = selectedLayer(); if (layer?.type === 'decoration') { layer.decoration.zOffset = Math.max(-10000, Math.min(10000, Number(event.target.value) || 0)); redraw(); } });
 for (const id of ['decorationSize', 'decorationSizeValue']) $(`#${id}`).addEventListener(id === 'decorationSize' ? 'input' : 'change', (event) => {
   const layer = selectedLayer(); if (layer?.type !== 'decoration') return; layer.decoration.size = Math.max(.05, Math.min(10, Number(event.target.value) || 1)); $('#decorationSize').value = $('#decorationSizeValue').value = layer.decoration.size; if (layer.decoration.preview) layer.decoration.preview.size = layer.decoration.size; redraw();
 });
@@ -2922,7 +2872,11 @@ viewport.addEventListener('pointercancel', () => { state.drag = false; state.mov
 viewport.addEventListener('wheel', (event) => {
   event.preventDefault();
   const decorationLayer = selectedLayer();
-  if (decorationLayer?.type === 'decoration' && maskShortcutKeys.has('f')) { const amount = event.deltaY < 0 ? .05 : -.05; decorationLayer.decoration.size = Math.max(.05, Math.min(10, Math.round((decorationLayer.decoration.size + amount) * 20) / 20)); $('#decorationSize').value = $('#decorationSizeValue').value = decorationLayer.decoration.size; if (decorationLayer.decoration.preview) decorationLayer.decoration.preview = decorationPreview(decorationLayer, { x: decorationLayer.decoration.preview.x, y: decorationLayer.decoration.preview.y }); redraw(); return; }
+  if (decorationLayer?.type === 'decoration' && maskShortcutKeys.has('f')) {
+    if (decorationLayer.decoration.tool === 'eraser') { decorationLayer.decoration.eraseSize = Math.max(5, Math.min(500, (decorationLayer.decoration.eraseSize || 80) + (event.deltaY < 0 ? 5 : -5))); $('#decorationEraserSize').value = $('#decorationEraserSizeValue').value = decorationLayer.decoration.eraseSize; }
+    else { const amount = event.deltaY < 0 ? .05 : -.05; decorationLayer.decoration.size = Math.max(.05, Math.min(10, Math.round((decorationLayer.decoration.size + amount) * 20) / 20)); $('#decorationSize').value = $('#decorationSizeValue').value = decorationLayer.decoration.size; if (decorationLayer.decoration.preview) decorationLayer.decoration.preview = decorationPreview(decorationLayer, { x: decorationLayer.decoration.preview.x, y: decorationLayer.decoration.preview.y }); }
+    redraw(); return;
+  }
   const rectangle = viewport.getBoundingClientRect();
   const mouseX = event.clientX - rectangle.left;
   const mouseY = event.clientY - rectangle.top;
@@ -3211,13 +3165,10 @@ window.addEventListener('resize', () => { if (selectedLayer()?.mask) fit(); });
 $('#languageSelect').addEventListener('change', (event) => applyLanguage(event.target.value));
 $('#themeSetting').addEventListener('change', (event) => applyTheme(event.target.value));
 
-const firstLayer = createLayer();
-state.layers.push(firstLayer);
-applyTheme(state.theme);
-setBrushRepetition(state.terrainBrushRepetition);
-selectLayer(firstLayer.id);
-applyLanguage(state.language);
-updateTransform();
+const initializeEditor = () => {
+  const firstLayer = createLayer(); state.layers.push(firstLayer); applyTheme(state.theme); setBrushRepetition(state.terrainBrushRepetition); selectLayer(firstLayer.id); applyLanguage(state.language); updateTransform();
+};
+loadLanguageCatalogs().catch((error) => console.warn(error)).finally(initializeEditor);
 fetch('../data/poi-types.json')
   .then((response) => response.ok ? response.json() : Promise.reject(new Error('Tipos indisponíveis')))
   .then((types) => { state.poiTypes = types; populateObjectOptions(); redraw(); })
