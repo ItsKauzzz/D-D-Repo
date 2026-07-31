@@ -166,7 +166,13 @@
       </div>
     </section>
     <section class="decoration-control decoration-inspector" hidden>
-      <div class="section-title"><b>Sprites do projeto</b><span id="decorationSelectionCount">0 selecionados</span></div>
+      <div class="decoration-collection-editor">
+        <div class="section-title"><b>Collection editor</b><span id="decorationCollectionStatus">All</span></div>
+        <select id="decorationCollection"><option value="all">All</option></select>
+        <div class="decoration-collection-actions"><button id="newDecorationCollection" type="button">＋ Nova</button><button id="editDecorationCollection" type="button">Editar</button><button id="renameDecorationCollection" type="button">Renomear</button><button id="deleteDecorationCollection" type="button">Excluir</button></div>
+        <small id="decorationCollectionHint">All contém todos os assets do projeto.</small>
+      </div>
+      <div class="section-title"><b>Sprites da coleção</b><span id="decorationSelectionCount">0 selecionados</span></div>
       <p class="decoration-help">Clique para selecionar. Segure Ctrl para selecionar vários sprites e sortear entre eles.</p>
       <div id="decorationSpriteGrid" class="decoration-sprite-grid"></div>
       <div class="decoration-settings">

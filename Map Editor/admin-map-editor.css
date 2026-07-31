@@ -352,3 +352,11 @@ html:not([data-theme='atlasmith']) .asset-modal { border-radius: var(--ui-radius
 .decoration-tools { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
 .decoration-tools button { padding:7px; border:1px solid var(--line); background:var(--surface-deep); color:var(--muted); cursor:pointer; }
 .decoration-tools button.active { border-color:var(--accent); color:var(--accent); background:color-mix(in srgb,var(--accent) 12%,var(--surface-deep)); }
+.decoration-collection-editor { display:grid; gap:8px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+.decoration-collection-editor select { width:100%; }
+.decoration-collection-actions { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; }
+.decoration-collection-actions button { min-width:0; padding:6px 3px; border:1px solid var(--line); background:var(--surface-deep); color:var(--text); font-size:10px; cursor:pointer; }
+.decoration-collection-actions button.active { border-color:var(--accent); color:var(--accent); }
+.decoration-collection-actions button:disabled { opacity:.4; cursor:not-allowed; }
+.decoration-collection-editor small { color:var(--muted); font-size:10px; }
+.decoration-sprite.collection-member { box-shadow:inset 0 0 0 3px #59bfff; border-color:#59bfff; }

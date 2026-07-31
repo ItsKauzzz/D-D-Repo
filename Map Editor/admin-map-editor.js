@@ -35,6 +35,8 @@ const state = {
   lastX: 0,
   lastY: 0,
   generationToken: 0,
+  decorationCollections: [],
+  editingDecorationCollectionId: null,
   imageSets: Object.entries(bundledIconFiles.reduce((groups, fileName) => {
       const name = fileName.replace(/_\d+(?=\.png$)/, '').replace(/\.png$/, '');
       (groups[name] ||= []).push(fileName);
@@ -211,7 +213,7 @@ function createLayer(type = 'terrain') {
     assets: [],
     selectedAssetIndex: 0,
     image: null,
-    decoration: type === 'decoration' ? { selectedAssetIds: [], size: 1, sizeVariation: false, sizeMin: .8, sizeMax: 1.2, zOffset: 0, randomRotation: false, randomMirror: false, eraseSize: 80, tool: 'place', placements: [], preview: null } : null,
+    decoration: type === 'decoration' ? { selectedAssetIds: [], size: 1, sizeVariation: false, sizeMin: .8, sizeMax: 1.2, zOffset: 0, collectionId: 'all', randomRotation: false, randomMirror: false, eraseSize: 80, tool: 'place', placements: [], preview: null } : null,
     object: type === 'object' ? { name: '', type: 'vila', iconSetId: '', selectedIconIndex: 0, gallerySetId: '', description: '', detailedTemplateId: '', descriptionPages: [], poi: true, x: null, y: null, scale: 1, opacity: 1, offsetX: 0, offsetY: 0, anchorX: 0.5, anchorY: 1 } : null,
     region: type === 'region' ? { group: 'Regiões', presetId: 'regions', name: `Região ${number}`, color: '#6fa86b', fillMode: 'fill', outlineThickness: 3, outlineDashed: false, outlineGap: 12, defaultOverview: false, drawnAt: 0 } : null,
     path: type === 'path' ? { name: `Caminho ${number}`, description: '', descriptionPages: [], gallerySetId: '', showOnMap: true, presetId: 'road', points: [], distance: 0 } : null,
@@ -603,12 +605,26 @@ function drawDecorationPlacement(layer, placement, context = ctx, alpha = 1) {
   context.rotate(placement.rotation || 0); context.scale(placement.mirrored ? -1 : 1, 1);
   context.drawImage(asset.image, -width * (asset.anchorX ?? .5), -size * (asset.anchorY ?? 1), width, size); context.restore();
 }
+function renderDecorationCollections(layer) {
+  const select = $('#decorationCollection'), current = layer.decoration.collectionId || 'all';
+  select.replaceChildren(new Option('All', 'all'), ...state.decorationCollections.map((collection) => new Option(`${collection.name} (${collection.assetIds.length})`, collection.id)));
+  layer.decoration.collectionId = current === 'all' || state.decorationCollections.some((collection) => collection.id === current) ? current : 'all'; select.value = layer.decoration.collectionId;
+  const collection = state.decorationCollections.find((item) => item.id === layer.decoration.collectionId), editing = state.editingDecorationCollectionId === collection?.id;
+  $('#decorationCollectionStatus').textContent = editing ? `${collection.name} • editando` : collection?.name || 'All';
+  $('#decorationCollectionHint').textContent = editing ? 'Clique nos assets para adicionar ou remover da coleção.' : collection ? `${collection.assetIds.length} asset(s) nesta coleção.` : 'All contém todos os assets do projeto.';
+  $('#editDecorationCollection').disabled = !collection; $('#renameDecorationCollection').disabled = !collection; $('#deleteDecorationCollection').disabled = !collection; $('#editDecorationCollection').classList.toggle('active', editing);
+}
 function renderDecorationInspector(layer) {
-  const grid = $('#decorationSpriteGrid'), selected = new Set(layer.decoration.selectedAssetIds || []); grid.replaceChildren();
-  for (const entry of projectSpriteEntries()) {
-    const button = document.createElement('button'); button.type = 'button'; button.className = `decoration-sprite${selected.has(entry.id) ? ' selected' : ''}`; button.title = `${entry.set.name} — ${entry.asset.file.name}`;
+  renderDecorationCollections(layer);
+  const grid = $('#decorationSpriteGrid'), selected = new Set(layer.decoration.selectedAssetIds || []), collection = state.decorationCollections.find((item) => item.id === layer.decoration.collectionId), editing = state.editingDecorationCollectionId === collection?.id;
+  const members = new Set(collection?.assetIds || []), entries = editing || !collection ? projectSpriteEntries() : projectSpriteEntries().filter((entry) => members.has(entry.id)); grid.replaceChildren();
+  for (const entry of entries) {
+    const button = document.createElement('button'); button.type = 'button'; button.className = `decoration-sprite${selected.has(entry.id) ? ' selected' : ''}${editing && members.has(entry.id) ? ' collection-member' : ''}`; button.title = `${entry.set.name} — ${entry.asset.file.name}`;
     const image = document.createElement('img'); image.src = entry.asset.image.src; image.alt = entry.asset.file.name; button.append(image);
-    button.onclick = (event) => { const current = new Set(layer.decoration.selectedAssetIds || []); if (!event.ctrlKey && !event.metaKey) current.clear(); current.has(entry.id) ? current.delete(entry.id) : current.add(entry.id); layer.decoration.selectedAssetIds = [...current]; renderDecorationInspector(layer); redraw(); };
+    button.onclick = (event) => {
+      if (editing) { members.has(entry.id) ? members.delete(entry.id) : members.add(entry.id); collection.assetIds = [...members]; layer.decoration.selectedAssetIds = layer.decoration.selectedAssetIds.filter((id) => members.has(id)); renderDecorationInspector(layer); return; }
+      const current = new Set(layer.decoration.selectedAssetIds || []); if (!event.ctrlKey && !event.metaKey) current.clear(); current.has(entry.id) ? current.delete(entry.id) : current.add(entry.id); layer.decoration.selectedAssetIds = [...current]; renderDecorationInspector(layer); redraw();
+    };
     grid.append(button);
   }
   $('#decorationSelectionCount').textContent = `${selected.size} selecionado(s)`;
@@ -618,6 +634,7 @@ function renderDecorationInspector(layer) {
   $('#decorationEraserSize').value = $('#decorationEraserSizeValue').value = layer.decoration.eraseSize || 80; $('#decorationEraserSizeField').hidden = layer.decoration.tool !== 'eraser'; document.querySelectorAll('[data-decoration-tool]').forEach((button) => button.classList.toggle('active', button.dataset.decorationTool === layer.decoration.tool));
   $('#decorationSizeVariation').checked = Boolean(layer.decoration.sizeVariation); $('#decorationRandomRotation').checked = Boolean(layer.decoration.randomRotation); $('#decorationRandomMirror').checked = Boolean(layer.decoration.randomMirror);
 }
+
 function renderTerrainAnchorPreview(layer) {
   const preview = $('#terrainAnchorPreview');
   const asset = layer?.type === 'terrain' ? layer.assets[layer.selectedAssetIndex || 0] : null;
@@ -1298,6 +1315,11 @@ async function generate(layer = selectedLayer()) {
   hideTaskProgress();
 }
 
+$('#decorationCollection').addEventListener('change', (event) => { const layer = selectedLayer(); if (layer?.type !== 'decoration') return; layer.decoration.collectionId = event.target.value; layer.decoration.selectedAssetIds = []; state.editingDecorationCollectionId = null; renderDecorationInspector(layer); redraw(); });
+$('#newDecorationCollection').onclick = () => { const layer = selectedLayer(); if (layer?.type !== 'decoration') return; const name = window.prompt('Nome da coleção:', 'Nova coleção'); if (!name?.trim()) return; const collection = { id: crypto.randomUUID?.() || `collection-${Date.now()}`, name: name.trim(), assetIds: [] }; state.decorationCollections.push(collection); layer.decoration.collectionId = collection.id; layer.decoration.selectedAssetIds = []; state.editingDecorationCollectionId = collection.id; renderDecorationInspector(layer); };
+$('#editDecorationCollection').onclick = () => { const layer = selectedLayer(); if (layer?.type !== 'decoration' || layer.decoration.collectionId === 'all') return; state.editingDecorationCollectionId = state.editingDecorationCollectionId === layer.decoration.collectionId ? null : layer.decoration.collectionId; if (!state.editingDecorationCollectionId) { const collection = state.decorationCollections.find((item) => item.id === layer.decoration.collectionId); layer.decoration.selectedAssetIds = layer.decoration.selectedAssetIds.filter((id) => collection.assetIds.includes(id)); } renderDecorationInspector(layer); };
+$('#renameDecorationCollection').onclick = () => { const layer = selectedLayer(), collection = state.decorationCollections.find((item) => item.id === layer?.decoration?.collectionId); if (!collection) return; const name = window.prompt('Nome da coleção:', collection.name); if (name?.trim()) { collection.name = name.trim(); renderDecorationInspector(layer); } };
+$('#deleteDecorationCollection').onclick = () => { const layer = selectedLayer(), id = layer?.decoration?.collectionId, collection = state.decorationCollections.find((item) => item.id === id); if (!collection || !window.confirm(`Excluir a coleção “${collection.name}”?`)) return; state.decorationCollections = state.decorationCollections.filter((item) => item.id !== id); state.layers.filter((item) => item.type === 'decoration' && item.decoration.collectionId === id).forEach((item) => { item.decoration.collectionId = 'all'; item.decoration.selectedAssetIds = []; }); state.editingDecorationCollectionId = null; renderDecorationInspector(layer); };
 $('#decorationZOffset').addEventListener('input', (event) => { const layer = selectedLayer(); if (layer?.type === 'decoration') { layer.decoration.zOffset = Math.max(-10000, Math.min(10000, Number(event.target.value) || 0)); redraw(); } });
 for (const id of ['decorationSize', 'decorationSizeValue']) $(`#${id}`).addEventListener(id === 'decorationSize' ? 'input' : 'change', (event) => {
   const layer = selectedLayer(); if (layer?.type !== 'decoration') return; layer.decoration.size = Math.max(.05, Math.min(10, Number(event.target.value) || 1)); $('#decorationSize').value = $('#decorationSizeValue').value = layer.decoration.size; if (layer.decoration.preview) layer.decoration.preview.size = layer.decoration.size; redraw();
@@ -2624,6 +2646,7 @@ function createProjectData() {
     objectsAlwaysOnTop: state.objectsAlwaysOnTop,
     theme: state.theme,
     maskObjects,
+    decorationCollections: state.decorationCollections,
     imageSets: state.imageSets.map((set) => ({ id: set.id, name: set.name, assets: set.assets.map(serializeAsset) })),
     layers: state.layers.map((layer) => ({
       id: layer.id, type: layer.type, name: layer.name, visible: layer.visible, parentId: layer.parentId, collapsed: layer.collapsed, selectedAssetIndex: layer.selectedAssetIndex,
@@ -2679,6 +2702,7 @@ $('#projectInput').addEventListener('change', async (event) => {
     state.distanceScaleKm = Number(project.distanceScaleKm) || 100;
     state.travelSpeeds = { ...state.travelSpeeds, ...project.travelSpeeds };
     state.descriptionTemplates = project.descriptionTemplates || [];
+    state.decorationCollections = Array.isArray(project.decorationCollections) ? project.decorationCollections : [];
     state.terrainColors = { ...state.terrainColors, ...project.terrainColors };
     applyTheme(project.theme || state.theme);
     setTerrainBrushRotation(project.terrainBrushRotation || 0);
