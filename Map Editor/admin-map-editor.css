@@ -360,3 +360,5 @@ html:not([data-theme='atlasmith']) .asset-modal { border-radius: var(--ui-radius
 .decoration-collection-actions button:disabled { opacity:.4; cursor:not-allowed; }
 .decoration-collection-editor small { color:var(--muted); font-size:10px; }
 .decoration-sprite.collection-member { box-shadow:inset 0 0 0 3px #59bfff; border-color:#59bfff; }
+.image-set:has(.delete-set) { grid-template-columns:48px minmax(0,1fr) auto auto auto; }
+.image-set .delete-set { padding:6px 9px; border:1px solid var(--line); background:transparent; color:#ff9188; cursor:pointer; }
